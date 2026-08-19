@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小游戏合集 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <style>
+        .game-section { margin-bottom: var(--space-xl); }
+        .game-section h2 { margin-bottom: var(--space-lg); }
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--space-md);
+        }
+        .game-link {
+            display: block;
+            padding: var(--space-md);
+            background: var(--color-card-bg);
+            border: 2px solid var(--color-border-sketch);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sketch);
+            text-align: center;
+            color: var(--color-text);
+            text-decoration: none;
+            border-bottom: 2px solid var(--color-border-sketch);
+            font-family: var(--font-title);
+            font-size: 1.1rem;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .game-link:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0 var(--color-border-sketch);
+            color: var(--color-primary);
+            border-bottom-color: var(--color-border-sketch);
+        }
+        .game-link .game-icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../index.html">EE工具箱</a>
+        <span class="breadcrumb">趣味游戏</span>
+    </nav>
+
+    <main class="container">
+        <h1>小游戏合集</h1>
+        <p style="color:var(--color-text-secondary);margin-bottom:var(--space-xl);">休息一下！以下是收集的本地小游戏和网页游戏合集。</p>
+
+        <!-- 本地游戏 -->
+        <section class="game-section">
+            <h2 class="section-title">本地游戏</h2>
+            <div class="game-grid">
+                <a href="bigwatermelon/index.html" target="_blank" class="game-link">
+                    <span class="game-icon">🍉</span>合成中科大
+                </a>
+                <a href="rzpk/rzpk.html" target="_blank" class="game-link">
+                    <span class="game-icon">🥷</span>忍者跑酷
+                </a>
+                <a href="flappyBird/FlappyBird.html" target="_blank" class="game-link">
+                    <span class="game-icon">🐦</span>Flappy Bird
+                </a>
+                <a href="mine/mine.html" target="_blank" class="game-link">
+                    <span class="game-icon">💣</span>扫雷
+                </a>
+                <a href="wuziqi/game.html" target="_blank" class="game-link">
+                    <span class="game-icon">⚫</span>五子棋
+                </a>
+                <a href="tank/tank.html" target="_blank" class="game-link">
+                    <span class="game-icon">🪖</span>坦克大战
+                </a>
+                <a href="jquery/jquery.html" target="_blank" class="game-link">
+                    <span class="game-icon">🃏</span>记忆小游戏
+                </a>
+                <a href="rzpk/tictactoe.html" target="_blank" class="game-link">
+                    <span class="game-icon">✖</span>井字棋
+                </a>
+                <a href="snake.html" target="_blank" class="game-link">
+                    <span class="game-icon">🐍</span>贪吃蛇
+                </a>
+                <a href="block.html" target="_blank" class="game-link">
+                    <span class="game-icon">🟦</span>俄罗斯方块
+                </a>
+                <a href="trick.html" target="_blank" class="game-link">
+                    <span class="game-icon">🎩</span>trick
+                </a>
+            </div>
+        </section>
+
+        <!-- 网页游戏 -->
+        <section class="game-section">
+            <h2 class="section-title">网页游戏</h2>
+            <div class="game-grid">
+                <a href="https://newdoku.com/zh/2048.php" target="_blank" class="game-link">
+                    <span class="game-icon">🔢</span>2048
+                </a>
+                <a href="https://zty.pe/" target="_blank" class="game-link">
+                    <span class="game-icon">⌨️</span>打字游戏
+                </a>
+                <a href="https://www.typelit.io/" target="_blank" class="game-link">
+                    <span class="game-icon">📝</span>打字练习
+                </a>
+                <a href="https://play.typeracer.com/" target="_blank" class="game-link">
+                    <span class="game-icon">🏎️</span>打字对战
+                </a>
+                <a href="https://paperio.site/" target="_blank" class="game-link">
+                    <span class="game-icon">⬜</span>圈地游戏
+                </a>
+                <a href="https://www.html5tricks.com/demo/jiaoben1765/index.html" target="_blank" class="game-link">
+                    <span class="game-icon">♟️</span>中国象棋
+                </a>
+                <a href="https://lichess.org/" target="_blank" class="game-link">
+                    <span class="game-icon">♞</span>国际象棋
+                </a>
+                <a href="https://www.html5tricks.com/demo/html5-mario/index.html" target="_blank" class="game-link">
+                    <span class="game-icon">🍄</span>超级玛丽
+                </a>
+                <a href="https://passer-by.com/pacman/" target="_blank" class="game-link">
+                    <span class="game-icon">👾</span>吃豆人
+                </a>
+                <a href="https://www.yibilian.cn/" target="_blank" class="game-link">
+                    <span class="game-icon">✏️</span>一笔连
+                </a>
+                <a href="https://www.hannuota.cn/" target="_blank" class="game-link">
+                    <span class="game-icon">🗼</span>汉诺塔
+                </a>
+                <a href="https://www.html5tricks.com/demo/html5-canvas-box-game/index.html" target="_blank" class="game-link">
+                    <span class="game-icon">📦</span>推箱子
+                </a>
+            </div>
+        </section>
+
+        <!-- 魔方工具 -->
+        <section class="game-section">
+            <h2 class="section-title">魔方 & 工具</h2>
+            <div class="game-grid">
+                <a href="https://cstimer.net/" target="_blank" class="game-link">
+                    <span class="game-icon">⏱️</span>魔方计时器
+                </a>
+                <a href="https://online-metronome.org/" target="_blank" class="game-link">
+                    <span class="game-icon">🎵</span>节拍器
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>EE工具箱 &copy; 2026</p>
+    </footer>
+
+    <script src="../js/common.js"></script>
+</body>
+</html>

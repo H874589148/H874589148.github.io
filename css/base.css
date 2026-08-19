@@ -1,0 +1,175 @@
+/* ============================================
+   base.css - 手绘科研风格基础主题
+   Google Fonts 需在 HTML <head> 中通过 <link> 引入：
+   Caveat, Patrick Hand, Fira Code
+   ============================================ */
+
+/* CSS 变量 */
+:root {
+  /* 配色 */
+  --color-bg: #faf8f5;
+  --color-bg-paper: #f5f0e8;
+  --color-bg-grid: #e8e2d8;
+  --color-text: #2c2c2c;
+  --color-text-secondary: #5a5a5a;
+  --color-text-muted: #8a8a8a;
+  --color-primary: #3a5a8c;
+  --color-primary-light: #5a7aac;
+  --color-accent: #c0583a;
+  --color-accent-light: #e07858;
+  --color-border: #b8b0a0;
+  --color-border-sketch: #4a4a4a;
+  --color-shadow: rgba(60, 50, 40, 0.12);
+  --color-card-bg: #fffcf7;
+
+  /* 字体 */
+  --font-handwrite: 'Caveat', 'Patrick Hand', cursive;
+  --font-body: 'Patrick Hand', 'Segoe UI', sans-serif;
+  --font-mono: 'Fira Code', 'Consolas', 'Courier New', monospace;
+  --font-title: 'Caveat', cursive;
+
+  /* 间距 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* 圆角 - 模拟手绘不规则感 */
+  --radius-sm: 3px 5px 4px 6px;
+  --radius-md: 5px 8px 6px 9px;
+  --radius-lg: 8px 12px 10px 14px;
+
+  /* 阴影 - 手绘投影 */
+  --shadow-sm: 2px 3px 0 var(--color-shadow);
+  --shadow-md: 3px 4px 0 var(--color-shadow), 1px 1px 0 var(--color-shadow);
+  --shadow-lg: 4px 6px 0 var(--color-shadow), 2px 2px 0 var(--color-shadow);
+  --shadow-sketch: 2px 2px 0 var(--color-border-sketch);
+}
+
+/* 基础重置 */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  /* 方格纸背景 */
+  background-image:
+    linear-gradient(var(--color-bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-bg-grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+  min-height: 100vh;
+}
+
+/* 标题 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+h1 { font-size: 2.4rem; }
+h2 { font-size: 1.9rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+
+/* 链接 */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  border-bottom: 1.5px dashed var(--color-primary-light);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+a:hover {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* 代码 */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-bg-paper);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+pre code {
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+/* 选中文本 */
+::selection {
+  background: rgba(58, 90, 140, 0.2);
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-paper);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* 手绘下划线装饰 */
+.sketch-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.sketch-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 3px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  transform: rotate(-0.5deg);
+}
+
+/* 手绘边框工具类 */
+.sketch-border {
+  border: 2px solid var(--color-border-sketch);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sketch);
+}
+
+/* 纸张卡片效果 */
+.paper-card {
+  background: var(--color-card-bg);
+  border: 2px solid var(--color-border-sketch);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sketch);
+  padding: var(--space-lg);
+}

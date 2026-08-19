@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>噪声快速计算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 噪声快速计算</span>
+    </nav>
+
+    <main class="container">
+        <h1>噪声快速计算</h1>
+        <p class="tool-desc">热噪声（Johnson）、散粒噪声（Shot）、闪烁噪声（1/f）参数实时计算。</p>
+
+        <!-- ===== 热噪声 ===== -->
+        <section class="tool-section">
+            <h2 class="sec-heading">热噪声 (Johnson-Nyquist Noise)</h2>
+            <div class="formula-box">
+                V²<sub>n</sub> = 4kTR&Delta;f &nbsp;|&nbsp; V<sub>n</sub> = √(4kTR) [V/√Hz]
+            </div>
+            <div class="paper-card">
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="thR">电阻 R</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="thR" value="1000" min="0" step="any">
+                            <span class="unit">Ω</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="thT">温度 T</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="thT" value="300" step="any">
+                            <span class="unit">K</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="thBW">带宽 Δf</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="thBW" value="1e6" step="any">
+                            <span class="unit">Hz</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-grid" id="thermalResult">
+                    <div class="ritem"><span class="rlabel">噪声功率谱密度 V<sub>n</sub></span><span class="rval" id="thSd">-</span></div>
+                    <div class="ritem"><span class="rlabel">总均方根电压 V<sub>rms</sub></span><span class="rval" id="thVrms">-</span></div>
+                    <div class="ritem"><span class="rlabel">等效噪声电流 I<sub>n</sub></span><span class="rval" id="thIn">-</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 散粒噪声 ===== -->
+        <section class="tool-section">
+            <h2 class="sec-heading">散粒噪声 (Shot Noise)</h2>
+            <div class="formula-box">
+                I²<sub>n</sub> = 2qI<sub>DC</sub>&Delta;f &nbsp;|&nbsp; I<sub>n</sub> = √(2qI<sub>DC</sub>) [A/√Hz]
+            </div>
+            <div class="paper-card">
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="shI">直流电流 I<sub>DC</sub></label>
+                        <div class="input-unit-row">
+                            <input type="number" id="shI" value="1e-3" step="any">
+                            <span class="unit">A</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="shBW">带宽 Δf</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="shBW" value="1e6" step="any">
+                            <span class="unit">Hz</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-grid" id="shotResult">
+                    <div class="ritem"><span class="rlabel">噪声电流谱密度 I<sub>n</sub></span><span class="rval" id="shSd">-</span></div>
+                    <div class="ritem"><span class="rlabel">总均方根电流 I<sub>rms</sub></span><span class="rval" id="shIrms">-</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 闪烁噪声 ===== -->
+        <section class="tool-section">
+            <h2 class="sec-heading">闪烁噪声 (1/f Noise)</h2>
+            <div class="formula-box">
+                S<sub>v</sub>(f) = K<sub>f</sub> / (C<sub>ox</sub>WLf) &nbsp;|&nbsp; V<sub>n</sub>(f) = √(K<sub>f</sub> / (C<sub>ox</sub>WLf)) [V/√Hz]
+            </div>
+            <div class="paper-card">
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="fKf">工艺参数 K<sub>f</sub></label>
+                        <div class="input-unit-row">
+                            <input type="number" id="fKf" value="1e-25" step="any">
+                            <span class="unit">J</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="fCox">C<sub>ox</sub></label>
+                        <div class="input-unit-row">
+                            <input type="number" id="fCox" value="8e-3" step="any">
+                            <span class="unit">F/m²</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="fW">W</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="fW" value="10e-6" step="any">
+                            <span class="unit">m</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="fL">L</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="fL" value="1e-6" step="any">
+                            <span class="unit">m</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="fFreq">频率 f</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="fFreq" value="1000" step="any">
+                            <span class="unit">Hz</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-grid">
+                    <div class="ritem"><span class="rlabel">电压谱密度 V<sub>n</sub>(f)</span><span class="rval" id="flickVn">-</span></div>
+                    <div class="ritem"><span class="rlabel">转角频率 f<sub>c</sub>（热噪声等效）</span><span class="rval" id="flickFc">-</span></div>
+                </div>
+                <div class="info-box" style="margin-top:12px;">
+                    转角频率需要同时输入热噪声等效电阻 R：
+                    <div class="input-unit-row" style="margin-top:8px;max-width:200px;">
+                        <input type="number" id="fR" value="1000" step="any">
+                        <span class="unit">Ω</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 常量说明 -->
+        <div class="tool-section">
+            <div class="info-box">
+                <strong>物理常量：</strong>
+                k = 1.38065 × 10⁻²³ J/K（玻尔兹曼），
+                q = 1.60218 × 10⁻¹⁹ C（元电荷）
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>EE工具箱 &copy; 2026</p>
+    </footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

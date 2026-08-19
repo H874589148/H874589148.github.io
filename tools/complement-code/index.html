@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反码补码转换 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 反码补码转换</span>
+    </nav>
+
+    <main class="container">
+        <h1>反码补码转换</h1>
+        <p class="tool-desc">支持原码、反码、补码的互转，可自定义位宽，实时计算。</p>
+
+        <!-- 参数区 -->
+        <div class="tool-section paper-card">
+            <div class="tool-row">
+                <div class="field" style="max-width:140px;">
+                    <label for="bitWidth">位宽</label>
+                    <select id="bitWidth">
+                        <option value="4">4 bit</option>
+                        <option value="8" selected>8 bit</option>
+                        <option value="16">16 bit</option>
+                        <option value="32">32 bit</option>
+                        <option value="64">64 bit</option>
+                    </select>
+                </div>
+                <div class="field" style="max-width:180px;">
+                    <label for="inputMode">输入类型</label>
+                    <select id="inputMode">
+                        <option value="decimal">十进制真值</option>
+                        <option value="bin_original">二进制原码</option>
+                        <option value="bin_ones">二进制反码</option>
+                        <option value="bin_twos">二进制补码</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="inputVal">输入值</label>
+                    <input type="text" id="inputVal" placeholder="例如: -85 或 10101010" autocomplete="off">
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果 -->
+        <div class="tool-section">
+            <h3>转换结果</h3>
+            <div class="code-table" id="resultTable">
+                <div class="code-row head">
+                    <span>表示形式</span>
+                    <span>二进制</span>
+                    <span>十进制真值</span>
+                </div>
+                <div class="code-row">
+                    <span>原码 (Sign-Magnitude)</span>
+                    <span class="mono" id="resSM">-</span>
+                    <span class="mono" id="resSMDec">-</span>
+                </div>
+                <div class="code-row">
+                    <span>反码 (One's Complement)</span>
+                    <span class="mono" id="resOnes">-</span>
+                    <span class="mono" id="resOnesDec">-</span>
+                </div>
+                <div class="code-row accent">
+                    <span>补码 (Two's Complement)</span>
+                    <span class="mono" id="resTwos">-</span>
+                    <span class="mono" id="resTwosDec">-</span>
+                </div>
+            </div>
+            <div class="warn-box" id="errBox" style="display:none;"></div>
+        </div>
+
+        <!-- 可视化 -->
+        <div class="tool-section">
+            <h3>位模式可视化</h3>
+            <div class="bit-vis" id="bitVis">
+                <div class="bit-row" id="bitRowSM"><span class="bit-label">原码</span><div class="bits" id="bvSM"></div></div>
+                <div class="bit-row" id="bitRowOnes"><span class="bit-label">反码</span><div class="bits" id="bvOnes"></div></div>
+                <div class="bit-row" id="bitRowTwos"><span class="bit-label">补码</span><div class="bits" id="bvTwos"></div></div>
+            </div>
+        </div>
+
+        <!-- 说明 -->
+        <div class="tool-section">
+            <div class="info-box">
+                <p><strong>转换规则：</strong></p>
+                <ul>
+                    <li>正数：原码 = 反码 = 补码（符号位为 0）</li>
+                    <li>负数反码：符号位不变，其余各位取反</li>
+                    <li>负数补码：反码 + 1</li>
+                    <li>特殊：-128 在 8 位补码中表示为 10000000，无对应原码</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>EE工具箱 &copy; 2026</p>
+    </footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

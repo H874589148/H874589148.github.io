@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>论文分享 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../index.html">EE工具箱</a>
+        <span class="breadcrumb">学术分享 / 论文</span>
+        <span class="nav-spacer"></span>
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="搜索论文标题、关键词..." oninput="filterPapers(this.value)">
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>论文分享</h1>
+        <p class="blog-desc">精选论文阅读笔记，涵盖模拟/混合信号 IC、电力电子、控制理论等方向。</p>
+
+        <!-- 分类筛选 -->
+        <div class="tag-filter" id="tagFilter">
+            <button class="tag-btn active" data-tag="all" onclick="filterByTag('all')">全部</button>
+            <button class="tag-btn" data-tag="analog" onclick="filterByTag('analog')">模拟电路</button>
+            <button class="tag-btn" data-tag="power" onclick="filterByTag('power')">电力电子</button>
+            <button class="tag-btn" data-tag="control" onclick="filterByTag('control')">控制理论</button>
+            <button class="tag-btn" data-tag="noise" onclick="filterByTag('noise')">噪声与匹配</button>
+        </div>
+
+        <!-- 论文列表 -->
+        <div id="paperList" class="paper-list">
+            <!-- 示例论文卡片 1 -->
+            <article class="paper-card-item" data-tags="noise analog">
+                <div class="paper-meta">
+                    <span class="paper-year">2024</span>
+                    <span class="tag-badge analog">模拟电路</span>
+                    <span class="tag-badge noise">噪声与匹配</span>
+                </div>
+                <h2 class="paper-title">
+                    <a href="posts/example-noise-matching.html">
+                        低噪声运放的噪声分析与匹配策略
+                    </a>
+                </h2>
+                <p class="paper-authors">示例作者 et al. — <em>IEEE JSSC</em></p>
+                <p class="paper-abstract">
+                    本文介绍了低噪声运算放大器的噪声建模方法，
+                    分析了热噪声与闪烁噪声在不同工作点下的贡献比例，
+                    并讨论了输入管尺寸对噪声-功耗权衡的影响。
+                </p>
+                <div class="paper-actions">
+                    <a href="posts/example-noise-matching.html" class="btn btn-sm">阅读笔记</a>
+                    <span class="paper-readtime">约 5 分钟</span>
+                </div>
+            </article>
+
+            <!-- 示例论文卡片 2 -->
+            <article class="paper-card-item" data-tags="power control">
+                <div class="paper-meta">
+                    <span class="paper-year">2023</span>
+                    <span class="tag-badge power">电力电子</span>
+                    <span class="tag-badge control">控制理论</span>
+                </div>
+                <h2 class="paper-title">
+                    <a href="posts/example-buck-control.html">
+                        Buck 变换器数字控制器设计：Type-III 补偿与环路带宽优化
+                    </a>
+                </h2>
+                <p class="paper-authors">示例作者 et al. — <em>IEEE TPEL</em></p>
+                <p class="paper-abstract">
+                    针对 Buck 变换器的数字电压模式控制，本文推导了 Type-III 补偿器的零极点配置方法，
+                    分析了相位裕度与环路带宽的设计权衡，给出了完整的 Bode 图设计流程。
+                </p>
+                <div class="paper-actions">
+                    <a href="posts/example-buck-control.html" class="btn btn-sm">阅读笔记</a>
+                    <span class="paper-readtime">约 8 分钟</span>
+                </div>
+            </article>
+        </div>
+
+        <!-- 空状态 -->
+        <div id="emptyState" class="empty-state" style="display:none;">
+            <p>没有找到匹配的论文。</p>
+        </div>
+
+        <!-- 添加提示 -->
+        <div class="add-hint info-box" style="margin-top:var(--space-xl);">
+            <strong>如何添加新论文：</strong>在 <code>blog/posts/</code> 目录下新建 HTML 文件，
+            并在 <code>blog/index.html</code> 的 <code>#paperList</code> 中添加对应的
+            <code>&lt;article class="paper-card-item"&gt;</code> 卡片即可。
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>EE工具箱 &copy; 2026</p>
+    </footer>
+
+    <script src="../js/common.js"></script>
+    <script>
+        var activeTag = 'all';
+        var searchQuery = '';
+
+        function filterByTag(tag) {
+            activeTag = tag;
+            document.querySelectorAll('.tag-btn').forEach(function(btn){
+                btn.classList.toggle('active', btn.dataset.tag === tag);
+            });
+            applyFilter();
+        }
+
+        function filterPapers(q) {
+            searchQuery = q.toLowerCase();
+            applyFilter();
+        }
+
+        function applyFilter() {
+            var cards = document.querySelectorAll('.paper-card-item');
+            var visible = 0;
+            cards.forEach(function(card) {
+                var tags = card.dataset.tags || '';
+                var tagMatch = activeTag === 'all' || tags.indexOf(activeTag) >= 0;
+                var text = card.textContent.toLowerCase();
+                var queryMatch = searchQuery === '' || text.indexOf(searchQuery) >= 0;
+                var show = tagMatch && queryMatch;
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            document.getElementById('emptyState').style.display = visible === 0 ? '' : 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+/* tools/power-electronics/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+.pe-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+}
+
+.pe-ctrl {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    position: sticky;
+    top: 72px;
+}
+
+.pe-ctrl h3 { color: var(--color-primary); font-size: 1.1rem; }
+
+.topo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+
+.topo-btn {
+    padding: 8px 4px;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    background: var(--color-card-bg);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.topo-btn:hover, .topo-btn.active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+
+input[type="range"] {
+    flex: 1;
+    accent-color: var(--color-primary);
+}
+
+.duty-val {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    min-width: 44px;
+}
+
+.dc-results { margin-top: var(--space-md); }
+.dc-results h3 { margin-bottom: var(--space-sm); }
+
+.dc-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--color-border);
+    font-size: 0.9rem;
+}
+
+.dc-row:last-child { border-bottom: none; }
+.dc-row .dc-val { font-family: var(--font-mono); font-weight: 600; color: var(--color-primary); }
+
+.pe-charts { display: flex; flex-direction: column; gap: var(--space-md); }
+
+.topo-desc {
+    padding: var(--space-md) var(--space-lg);
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    min-height: 40px;
+}
+
+.chart-container { padding: var(--space-sm); }
+.chart-container canvas { width: 100%; height: auto; }
+
+@media (max-width: 900px) {
+    .pe-layout { grid-template-columns: 1fr; }
+    .pe-ctrl { position: static; }
+}

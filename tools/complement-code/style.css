@@ -1,0 +1,121 @@
+/* tools/complement-code/style.css */
+
+.tool-desc {
+    color: var(--color-text-secondary);
+    font-size: 1.05rem;
+    margin: var(--space-sm) 0 var(--space-xl);
+}
+
+.tool-section { margin-bottom: var(--space-xl); }
+.tool-section h3 { margin-bottom: var(--space-md); color: var(--color-primary); }
+
+/* 结果表格 */
+.code-table {
+    background: var(--color-card-bg);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sketch);
+    overflow: hidden;
+}
+
+.code-row {
+    display: grid;
+    grid-template-columns: 2fr 3fr 1fr;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+    align-items: center;
+}
+
+.code-row:last-child { border-bottom: none; }
+
+.code-row.head {
+    background: var(--color-bg-paper);
+    font-family: var(--font-title);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+}
+
+.code-row.accent {
+    background: rgba(58, 90, 140, 0.05);
+}
+
+.code-row .mono {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    word-break: break-all;
+    letter-spacing: 0.05em;
+}
+
+/* 位可视化 */
+.bit-vis {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    background: var(--color-card-bg);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sketch);
+    overflow-x: auto;
+}
+
+.bit-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.bit-label {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    min-width: 48px;
+    flex-shrink: 0;
+}
+
+.bits {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+.bit-cell {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-paper);
+    cursor: default;
+}
+
+.bit-cell.sign {
+    border-color: var(--color-accent);
+    background: rgba(192, 88, 58, 0.08);
+    color: var(--color-accent);
+    font-weight: 700;
+}
+
+.bit-cell.one {
+    background: rgba(58, 90, 140, 0.12);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.info-box ul {
+    margin-top: var(--space-sm);
+    padding-left: var(--space-lg);
+}
+
+.info-box li { margin-bottom: var(--space-xs); }
+
+@media (max-width: 600px) {
+    .code-row { grid-template-columns: 1.5fr 2fr 1fr; font-size: 0.85rem; }
+    .bit-cell { width: 22px; height: 22px; font-size: 0.75rem; }
+}

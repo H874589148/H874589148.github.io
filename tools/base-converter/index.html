@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进制转换 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 进制转换</span>
+    </nav>
+
+    <main class="container">
+        <h1>进制转换</h1>
+        <p class="tool-desc">支持二、八、十、十六进制之间的快速互转，实时计算，支持大数与负数。</p>
+
+        <!-- 输入区域 -->
+        <div class="tool-section paper-card">
+            <div class="tool-row">
+                <div class="field">
+                    <label for="inputValue">输入数值</label>
+                    <input type="text" id="inputValue" placeholder="例如: 1A3F, 11010, -255" autocomplete="off">
+                </div>
+                <div class="field" style="max-width: 180px;">
+                    <label for="inputBase">输入进制</label>
+                    <select id="inputBase">
+                        <option value="2">二进制 (2)</option>
+                        <option value="8">八进制 (8)</option>
+                        <option value="10" selected>十进制 (10)</option>
+                        <option value="16">十六进制 (16)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输出结果 -->
+        <div class="tool-section">
+            <h3>转换结果</h3>
+            <div class="result-box" id="resultBox">
+                <div class="result-row">
+                    <span class="result-label">二进制 (BIN)</span>
+                    <span class="result-value" id="resultBin">-</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">八进制 (OCT)</span>
+                    <span class="result-value" id="resultOct">-</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">十进制 (DEC)</span>
+                    <span class="result-value" id="resultDec">-</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">十六进制 (HEX)</span>
+                    <span class="result-value" id="resultHex">-</span>
+                </div>
+            </div>
+            <div class="info-box" id="errorBox" style="display:none;"></div>
+        </div>
+
+        <!-- 快捷输入 -->
+        <div class="tool-section">
+            <h3>快捷操作</h3>
+            <div class="quick-btns">
+                <button class="btn" onclick="copyResult('resultBin')">复制二进制</button>
+                <button class="btn" onclick="copyResult('resultOct')">复制八进制</button>
+                <button class="btn" onclick="copyResult('resultDec')">复制十进制</button>
+                <button class="btn" onclick="copyResult('resultHex')">复制十六进制</button>
+                <button class="btn" onclick="clearAll()">清空</button>
+            </div>
+        </div>
+
+        <!-- 说明 -->
+        <div class="tool-section">
+            <h3>使用说明</h3>
+            <div class="info-box">
+                <p><strong>支持的输入格式：</strong></p>
+                <ul>
+                    <li>二进制：仅包含 0 和 1，如 <code>11010110</code></li>
+                    <li>八进制：0-7 的数字，如 <code>377</code></li>
+                    <li>十进制：常规数字，支持负数如 <code>-255</code></li>
+                    <li>十六进制：0-9 和 A-F，如 <code>1A3F</code></li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>EE工具箱 &copy; 2026</p>
+    </footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

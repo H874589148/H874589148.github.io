@@ -1,0 +1,79 @@
+/* tools/base-converter/style.css */
+
+.tool-desc {
+    color: var(--color-text-secondary);
+    font-size: 1.05rem;
+    margin: var(--space-sm) 0 var(--space-xl);
+}
+
+.tool-section {
+    margin-bottom: var(--space-xl);
+}
+
+.tool-section h3 {
+    margin-bottom: var(--space-md);
+    color: var(--color-primary);
+}
+
+.result-box {
+    padding: var(--space-md) var(--space-lg);
+}
+
+.result-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px dashed var(--color-border);
+}
+
+.result-row:last-child {
+    border-bottom: none;
+}
+
+.result-label {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    min-width: 160px;
+    flex-shrink: 0;
+}
+
+.result-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: var(--color-text);
+    word-break: break-all;
+    flex: 1;
+}
+
+.result-value.updated {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.quick-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.info-box ul {
+    margin-top: var(--space-sm);
+    padding-left: var(--space-lg);
+}
+
+.info-box li {
+    margin-bottom: var(--space-xs);
+}
+
+@media (max-width: 600px) {
+    .result-label {
+        min-width: 120px;
+        font-size: 0.85rem;
+    }
+
+    .result-value {
+        font-size: 0.95rem;
+    }
+}

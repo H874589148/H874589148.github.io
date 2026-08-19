@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电流镜失配计算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 电流镜失配计算</span>
+    </nav>
+
+    <main class="container">
+        <h1>电流镜失配快速计算</h1>
+        <p class="tool-desc">基于 Pelgrom 模型，快速估算 MOS 电流镜的电流失配率（σΔI/I）。</p>
+
+        <!-- 理论说明 -->
+        <div class="tool-section">
+            <div class="formula-box">
+                σ²(ΔI/I) = (A<sub>VT</sub>² / (WL)) × (1/V<sub>ov</sub>²) + (A<sub>β</sub>² / (WL))
+            </div>
+        </div>
+
+        <!-- 输入参数 -->
+        <div class="tool-section paper-card">
+            <h3>工艺 & 版图参数</h3>
+            <div class="tool-row">
+                <div class="field">
+                    <label>A<sub>VT</sub> (阈值失配系数)</label>
+                    <div class="iu-row">
+                        <input type="number" id="Avt" value="5" step="any" min="0">
+                        <span class="unit">mV·μm</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>A<sub>β</sub> (增益失配系数)</label>
+                    <div class="iu-row">
+                        <input type="number" id="Ab" value="1" step="any" min="0">
+                        <span class="unit">%·μm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tool-row">
+                <div class="field">
+                    <label>沟道宽度 W</label>
+                    <div class="iu-row">
+                        <input type="number" id="mW" value="10" step="any" min="0.1">
+                        <span class="unit">μm</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>沟道长度 L</label>
+                    <div class="iu-row">
+                        <input type="number" id="mL" value="1" step="any" min="0.1">
+                        <span class="unit">μm</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>过驱动电压 V<sub>ov</sub></label>
+                    <div class="iu-row">
+                        <input type="number" id="Vov" value="0.2" step="any" min="0.01">
+                        <span class="unit">V</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果 -->
+        <div class="tool-section">
+            <h3>计算结果</h3>
+            <div class="result-grid">
+                <div class="ritem big">
+                    <span class="rlabel">电流失配率 σ(ΔI/I)</span>
+                    <span class="rval" id="resMain">-</span>
+                </div>
+                <div class="ritem">
+                    <span class="rlabel">VT 项贡献</span>
+                    <span class="rval" id="resVT">-</span>
+                </div>
+                <div class="ritem">
+                    <span class="rlabel">β 项贡献</span>
+                    <span class="rval" id="resBeta">-</span>
+                </div>
+                <div class="ritem">
+                    <span class="rlabel">WL 面积</span>
+                    <span class="rval" id="resArea">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- W/L 扫描表 -->
+        <div class="tool-section">
+            <h3>W/L 敏感性分析</h3>
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:8px;">固定 V<sub>ov</sub>，改变 W（L 不变），扫描失配率</p>
+            <div class="scroll-table">
+                <table class="sketch-table" id="sweepTable">
+                    <thead>
+                        <tr>
+                            <th>W (μm)</th>
+                            <th>WL (μm²)</th>
+                            <th>σ(ΔI/I)</th>
+                            <th>3σ 匹配要求</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sweepBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 说明 -->
+        <div class="tool-section">
+            <div class="info-box">
+                <p><strong>Pelgrom 模型说明：</strong></p>
+                <ul>
+                    <li>A<sub>VT</sub>：典型值 2~10 mV·μm（工艺相关，NMOS 通常更小）</li>
+                    <li>A<sub>β</sub>：典型值 1~2 %·μm</li>
+                    <li>增大面积（WL）可降低失配率；增大 V<sub>ov</sub> 可削弱 VT 失配的影响</li>
+                    <li>σ 为 1σ 值，芯片一致性通常要求 3σ &lt; 1%</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

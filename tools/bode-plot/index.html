@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>零极点 Bode 图 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 零极点 Bode 图</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>零极点 Bode 图</h1>
+        <p class="tool-desc">输入传递函数的零点和极点（Hz），实时绘制幅频特性与相频特性曲线。</p>
+
+        <!-- 参数输入区 -->
+        <div class="bode-layout">
+            <aside class="bode-params">
+                <!-- 直流增益 -->
+                <div class="param-block paper-card">
+                    <h3>系统参数</h3>
+                    <div class="field">
+                        <label for="dcGain">直流增益 K (dB)</label>
+                        <input type="number" id="dcGain" value="0" step="1">
+                    </div>
+                    <div class="field" style="margin-top:var(--space-md);">
+                        <label for="freqStart">频率范围</label>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <input type="number" id="freqStart" value="1" step="any" style="width:80px;">
+                            <span style="color:var(--color-text-muted);">~</span>
+                            <input type="number" id="freqEnd" value="1e8" step="any" style="width:100px;">
+                            <span style="font-size:0.85rem;color:var(--color-text-muted);">Hz</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 极点列表 -->
+                <div class="param-block paper-card">
+                    <div class="block-header">
+                        <h3>极点 (Poles)</h3>
+                        <button class="btn btn-sm" onclick="addPole()">+ 添加</button>
+                    </div>
+                    <div id="poleList" class="pole-zero-list"></div>
+                </div>
+
+                <!-- 零点列表 -->
+                <div class="param-block paper-card">
+                    <div class="block-header">
+                        <h3>零点 (Zeros)</h3>
+                        <button class="btn btn-sm" onclick="addZero()">+ 添加</button>
+                    </div>
+                    <div id="zeroList" class="pole-zero-list"></div>
+                </div>
+
+                <!-- 预设 -->
+                <div class="param-block paper-card">
+                    <h3>典型电路预设</h3>
+                    <div class="preset-btns">
+                        <button class="btn" onclick="loadPreset('singlePole')">单极点系统</button>
+                        <button class="btn" onclick="loadPreset('typeII')">Type-II 补偿</button>
+                        <button class="btn" onclick="loadPreset('typeIII')">Type-III 补偿</button>
+                        <button class="btn" onclick="loadPreset('notch')">陷波滤波器</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="drawBode()" style="width:100%;margin-top:8px;">
+                    绘制 Bode 图
+                </button>
+            </aside>
+
+            <!-- 图表区 -->
+            <div class="bode-charts">
+                <!-- 幅频特性 -->
+                <div class="chart-container">
+                    <div class="chart-label">幅频特性 |H(jω)| (dB)</div>
+                    <canvas id="magCanvas" width="700" height="300"></canvas>
+                </div>
+                <!-- 相频特性 -->
+                <div class="chart-container" style="margin-top:var(--space-md);">
+                    <div class="chart-label">相频特性 ∠H(jω) (°)</div>
+                    <canvas id="phaseCanvas" width="700" height="240"></canvas>
+                </div>
+                <!-- 相位/增益裕度 -->
+                <div class="margin-display" id="marginDisplay" style="display:none;">
+                    <div class="margin-item">
+                        <span class="mlabel">相位裕度 (PM)</span>
+                        <span class="mval" id="pmVal">-</span>
+                    </div>
+                    <div class="margin-item">
+                        <span class="mlabel">增益裕度 (GM)</span>
+                        <span class="mval" id="gmVal">-</span>
+                    </div>
+                    <div class="margin-item">
+                        <span class="mlabel">0dB 穿越频率</span>
+                        <span class="mval" id="fcVal">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

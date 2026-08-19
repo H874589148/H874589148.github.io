@@ -1,0 +1,130 @@
+/* tools/bode-plot/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+.bode-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+}
+
+.bode-params {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    position: sticky;
+    top: 72px;
+}
+
+.param-block { padding: var(--space-md); }
+.param-block h3 { margin-bottom: var(--space-md); color: var(--color-primary); font-size: 1.1rem; }
+
+.block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.btn-sm {
+    padding: 2px 10px;
+    font-size: 0.85rem;
+}
+
+.pole-zero-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.pz-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pz-row input {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+}
+
+.pz-row .pz-unit {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    min-width: 24px;
+}
+
+.pz-del {
+    background: none;
+    border: 1.5px solid var(--color-border);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: var(--color-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.pz-del:hover { background: rgba(192,88,58,0.1); }
+
+.pz-type {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    min-width: 36px;
+    text-align: right;
+}
+
+.preset-btns {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.preset-btns .btn { font-size: 0.9rem; padding: 6px 12px; text-align: left; }
+
+/* 图表 */
+.bode-charts { display: flex; flex-direction: column; }
+
+.chart-container {
+    padding: var(--space-sm) var(--space-md) var(--space-md);
+}
+
+.chart-label {
+    font-family: var(--font-title);
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.chart-container canvas {
+    width: 100%;
+    height: auto;
+}
+
+/* 裕度显示 */
+.margin-display {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg-paper);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+}
+
+.margin-item { flex: 1; min-width: 140px; }
+.mlabel { display: block; font-size: 0.85rem; color: var(--color-text-muted); }
+.mval { display: block; font-family: var(--font-mono); font-size: 1.2rem; color: var(--color-primary); font-weight: 700; }
+
+@media (max-width: 900px) {
+    .bode-layout { grid-template-columns: 1fr; }
+    .bode-params { position: static; }
+}

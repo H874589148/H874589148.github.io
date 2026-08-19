@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电力电子波形 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 电力电子波形</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>电力电子拓扑工作波形</h1>
+        <p class="tool-desc">选择拓扑结构，调整占空比与参数，实时绘制关键节点的稳态工作波形。</p>
+
+        <!-- 控制区 -->
+        <div class="pe-layout">
+            <aside class="pe-ctrl paper-card">
+                <h3>拓扑选择</h3>
+                <div class="topo-grid">
+                    <button class="topo-btn active" data-topo="buck" onclick="selectTopo('buck')">Buck</button>
+                    <button class="topo-btn" data-topo="boost" onclick="selectTopo('boost')">Boost</button>
+                    <button class="topo-btn" data-topo="buckboost" onclick="selectTopo('buckboost')">Buck-Boost</button>
+                    <button class="topo-btn" data-topo="flyback" onclick="selectTopo('flyback')">Flyback</button>
+                </div>
+
+                <h3 style="margin-top:var(--space-lg);">参数</h3>
+                <div class="field">
+                    <label>占空比 D</label>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="range" id="dutySlider" min="5" max="95" value="50" step="1" oninput="updateDuty(this.value)">
+                        <span class="duty-val" id="dutyVal">50%</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="vin">输入电压 V<sub>in</sub></label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="vin" value="12" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">V</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="iLoad">负载电流 I<sub>L</sub></label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="iLoad" value="2" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">A</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="ripple">电感电流纹波率</label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="ripple" value="30" step="1" min="1" max="100">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">%</span>
+                    </div>
+                </div>
+
+                <!-- 直流参数显示 -->
+                <div class="dc-results">
+                    <h3>直流工作点</h3>
+                    <div id="dcParams"></div>
+                </div>
+            </aside>
+
+            <!-- 波形图区 -->
+            <div class="pe-charts">
+                <div class="topo-desc paper-card" id="topoDesc"></div>
+
+                <!-- 波形 Canvas -->
+                <div class="chart-container" id="waveArea">
+                    <div class="chart-label" id="waveTitle">波形</div>
+                    <canvas id="waveCanvas" width="700" height="480"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
