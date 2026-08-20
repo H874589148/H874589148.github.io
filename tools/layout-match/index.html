@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>版图失配计算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 版图失配计算</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>版图失配快速计算</h1>
+        <p class="tool-desc">用 M×N 网格模拟版图上的单元器件阵列：相同数字 = 同一器件的单元（0 = dummy 不参与），施加方向/径向浓度梯度，实时评估组间失配、质心偏移与 INL/DNL 线性度。</p>
+
+        <div class="formula-box">
+            v(x,y) = 1 ± s·d(x,y)（单位器件归一化）｜
+            组间失配 Δ<sub>ij</sub> = (v&#772;<sub>i</sub> − v&#772;<sub>j</sub>)/v&#772;<sub>j</sub> × 100% ｜
+            DNL<sub>i</sub> = step<sub>i</sub>/LSB − 1，INL<sub>k</sub> = ΣDNL
+        </div>
+
+        <div class="lm-layout">
+            <aside class="lm-params">
+                <div class="param-block paper-card">
+                    <h3>阵列设置</h3>
+                    <div class="field">
+                        <label for="rows">行数 M</label>
+                        <div class="iu-row"><input type="number" id="rows" value="4" min="1" max="16" step="1"><span class="unit">行</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="cols">列数 N</label>
+                        <div class="iu-row"><input type="number" id="cols" value="4" min="1" max="16" step="1"><span class="unit">列</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="groups">组数 K（点击循环 0→K）</label>
+                        <div class="iu-row"><input type="number" id="groups" value="2" min="1" max="8" step="1"><span class="unit">组</span></div>
+                    </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>浓度梯度</h3>
+                    <div class="field">
+                        <label for="gradDir">梯度方向</label>
+                        <select id="gradDir">
+                            <option value="lr" selected>从左至右</option>
+                            <option value="rl">从右至左</option>
+                            <option value="tb">从上至下</option>
+                            <option value="bt">从下至上</option>
+                            <option value="radial">径向（从中心点向四周）</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="gradPol">浓度变化</label>
+                        <select id="gradPol">
+                            <option value="h2l" selected>从高到低</option>
+                            <option value="l2h">从低到高</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="gradSlope">梯度斜率 s</label>
+                        <div class="iu-row"><input type="number" id="gradSlope" value="0.5" step="any" min="0"><span class="unit">%/格</span></div>
+                    </div>
+                    <div class="field" id="centerField" style="display:none;">
+                        <button class="btn" id="centerBtn" type="button">点选中心点</button>
+                        <p class="hint" id="centerInfo"></p>
+                    </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>快捷填充</h3>
+                    <div class="lm-actions">
+                        <button class="btn" id="fillSame" type="button">全填 1</button>
+                        <button class="btn" id="fillInter" type="button">插指 ABAB</button>
+                        <button class="btn" id="fillCC" type="button">共质心对称</button>
+                        <button class="btn" id="fillRand" type="button">随机填充</button>
+                        <button class="btn" id="fillClear" type="button">清空</button>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="lm-main">
+                <div class="paper-card grid-card">
+                    <div class="chart-label">版图网格（点击格子循环改组号；格底色 = 归一化浓度，暖色偏高、冷色偏低）</div>
+                    <div class="grid-scroll">
+                        <div class="grid-wrap" id="gridWrap">
+                            <table id="gridTable"></table>
+                            <div class="center-dot" id="centerDot" style="display:none;"></div>
+                        </div>
+                    </div>
+                    <p class="grid-info" id="gridInfo"></p>
+                </div>
+
+                <div class="paper-card result-card">
+                    <h3>组统计与质心</h3>
+                    <div class="table-scroll">
+                        <table class="lm-table">
+                            <thead>
+                                <tr><th>组号</th><th>单元数 n</th><th>均值 v&#772;</th><th>相对参考组 Δ%</th><th>质心 X (格)</th><th>质心 Y (格)</th></tr>
+                            </thead>
+                            <tbody id="statBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="hint" id="centroidInfo"></p>
+                </div>
+
+                <div class="paper-card result-card">
+                    <h3>组间失配矩阵（行组 相对 列组，%）</h3>
+                    <div class="table-scroll" id="mmWrap">
+                        <table class="lm-table" id="mmTable"></table>
+                    </div>
+                    <p class="hint" id="mmHint"></p>
+                    <p class="ratio-box" id="ratioBox" style="display:none;"></p>
+                </div>
+
+                <div class="paper-card result-card">
+                    <h3>线性度指标（INL / DNL）</h3>
+                    <div class="field inl-order-row">
+                        <label for="inlOrder">累加顺序</label>
+                        <select id="inlOrder">
+                            <option value="desc" selected>编号从高到低</option>
+                            <option value="asc">编号从低到高</option>
+                        </select>
+                    </div>
+                    <p class="hint" id="inlSummary"></p>
+                    <div class="table-scroll">
+                        <table class="lm-table">
+                            <thead>
+                                <tr><th>顺序 k</th><th>组号</th><th>步长 step</th><th>DNL (LSB)</th><th>INL (LSB)</th></tr>
+                            </thead>
+                            <tbody id="inlBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>版图匹配要点：</strong></p>
+                    <ul>
+                        <li>一阶梯度下，各组<strong>质心重合</strong>则失配≈0 —— 这就是共质心（common-centroid）布局的原理。</li>
+                        <li>插指（interdigitated）可缩小质心距；径向（热/应力）梯度只能用环形/共质心布局抵消。</li>
+                        <li>阵列边缘建议放置 dummy（填 0），dummy 不参与失配统计。</li>
+                        <li>本工具评估<strong>系统性梯度失配</strong>；随机失配（σ ∝ 1/√WL）请用「电流镜失配计算」页。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

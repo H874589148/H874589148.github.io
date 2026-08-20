@@ -65,6 +65,26 @@
         <!-- ========== 计算工具 ========== -->
         <h2 class="section-title">计算工具</h2>
         <div class="card-grid">
+            <a href="tools/bandgap/index.html" class="nav-card">
+                <div class="card-icon" id="icon-bandgap"></div>
+                <div class="card-title">Bandgap 计算集</div>
+                <div class="card-desc">带隙基准参数链 / Trim 位 / VBE(T) 设计计算</div>
+            </a>
+            <a href="tools/current-mirror/index.html" class="nav-card">
+                <div class="card-icon" id="icon-circuit"></div>
+                <div class="card-title">电流镜失配计算</div>
+                <div class="card-desc">MOS电流镜失配率与版图参数快速估算</div>
+            </a>
+            <a href="tools/noise-calc/index.html" class="nav-card">
+                <div class="card-icon" id="icon-noise"></div>
+                <div class="card-title">噪声快速计算</div>
+                <div class="card-desc">热噪声、散粒噪声、闪烁噪声参数计算</div>
+            </a>
+            <a href="tools/layout-match/index.html" class="nav-card">
+                <div class="card-icon" id="icon-layout"></div>
+                <div class="card-title">版图失配计算</div>
+                <div class="card-desc">网格阵列 + 浓度梯度，实时评估组间失配与 INL/DNL</div>
+            </a>
             <a href="tools/base-converter/index.html" class="nav-card">
                 <div class="card-icon" id="icon-binary"></div>
                 <div class="card-title">进制转换</div>
@@ -75,35 +95,20 @@
                 <div class="card-title">反码补码转换</div>
                 <div class="card-desc">原码、反码、补码互转，支持自定义位宽</div>
             </a>
-            <a href="tools/noise-calc/index.html" class="nav-card">
-                <div class="card-icon" id="icon-noise"></div>
-                <div class="card-title">噪声快速计算</div>
-                <div class="card-desc">热噪声、散粒噪声、闪烁噪声参数计算</div>
-            </a>
-            <a href="tools/current-mirror/index.html" class="nav-card">
-                <div class="card-icon" id="icon-circuit"></div>
-                <div class="card-title">电流镜失配计算</div>
-                <div class="card-desc">MOS电流镜失配率与版图参数快速估算</div>
+            <a href="tools/power-electronics/index.html" class="nav-card">
+                <div class="card-icon" id="icon-power"></div>
+                <div class="card-title">电力电子波形</div>
+                <div class="card-desc">不同拓扑与占空比下的工作波形实时绘制</div>
             </a>
             <a href="tools/bode-plot/index.html" class="nav-card">
                 <div class="card-icon" id="icon-bode"></div>
                 <div class="card-title">零极点 Bode 图</div>
                 <div class="card-desc">输入零极点，实时绘制幅频/相频特性曲线</div>
             </a>
-            <a href="tools/power-electronics/index.html" class="nav-card">
-                <div class="card-icon" id="icon-power"></div>
-                <div class="card-title">电力电子波形</div>
-                <div class="card-desc">不同拓扑与占空比下的工作波形实时绘制</div>
-            </a>
             <a href="tools/miller-comp/index.html" class="nav-card">
                 <div class="card-icon" id="icon-miller"></div>
                 <div class="card-title">密勒补偿 Bode 图</div>
                 <div class="card-desc">两级运放极点分裂与相位裕度实时分析</div>
-            </a>
-            <a href="tools/bandgap/index.html" class="nav-card">
-                <div class="card-icon" id="icon-bandgap"></div>
-                <div class="card-title">Bandgap 计算集</div>
-                <div class="card-desc">带隙基准参数链 / Trim 位 / VBE(T) 设计计算</div>
             </a>
             <a href="tools/gaussian/index.html" class="nav-card">
                 <div class="card-icon" id="icon-gaussian"></div>
@@ -159,6 +164,7 @@
         document.getElementById('icon-miller').innerHTML = Icons.miller;
         document.getElementById('icon-bandgap').innerHTML = Icons.bandgap;
         document.getElementById('icon-gaussian').innerHTML = Icons.gaussian;
+        document.getElementById('icon-layout').innerHTML = Icons.layout;
         document.getElementById('icon-book').innerHTML = Icons.book;
         document.getElementById('icon-links').innerHTML = Icons.links;
         document.getElementById('icon-game').innerHTML = Icons.game;
