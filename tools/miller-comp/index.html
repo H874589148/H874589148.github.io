@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密勒补偿 Bode 图 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 密勒补偿 Bode 图</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>两级放大器密勒补偿 Bode 图</h1>
+        <p class="tool-desc">输入两级运放参数，调节密勒电容 C<sub>c</sub> 与调零电阻 R<sub>z</sub>，实时观察极点分裂、零点搬移与相位裕度。</p>
+
+        <div class="formula-box">
+            A<sub>dc</sub> = g<sub>m1</sub>R<sub>o1</sub>g<sub>m2</sub>R<sub>o2</sub> ｜
+            f<sub>p1</sub> ≈ 1/(2π·g<sub>m2</sub>R<sub>o2</sub>R<sub>o1</sub>C<sub>c</sub>) ｜
+            f<sub>p2</sub> ≈ g<sub>m2</sub>C<sub>c</sub>/(2π·(C<sub>o1</sub>C<sub>o2</sub>+C<sub>c</sub>(C<sub>o1</sub>+C<sub>o2</sub>))) ｜
+            f<sub>z</sub> = 1/(2π·C<sub>c</sub>(1/g<sub>m2</sub>−R<sub>z</sub>))
+        </div>
+
+        <div class="mc-layout">
+            <aside class="mc-params">
+                <div class="param-block paper-card">
+                    <h3>第一级</h3>
+                    <div class="field">
+                        <label for="gm1">跨导 g<sub>m1</sub></label>
+                        <div class="iu-row"><input type="number" id="gm1" value="1" step="any" min="0"><span class="unit">mA/V</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ro1">输出电阻 R<sub>o1</sub></label>
+                        <div class="iu-row"><input type="number" id="ro1" value="100" step="any" min="0"><span class="unit">kΩ</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="co1">节点电容 C<sub>o1</sub></label>
+                        <div class="iu-row"><input type="number" id="co1" value="0.5" step="any" min="0"><span class="unit">pF</span></div>
+                    </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>第二级</h3>
+                    <div class="field">
+                        <label for="gm2">跨导 g<sub>m2</sub></label>
+                        <div class="iu-row"><input type="number" id="gm2" value="5" step="any" min="0"><span class="unit">mA/V</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ro2">输出电阻 R<sub>o2</sub></label>
+                        <div class="iu-row"><input type="number" id="ro2" value="50" step="any" min="0"><span class="unit">kΩ</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="co2">负载电容 C<sub>o2</sub></label>
+                        <div class="iu-row"><input type="number" id="co2" value="5" step="any" min="0"><span class="unit">pF</span></div>
+                    </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>补偿网络</h3>
+                    <div class="field">
+                        <label for="cc">密勒电容 C<sub>c</sub> = <span id="ccVal">2.0 pF</span></label>
+                        <div class="slider-row">
+                            <input type="range" id="cc" min="0.1" max="20" step="0.1" value="2">
+                        </div>
+                    </div>
+                    <div class="field" style="margin-top:var(--space-md);">
+                        <label for="rz">调零电阻 R<sub>z</sub> = <span id="rzVal">0 Ω</span></label>
+                        <div class="slider-row">
+                            <input type="range" id="rz" min="0" max="1000" step="5" value="0">
+                            <select id="rzUnit" style="width:auto;">
+                                <option value="1" selected>Ω</option>
+                                <option value="1e3">kΩ</option>
+                                <option value="1e6">MΩ</option>
+                            </select>
+                        </div>
+                        <p style="margin-top:4px;font-size:0.82rem;color:var(--color-text-muted);">R<sub>z</sub> = 1/g<sub>m2</sub> 时零点移至无穷；R<sub>z</sub> &gt; 1/g<sub>m2</sub> 零点进入左半平面（有利相位）。</p>
+                    </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>频率轴范围</h3>
+                    <div class="field">
+                        <label for="fPreset">快捷预设</label>
+                        <select id="fPreset">
+                            <option value="0.1|1|10|1e9" selected>0.1 Hz – 10 GHz（默认）</option>
+                            <option value="1|1|100|1e6">1 Hz – 100 MHz（低频/精密）</option>
+                            <option value="100|1|1|1e9">100 Hz – 1 GHz（通用）</option>
+                            <option value="1|1e3|10|1e9">1 kHz – 10 GHz（高速）</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="fStartVal">起始频率</label>
+                        <div class="iu-row">
+                            <input type="number" id="fStartVal" value="0.1" step="any" min="0">
+                            <select id="fStartUnit" style="width:auto;">
+                                <option value="1" selected>Hz</option>
+                                <option value="1e3">kHz</option>
+                                <option value="1e6">MHz</option>
+                                <option value="1e9">GHz</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="fEndVal">终止频率</label>
+                        <div class="iu-row">
+                            <input type="number" id="fEndVal" value="10" step="any" min="0">
+                            <select id="fEndUnit" style="width:auto;">
+                                <option value="1">Hz</option>
+                                <option value="1e3">kHz</option>
+                                <option value="1e6">MHz</option>
+                                <option value="1e9" selected>GHz</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="mc-charts">
+                <div class="chart-container">
+                    <div class="chart-label">幅频特性 |A(jω)| (dB)</div>
+                    <canvas id="magCanvas" width="700" height="280"></canvas>
+                </div>
+                <div class="chart-container" style="margin-top:var(--space-md);">
+                    <div class="chart-label">相频特性 ∠A(jω) (°)</div>
+                    <canvas id="phaseCanvas" width="700" height="220"></canvas>
+                </div>
+
+                <div class="result-grid" style="margin-top:var(--space-md);">
+                    <div class="ritem big"><span class="rlabel">直流增益 A<sub>dc</sub></span><span class="rval" id="rAdc">-</span></div>
+                    <div class="ritem big"><span class="rlabel">相位裕度 PM</span><span class="rval" id="rPm">-</span></div>
+                    <div class="ritem"><span class="rlabel">增益裕度 GM</span><span class="rval" id="rGm">-</span></div>
+                    <div class="ritem"><span class="rlabel">单位增益带宽 GBW</span><span class="rval" id="rGbw">-</span></div>
+                    <div class="ritem"><span class="rlabel">主极点 f<sub>p1</sub></span><span class="rval" id="rFp1">-</span></div>
+                    <div class="ritem"><span class="rlabel">次极点 f<sub>p2</sub></span><span class="rval" id="rFp2">-</span></div>
+                    <div class="ritem"><span class="rlabel">零点 f<sub>z</sub></span><span class="rval" id="rFz">-</span></div>
+                    <div class="ritem"><span class="rlabel">1/g<sub>m2</sub></span><span class="rval" id="rInvGm">-</span></div>
+                </div>
+
+                <div class="info-box" style="margin-top:var(--space-md);">
+                    <p><strong>密勒补偿要点：</strong></p>
+                    <ul>
+                        <li>C<sub>c</sub> 增大 → 主极点 f<sub>p1</sub> 前移、次极点 f<sub>p2</sub> 后移（极点分裂），GBW ≈ g<sub>m1</sub>/(2πC<sub>c</sub>)。</li>
+                        <li>R<sub>z</sub>=0 时零点在右半平面，恶化相位；增大 R<sub>z</sub> 可将其移到左半平面补偿相位。</li>
+                        <li>常用取 f<sub>p2</sub> ≈ 2.2×GBW 保证 PM ≈ 60°。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

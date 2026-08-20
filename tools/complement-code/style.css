@@ -102,10 +102,66 @@
     font-weight: 700;
 }
 
+.bit-cell.frac {
+    border-style: dashed;
+}
+
 .bit-cell.one {
     background: rgba(58, 90, 140, 0.12);
     border-color: var(--color-primary);
     color: var(--color-primary);
+}
+
+/* 位宽徽标 / 预设 / 范围提示 */
+.width-badge {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    padding: var(--space-sm) var(--space-md);
+    border: 2px dashed var(--color-primary-light);
+    border-radius: var(--radius-sm);
+    background: rgba(58, 90, 140, 0.05);
+    text-align: center;
+}
+
+.preset-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+
+.preset-label {
+    font-family: var(--font-body);
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+.btn-sm {
+    padding: 2px 12px;
+    font-size: 0.9rem;
+}
+
+.range-hint {
+    margin-top: var(--space-md);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* 小数点标记 */
+.bit-dot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    width: 10px;
+    padding-bottom: 2px;
 }
 
 .info-box ul {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>电流镜失配计算 - EE工具箱</title>
+    <title>电流镜 & VTH 失配计算 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -14,119 +14,289 @@
 </head>
 <body>
     <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
-        <span class="breadcrumb">计算工具 / 电流镜失配计算</span>
+        <span class="breadcrumb">计算工具 / 电流镜 &amp; VTH 失配</span>
     </nav>
 
     <main class="container">
-        <h1>电流镜失配快速计算</h1>
-        <p class="tool-desc">基于 Pelgrom 模型，快速估算 MOS 电流镜的电流失配率（σΔI/I）。</p>
+        <h1>电流镜 &amp; VTH 失配计算</h1>
+        <p class="tool-desc">Pelgrom 通用模型 + 0.18µm BCD 平方律速算表 + 前仿 1-σ 速查表 + BJT/带隙失配数据。</p>
 
-        <!-- 理论说明 -->
-        <div class="tool-section">
-            <div class="formula-box">
-                σ²(ΔI/I) = (A<sub>VT</sub>² / (WL)) × (1/V<sub>ov</sub>²) + (A<sub>β</sub>² / (WL))
-            </div>
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="pelgrom" onclick="switchTab('pelgrom')">Pelgrom 通用模型</button>
+            <button class="tab-btn" data-tab="calc" onclick="switchTab('calc')">0.18µm 速算表</button>
+            <button class="tab-btn" data-tab="lut" onclick="switchTab('lut')">1-σ 速查表</button>
+            <button class="tab-btn" data-tab="bjt" onclick="switchTab('bjt')">BJT / 带隙失配</button>
         </div>
 
-        <!-- 输入参数 -->
-        <div class="tool-section paper-card">
-            <h3>工艺 & 版图参数</h3>
-            <div class="tool-row">
-                <div class="field">
-                    <label>A<sub>VT</sub> (阈值失配系数)</label>
-                    <div class="iu-row">
-                        <input type="number" id="Avt" value="5" step="any" min="0">
-                        <span class="unit">mV·μm</span>
-                    </div>
-                </div>
-                <div class="field">
-                    <label>A<sub>β</sub> (增益失配系数)</label>
-                    <div class="iu-row">
-                        <input type="number" id="Ab" value="1" step="any" min="0">
-                        <span class="unit">%·μm</span>
-                    </div>
+        <!-- ============ TAB 1: Pelgrom ============ -->
+        <section class="tab-panel active" id="tab-pelgrom">
+            <div class="tool-section">
+                <div class="formula-box">
+                    σ²(ΔI/I) = (A<sub>VT</sub>² / (WL)) × (1/V<sub>ov</sub>²) + (A<sub>β</sub>² / (WL))
                 </div>
             </div>
-            <div class="tool-row">
-                <div class="field">
-                    <label>沟道宽度 W</label>
-                    <div class="iu-row">
-                        <input type="number" id="mW" value="10" step="any" min="0.1">
-                        <span class="unit">μm</span>
-                    </div>
-                </div>
-                <div class="field">
-                    <label>沟道长度 L</label>
-                    <div class="iu-row">
-                        <input type="number" id="mL" value="1" step="any" min="0.1">
-                        <span class="unit">μm</span>
-                    </div>
-                </div>
-                <div class="field">
-                    <label>过驱动电压 V<sub>ov</sub></label>
-                    <div class="iu-row">
-                        <input type="number" id="Vov" value="0.2" step="any" min="0.01">
-                        <span class="unit">V</span>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- 结果 -->
-        <div class="tool-section">
-            <h3>计算结果</h3>
-            <div class="result-grid">
-                <div class="ritem big">
-                    <span class="rlabel">电流失配率 σ(ΔI/I)</span>
-                    <span class="rval" id="resMain">-</span>
+            <div class="tool-section paper-card">
+                <h3>工艺 &amp; 版图参数</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>A<sub>VT</sub> (阈值失配系数)</label>
+                        <div class="iu-row">
+                            <input type="number" id="Avt" value="5" step="any" min="0">
+                            <span class="unit">mV·μm</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>A<sub>β</sub> (增益失配系数)</label>
+                        <div class="iu-row">
+                            <input type="number" id="Ab" value="1" step="any" min="0">
+                            <span class="unit">%·μm</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="ritem">
-                    <span class="rlabel">VT 项贡献</span>
-                    <span class="rval" id="resVT">-</span>
-                </div>
-                <div class="ritem">
-                    <span class="rlabel">β 项贡献</span>
-                    <span class="rval" id="resBeta">-</span>
-                </div>
-                <div class="ritem">
-                    <span class="rlabel">WL 面积</span>
-                    <span class="rval" id="resArea">-</span>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>沟道宽度 W</label>
+                        <div class="iu-row">
+                            <input type="number" id="mW" value="10" step="any" min="0.1">
+                            <span class="unit">μm</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>沟道长度 L</label>
+                        <div class="iu-row">
+                            <input type="number" id="mL" value="1" step="any" min="0.1">
+                            <span class="unit">μm</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>过驱动电压 V<sub>ov</sub></label>
+                        <div class="iu-row">
+                            <input type="number" id="Vov" value="0.2" step="any" min="0.01">
+                            <span class="unit">V</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- W/L 扫描表 -->
-        <div class="tool-section">
-            <h3>W/L 敏感性分析</h3>
-            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:8px;">固定 V<sub>ov</sub>，改变 W（L 不变），扫描失配率</p>
-            <div class="scroll-table">
-                <table class="sketch-table" id="sweepTable">
-                    <thead>
-                        <tr>
-                            <th>W (μm)</th>
-                            <th>WL (μm²)</th>
-                            <th>σ(ΔI/I)</th>
-                            <th>3σ 匹配要求</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sweepBody"></tbody>
-                </table>
+            <div class="tool-section">
+                <h3>计算结果</h3>
+                <div class="result-grid">
+                    <div class="ritem big"><span class="rlabel">电流失配率 σ(ΔI/I)</span><span class="rval" id="resMain">-</span></div>
+                    <div class="ritem"><span class="rlabel">VT 项贡献</span><span class="rval" id="resVT">-</span></div>
+                    <div class="ritem"><span class="rlabel">β 项贡献</span><span class="rval" id="resBeta">-</span></div>
+                    <div class="ritem"><span class="rlabel">WL 面积</span><span class="rval" id="resArea">-</span></div>
+                </div>
             </div>
-        </div>
 
-        <!-- 说明 -->
-        <div class="tool-section">
-            <div class="info-box">
-                <p><strong>Pelgrom 模型说明：</strong></p>
-                <ul>
-                    <li>A<sub>VT</sub>：典型值 2~10 mV·μm（工艺相关，NMOS 通常更小）</li>
-                    <li>A<sub>β</sub>：典型值 1~2 %·μm</li>
-                    <li>增大面积（WL）可降低失配率；增大 V<sub>ov</sub> 可削弱 VT 失配的影响</li>
-                    <li>σ 为 1σ 值，芯片一致性通常要求 3σ &lt; 1%</li>
-                </ul>
+            <div class="tool-section">
+                <h3>W/L 敏感性分析</h3>
+                <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:8px;">固定 V<sub>ov</sub>，改变 W（L 不变），扫描失配率</p>
+                <div class="scroll-table">
+                    <table class="sketch-table" id="sweepTable">
+                        <thead><tr><th>W (μm)</th><th>WL (μm²)</th><th>σ(ΔI/I)</th><th>3σ 匹配要求</th></tr></thead>
+                        <tbody id="sweepBody"></tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+
+            <div class="tool-section">
+                <div class="info-box">
+                    <p><strong>Pelgrom 模型说明：</strong></p>
+                    <ul>
+                        <li>A<sub>VT</sub>：典型值 2~10 mV·μm（工艺相关，NMOS 通常更小）</li>
+                        <li>A<sub>β</sub>：典型值 1~2 %·μm</li>
+                        <li>增大面积（WL）可降低失配率；增大 V<sub>ov</sub> 可削弱 VT 失配的影响</li>
+                        <li>σ 为 1σ 值，芯片一致性通常要求 3σ &lt; 1%</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ TAB 2: 速算表 ============ -->
+        <section class="tab-panel" id="tab-calc">
+            <div class="tool-section">
+                <div class="formula-box">
+                    ΔV<sub>TH</sub> = A<sub>VT0</sub>/√(WL) ; V<sub>ov</sub> = √(2·I<sub>D</sub>/(µ·C<sub>ox</sub>)·L/W) ; g<sub>m</sub>=2I<sub>D</sub>/V<sub>ov</sub> ; 1-σ% = 2·ΔV<sub>TH</sub>/V<sub>ov</sub>×100
+                </div>
+            </div>
+
+            <div class="tool-section paper-card">
+                <h3>0.18µm BCD 平方律速算</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>器件类型</label>
+                        <select id="cDev">
+                            <option value="n50">n50 (5V NMOS)</option>
+                            <option value="p50">p50 (5V PMOS)</option>
+                            <option value="n18">n18 (1.8V NMOS)</option>
+                            <option value="p18">p18 (1.8V PMOS)</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>漏电流 I<sub>D</sub></label>
+                        <div class="iu-row"><input type="number" id="cId" value="4" step="any" min="0"><span class="unit">μA</span></div>
+                    </div>
+                </div>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>沟道宽度 W</label>
+                        <div class="iu-row"><input type="number" id="cW" value="2" step="any" min="0.01"><span class="unit">μm</span></div>
+                    </div>
+                    <div class="field">
+                        <label>沟道长度 L</label>
+                        <div class="iu-row"><input type="number" id="cL" value="8" step="any" min="0.01"><span class="unit">μm</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>速算结果</h3>
+                <div class="result-grid">
+                    <div class="ritem big"><span class="rlabel">1-σ 失配 (ΔI/I)</span><span class="rval" id="cResSig">-</span></div>
+                    <div class="ritem"><span class="rlabel">ΔV<sub>TH</sub></span><span class="rval" id="cResVth">-</span></div>
+                    <div class="ritem"><span class="rlabel">V<sub>ov</sub></span><span class="rval" id="cResVov">-</span></div>
+                    <div class="ritem"><span class="rlabel">g<sub>m</sub></span><span class="rval" id="cResGm">-</span></div>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <div class="info-box">
+                    <p><strong>内嵌工艺常数（黄色参数，源自 xlsx「失配速算表」）：</strong></p>
+                    <div class="scroll-table">
+                        <table class="sketch-table"><thead><tr><th>器件</th><th>A<sub>VT0</sub> (V·m)</th><th>µ<sub>0</sub></th><th>C<sub>ox</sub> (F/m²)</th></tr></thead>
+                        <tbody id="cDevTable"></tbody></table>
+                    </div>
+                    <p style="margin-top:8px;">校验：<code>n50, I<sub>D</sub>=4µA, W=2, L=8</code> → 1-σ ≈ 0.799%、V<sub>ov</sub> ≈ 501mV。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ TAB 3: 速查表 ============ -->
+        <section class="tab-panel" id="tab-lut">
+            <div class="tool-section paper-card">
+                <h3>前仿 1-σ% 速查</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>器件表</label>
+                        <select id="lutDev" onchange="renderLut()">
+                            <option value="n50">5V NMOS</option>
+                            <option value="p50">5V PMOS</option>
+                            <option value="n18">1.8V NMOS</option>
+                            <option value="p18">1.8V PMOS</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>沟道长度 L (µm)</label>
+                        <select id="lutL" onchange="highlightLut()"></select>
+                    </div>
+                    <div class="field">
+                        <label>I<sub>D</sub> / W 组合</label>
+                        <select id="lutCol" onchange="highlightLut()"></select>
+                    </div>
+                </div>
+                <div class="lut-hit" id="lutHit">选择 L 与 I<sub>D</sub>/W 组合以高亮命中单元格。</div>
+            </div>
+
+            <div class="tool-section">
+                <div class="scroll-table">
+                    <table class="sketch-table lut-table" id="lutTable"></table>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>同面积同功耗对比（源自「速查表」）</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table" id="cmpTable">
+                        <thead><tr><th>器件</th><th>W/L (µm)</th><th>面积 µm²</th><th>I<sub>D</sub> (µA)</th><th>V<sub>dsat</sub> (mV)</th><th>1-σ %</th></tr></thead>
+                        <tbody id="cmpBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <div class="info-box">
+                    <p><strong>缩放法则与查表算例：</strong></p>
+                    <ul>
+                        <li>同面积同功耗时 1-σ 大小：<strong>p18 &lt; n18 &lt; p50 &lt; n50</strong>。</li>
+                        <li>同比例缩放 I<sub>D</sub> 和 W（相当于 n 个器件并联），1-σ 缩放 1/√n。</li>
+                        <li>中等 / 强反型区，1-σ 与 W 基本无关；W 太大工作在弱反型区时 1-σ 随 C 增大而减小。</li>
+                        <li>算例：查表确定【I<sub>D</sub>=2.5µA，W=4µm，L=9µm，5V NMOS】电流镜失配约 <strong>1.1%</strong>。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ TAB 4: BJT ============ -->
+        <section class="tab-panel" id="tab-bjt">
+            <div class="tool-section paper-card">
+                <h3>BJT / 带隙失配查询</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>器件类型</label>
+                        <select id="bjtDev" onchange="renderBjt()">
+                            <option value="0">2×2 PNP (13×13 µm²)</option>
+                            <option value="1">5×5 PNP (18×18 µm²)</option>
+                            <option value="2">10×10 PNP (20×20 µm²)</option>
+                            <option value="3">2×2 NPN</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>发射极电流 I<sub>E</sub></label>
+                        <select id="bjtIe" onchange="renderBjt()">
+                            <option value="0">2 µA</option>
+                            <option value="1" selected>4 µA</option>
+                            <option value="2">6 µA</option>
+                            <option value="3">8 µA</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="result-grid" style="margin-top:var(--space-md);">
+                    <div class="ritem big"><span class="rlabel">σ(TC1 温漂比) %</span><span class="rval" id="bjtTc">-</span></div>
+                    <div class="ritem big"><span class="rlabel">σ(V<sub>BG</sub>) %</span><span class="rval" id="bjtVbg">-</span></div>
+                    <div class="ritem"><span class="rlabel">V<sub>BG</sub> 均值</span><span class="rval" id="bjtVbgMean">-</span></div>
+                    <div class="ritem"><span class="rlabel">V<sub>BG</sub> 标准差</span><span class="rval" id="bjtVbgStd">-</span></div>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>σ(TC1) 分解 @ I<sub>E</sub>=4µA（Mismatch / Process / All）</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table" id="tc1Table">
+                        <thead><tr><th>分量</th><th>2×2 PNP</th><th>5×5 PNP</th><th>10×10 PNP</th><th>2×2 NPN</th></tr></thead>
+                        <tbody id="tc1Body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>σ(TC1) vs I<sub>E</sub>（MC Option = All）</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table" id="tcIeTable">
+                        <thead><tr><th>I<sub>E</sub></th><th>2×2 PNP</th><th>5×5 PNP</th><th>10×10 PNP</th><th>2×2 NPN</th></tr></thead>
+                        <tbody id="tcIeBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>σ(V<sub>BG</sub>%) vs I<sub>E</sub> @ 27°C（MC Option = All）</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table" id="vbgIeTable">
+                        <thead><tr><th>I<sub>E</sub></th><th>2×2 PNP</th><th>5×5 PNP</th><th>10×10 PNP</th><th>2×2 NPN</th></tr></thead>
+                        <tbody id="vbgIeBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <div class="info-box">
+                    <p><strong>说明（源自 xlsx「BJT」sheet）：</strong>PNP 器件面积越大（并联单元越多）失配越小；σ(All) ≈ √(σ(Mismatch)² + σ(Process)²)。带隙基准 V<sub>BG</sub> ≈ 1.23 V。</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>

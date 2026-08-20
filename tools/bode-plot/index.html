@@ -14,6 +14,7 @@
 </head>
 <body>
     <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
         <span class="breadcrumb">计算工具 / 零极点 Bode 图</span>
     </nav>
@@ -29,8 +30,15 @@
                 <div class="param-block paper-card">
                     <h3>系统参数</h3>
                     <div class="field">
-                        <label for="dcGain">直流增益 K (dB)</label>
-                        <input type="number" id="dcGain" value="0" step="1">
+                        <label for="dcGain">直流增益 K</label>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <input type="number" id="dcGain" value="20" step="any" style="width:100px;">
+                            <select id="dcUnit" style="width:auto;">
+                                <option value="dB">dB</option>
+                                <option value="vv">V/V</option>
+                            </select>
+                        </div>
+                        <p id="dcConv" style="margin-top:4px;font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">20 dB = 10 V/V</p>
                     </div>
                     <div class="field" style="margin-top:var(--space-md);">
                         <label for="freqStart">频率范围</label>

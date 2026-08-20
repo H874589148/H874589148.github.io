@@ -14,6 +14,7 @@
 </head>
 <body>
     <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
         <span class="breadcrumb">计算工具 / 噪声快速计算</span>
     </nav>
@@ -144,6 +145,93 @@
                         <input type="number" id="fR" value="1000" step="any">
                         <span class="unit">Ω</span>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 开关电容 kT/C 噪声 ===== -->
+        <section class="tool-section">
+            <h2 class="sec-heading">开关电容 kT/C 热噪声 (Sampled Noise)</h2>
+            <div class="formula-box">
+                V²<sub>n</sub> = kT/C &nbsp;|&nbsp; V<sub>n,rms</sub> = √(kT/C) [V]
+            </div>
+            <div class="paper-card">
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="ktcC">采样电容 C</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="ktcC" value="1e-12" min="0" step="any">
+                            <span class="unit">F</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="ktcT">温度 T</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="ktcT" value="300" step="any">
+                            <span class="unit">K</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="ktcVref">满摆幅 V<sub>ref</sub>（峰峰）</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="ktcVref" value="1" step="any">
+                            <span class="unit">V</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-grid">
+                    <div class="ritem"><span class="rlabel">均方噪声 V²<sub>n</sub> = kT/C</span><span class="rval" id="ktcVn2">-</span></div>
+                    <div class="ritem"><span class="rlabel">均方根噪声 V<sub>n,rms</sub></span><span class="rval" id="ktcVrms">-</span></div>
+                    <div class="ritem"><span class="rlabel">噪声受限 ENOB 上限</span><span class="rval" id="ktcEnob">-</span></div>
+                </div>
+                <div class="info-box" style="margin-top:12px;">
+                    ENOB 上限按 SNR = 6.02·N + 1.76 dB 反推，其中 SNR = 20·log<sub>10</sub>[(V<sub>ref</sub>/(2√2)) / V<sub>n,rms</sub>]（正弦满摆幅）。
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ADC 量化噪声 ===== -->
+        <section class="tool-section">
+            <h2 class="sec-heading">ADC 量化噪声 (Quantization Noise)</h2>
+            <div class="formula-box">
+                LSB = V<sub>ref</sub>/2<sup>N</sup> &nbsp;|&nbsp; q<sub>rms</sub> = LSB/√12 &nbsp;|&nbsp; SQNR = 6.02N + 1.76 (+10·log<sub>10</sub>OSR) [dB]
+            </div>
+            <div class="paper-card">
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="adcVref">满量程 V<sub>ref</sub></label>
+                        <div class="input-unit-row">
+                            <input type="number" id="adcVref" value="1" min="0" step="any">
+                            <span class="unit">V</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="adcN">位数 N（可含 ENOB）</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="adcN" value="12" min="1" step="any">
+                            <span class="unit">bit</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="adcFs">采样率 f<sub>s</sub></label>
+                        <div class="input-unit-row">
+                            <input type="number" id="adcFs" value="1e6" step="any">
+                            <span class="unit">Hz</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="adcOsr">过采样比 OSR</label>
+                        <div class="input-unit-row">
+                            <input type="number" id="adcOsr" value="1" min="1" step="any">
+                            <span class="unit">×</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-grid">
+                    <div class="ritem"><span class="rlabel">1 LSB</span><span class="rval" id="adcLsb">-</span></div>
+                    <div class="ritem"><span class="rlabel">量化噪声 q<sub>rms</sub></span><span class="rval" id="adcQrms">-</span></div>
+                    <div class="ritem big"><span class="rlabel">SQNR（含 OSR 处理增益）</span><span class="rval" id="adcSqnr">-</span></div>
+                    <div class="ritem"><span class="rlabel">噪声带宽 f<sub>s</sub>/2</span><span class="rval" id="adcBw">-</span></div>
                 </div>
             </div>
         </section>

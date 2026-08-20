@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正态分布置信区间 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 正态分布置信区间</span>
+    </nav>
+
+    <main class="container">
+        <h1>正态分布置信区间</h1>
+        <p class="tool-desc">输入均值 µ 与标准差 σ，拖动区间 [a, b]，实时计算落入区间的概率 P = Φ((b−µ)/σ) − Φ((a−µ)/σ)。</p>
+
+        <div class="formula-box">
+            f(x) = 1/(σ√(2π))·e<sup>−(x−µ)²/(2σ²)</sup> ｜ Φ(z) = ½[1 + erf(z/√2)] ｜ P(a≤x≤b) = Φ(z<sub>b</sub>) − Φ(z<sub>a</sub>)
+        </div>
+
+        <div class="paper-card">
+            <div class="tool-row">
+                <div class="field">
+                    <label for="mu">均值 µ</label>
+                    <div class="iu-row"><input type="number" id="mu" value="0" step="any"><span class="unit"></span></div>
+                </div>
+                <div class="field">
+                    <label for="sigma">标准差 σ</label>
+                    <div class="iu-row"><input type="number" id="sigma" value="1" step="any" min="0"><span class="unit"></span></div>
+                </div>
+            </div>
+            <div class="field" style="margin-top:var(--space-md);">
+                <label>下界 a = <span id="aVal">−1.00</span> （z<sub>a</sub> = <span id="zaVal">−1.00</span>σ）</label>
+                <div class="slider-row"><input type="range" id="za" min="-4" max="4" step="0.05" value="-1"></div>
+            </div>
+            <div class="field" style="margin-top:var(--space-md);">
+                <label>上界 b = <span id="bVal">1.00</span> （z<sub>b</sub> = <span id="zbVal">1.00</span>σ）</label>
+                <div class="slider-row"><input type="range" id="zb" min="-4" max="4" step="0.05" value="1"></div>
+            </div>
+            <div class="preset-btns" style="margin-top:var(--space-md);display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="setSigmaRange(1)">±1σ</button>
+                <button class="btn btn-sm" onclick="setSigmaRange(2)">±2σ</button>
+                <button class="btn btn-sm" onclick="setSigmaRange(3)">±3σ</button>
+                <button class="btn btn-sm" onclick="setTail('lower')">左尾 (−∞, b]</button>
+                <button class="btn btn-sm" onclick="setTail('upper')">右尾 [a, +∞)</button>
+            </div>
+        </div>
+
+        <div class="chart-container" style="margin-top:var(--space-lg);">
+            <div class="chart-label">概率密度函数 f(x) 与区间阴影</div>
+            <canvas id="pdfCanvas" width="720" height="320"></canvas>
+        </div>
+
+        <div class="tool-section">
+            <div class="result-grid">
+                <div class="ritem big"><span class="rlabel">区间概率 P(a ≤ x ≤ b)</span><span class="rval" id="rP">-</span></div>
+                <div class="ritem"><span class="rlabel">区间外概率（双尾）</span><span class="rval" id="rTail">-</span></div>
+                <div class="ritem"><span class="rlabel">Φ(z<sub>a</sub>)</span><span class="rval" id="rPhiA">-</span></div>
+                <div class="ritem"><span class="rlabel">Φ(z<sub>b</sub>)</span><span class="rval" id="rPhiB">-</span></div>
+            </div>
+        </div>
+
+        <div class="tool-section">
+            <h3>常用对称区间概率</h3>
+            <div class="scroll-table">
+                <table class="sketch-table" id="stdTable">
+                    <thead><tr><th>区间</th><th>P（区间内）</th><th>区间外（双尾）</th><th>单尾</th></tr></thead>
+                    <tbody id="stdBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -14,6 +14,7 @@
 </head>
 <body>
     <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
         <span class="breadcrumb">计算工具 / 电力电子波形</span>
     </nav>
@@ -56,11 +57,34 @@
                     </div>
                 </div>
                 <div class="field">
-                    <label for="ripple">电感电流纹波率</label>
+                    <label for="fsw">开关频率 f<sub>sw</sub></label>
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="ripple" value="30" step="1" min="1" max="100">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">%</span>
+                        <input type="number" id="fsw" value="500" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">kHz</span>
                     </div>
+                </div>
+                <div class="field">
+                    <label for="lval">电感 L</label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="lval" value="10" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µH</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="cout">输出电容 C<sub>out</sub></label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="cout" value="100" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µF</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="ncycle">显示周期数</label>
+                    <select id="ncycle">
+                        <option value="1">1</option>
+                        <option value="2" selected>2</option>
+                        <option value="3">3</option>
+                        <option value="5">5</option>
+                    </select>
                 </div>
 
                 <!-- 直流参数显示 -->

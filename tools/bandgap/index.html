@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandgap 设计计算集 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / Bandgap 设计计算集</span>
+    </nav>
+
+    <main class="container">
+        <h1>Bandgap 带隙基准设计计算集</h1>
+        <p class="tool-desc">核心参数链求解 + Trim 位设计 + VBE(T)/ΔVBE 计算 + 常用换算，基于一阶工程近似。</p>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="core" onclick="switchTab('core')">核心参数链</button>
+            <button class="tab-btn" data-tab="trim" onclick="switchTab('trim')">Trim 位设计</button>
+            <button class="tab-btn" data-tab="vbe" onclick="switchTab('vbe')">VBE(T)/ΔVBE</button>
+            <button class="tab-btn" data-tab="conv" onclick="switchTab('conv')">小换算集</button>
+        </div>
+
+        <!-- ===== TAB 1 核心参数链 ===== -->
+        <section class="tab-panel active" id="tab-core">
+            <div class="formula-box">
+                ΔV<sub>BE</sub> = (kT/q)·ln(N) ｜ V<sub>REF</sub> = V<sub>BE</sub> + K·ΔV<sub>BE</sub> ｜
+                K = R<sub>2</sub>/R<sub>1</sub> = (V<sub>REF</sub>−V<sub>BE</sub>)/ΔV<sub>BE</sub> ｜ R<sub>1</sub> = ΔV<sub>BE</sub>/I<sub>PTAT</sub>
+            </div>
+            <div class="paper-card">
+                <h3>输入参数</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>面积比 / 支路比 N</label>
+                        <div class="iu-row"><input type="number" id="coN" value="8" step="any" min="1"><span class="unit">×</span></div>
+                    </div>
+                    <div class="field">
+                        <label>目标 V<sub>REF</sub></label>
+                        <div class="iu-row"><input type="number" id="coVref" value="1.25" step="any" min="0"><span class="unit">V</span></div>
+                    </div>
+                </div>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>PTAT 支路电流 I</label>
+                        <div class="iu-row"><input type="number" id="coI" value="10" step="any" min="0"><span class="unit">µA</span></div>
+                    </div>
+                    <div class="field">
+                        <label>V<sub>BE</sub>（工作点）</label>
+                        <div class="iu-row"><input type="number" id="coVbe" value="0.65" step="any" min="0"><span class="unit">V</span></div>
+                    </div>
+                    <div class="field">
+                        <label>温度 T</label>
+                        <div class="iu-row"><input type="number" id="coT" value="300" step="any" min="0"><span class="unit">K</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tool-section">
+                <h3>计算结果</h3>
+                <div class="result-grid">
+                    <div class="ritem big"><span class="rlabel">V<sub>REF</sub>（实际）</span><span class="rval" id="coResVref">-</span></div>
+                    <div class="ritem"><span class="rlabel">ΔV<sub>BE</sub></span><span class="rval" id="coResDvbe">-</span></div>
+                    <div class="ritem"><span class="rlabel">系数 K = R<sub>2</sub>/R<sub>1</sub></span><span class="rval" id="coResK">-</span></div>
+                    <div class="ritem"><span class="rlabel">R<sub>1</sub></span><span class="rval" id="coResR1">-</span></div>
+                    <div class="ritem"><span class="rlabel">R<sub>2</sub></span><span class="rval" id="coResR2">-</span></div>
+                    <div class="ritem"><span class="rlabel">零温漂所需 K<sub>TC</sub></span><span class="rval" id="coResKtc">-</span></div>
+                </div>
+            </div>
+            <div class="tool-section">
+                <div class="info-box">
+                    零温漂条件：K·d(ΔV<sub>BE</sub>)/dT = −dV<sub>BE</sub>/dT。取 dV<sub>BE</sub>/dT ≈ −2 mV/K、
+                    d(ΔV<sub>BE</sub>)/dT = (k/q)·ln(N)。若实际 K 与 K<sub>TC</sub> 相差较大，说明 V<sub>REF</sub> 或 N 需调整。
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== TAB 2 Trim 位设计 ===== -->
+        <section class="tab-panel" id="tab-trim">
+            <div class="formula-box">
+                Trim 范围 = ±3σ ｜ 步数 = ⌈6σ / LSB⌉ ｜ 位数 N = ⌈log<sub>2</sub>(步数)⌉ ｜ 档数 = 2<sup>N</sup>
+            </div>
+            <div class="paper-card">
+                <h3>输入参数</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>未校准 1σ 扩散</label>
+                        <div class="iu-row"><input type="number" id="trSigma" value="8" step="any" min="0"><span class="unit">mV</span></div>
+                    </div>
+                    <div class="field">
+                        <label>单步精度 (LSB)</label>
+                        <div class="iu-row"><input type="number" id="trLsb" value="1" step="any" min="0"><span class="unit">mV</span></div>
+                    </div>
+                    <div class="field">
+                        <label>基准 V<sub>REF</sub>（算 ppm）</label>
+                        <div class="iu-row"><input type="number" id="trVref" value="1.25" step="any" min="0"><span class="unit">V</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tool-section">
+                <h3>计算结果</h3>
+                <div class="result-grid">
+                    <div class="ritem"><span class="rlabel">Trim 范围 (±3σ)</span><span class="rval" id="trResRange">-</span></div>
+                    <div class="ritem"><span class="rlabel">所需步数</span><span class="rval" id="trResSteps">-</span></div>
+                    <div class="ritem big"><span class="rlabel">Trim 位数</span><span class="rval" id="trResBits">-</span></div>
+                    <div class="ritem"><span class="rlabel">实际档数 2ᴺ</span><span class="rval" id="trResLevels">-</span></div>
+                    <div class="ritem"><span class="rlabel">校准后残差 (ppm)</span><span class="rval" id="trResPpm">-</span></div>
+                </div>
+            </div>
+            <div class="tool-section">
+                <h3>二进制加权电阻网络分档表</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table" id="trTable">
+                        <thead><tr><th>位</th><th>权重</th><th>修调量 (mV)</th><th>累计范围 (mV)</th></tr></thead>
+                        <tbody id="trBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== TAB 3 VBE(T)/ΔVBE ===== -->
+        <section class="tab-panel" id="tab-vbe">
+            <div class="formula-box">
+                V<sub>T</sub> = kT/q ｜ ΔV<sub>BE</sub> = V<sub>T</sub>·ln(N) ｜ V<sub>BE</sub>(T) ≈ V<sub>BE0</sub> + (dV<sub>BE</sub>/dT)·(T−27°C)
+            </div>
+            <div class="paper-card">
+                <h3>输入参数</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>温度 T</label>
+                        <div class="iu-row"><input type="number" id="vbT" value="27" step="any"><span class="unit">°C</span></div>
+                    </div>
+                    <div class="field">
+                        <label>电流比 / 面积比 N</label>
+                        <div class="iu-row"><input type="number" id="vbN" value="8" step="any" min="1"><span class="unit">×</span></div>
+                    </div>
+                </div>
+                <div class="tool-row">
+                    <div class="field">
+                        <label>V<sub>BE0</sub> @27°C</label>
+                        <div class="iu-row"><input type="number" id="vbVbe0" value="0.65" step="any" min="0"><span class="unit">V</span></div>
+                    </div>
+                    <div class="field">
+                        <label>dV<sub>BE</sub>/dT</label>
+                        <div class="iu-row"><input type="number" id="vbSlope" value="-2" step="any"><span class="unit">mV/K</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tool-section">
+                <h3>计算结果</h3>
+                <div class="result-grid">
+                    <div class="ritem"><span class="rlabel">热电压 V<sub>T</sub></span><span class="rval" id="vbResVt">-</span></div>
+                    <div class="ritem big"><span class="rlabel">ΔV<sub>BE</sub></span><span class="rval" id="vbResDvbe">-</span></div>
+                    <div class="ritem"><span class="rlabel">V<sub>BE</sub>(T)</span><span class="rval" id="vbResVbe">-</span></div>
+                    <div class="ritem"><span class="rlabel">d(ΔV<sub>BE</sub>)/dT</span><span class="rval" id="vbResSlope">-</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== TAB 4 小换算集 ===== -->
+        <section class="tab-panel" id="tab-conv">
+            <div class="tool-row" style="align-items:stretch;">
+                <div class="paper-card" style="flex:1;min-width:240px;">
+                    <h3>ppm ↔ mV</h3>
+                    <div class="field">
+                        <label>基准电压 V<sub>ref</sub></label>
+                        <div class="iu-row"><input type="number" id="cvVref" value="1.25" step="any" min="0"><span class="unit">V</span></div>
+                    </div>
+                    <div class="field" style="margin-top:8px;">
+                        <label>ppm</label>
+                        <div class="iu-row"><input type="number" id="cvPpm" value="100" step="any"><span class="unit">ppm</span></div>
+                    </div>
+                    <div class="field" style="margin-top:8px;">
+                        <label>对应 mV</label>
+                        <div class="iu-row"><input type="number" id="cvMv" value="0.125" step="any"><span class="unit">mV</span></div>
+                    </div>
+                </div>
+                <div class="paper-card" style="flex:1;min-width:240px;">
+                    <h3>dB ↔ 倍数</h3>
+                    <div class="field">
+                        <label>dB</label>
+                        <div class="iu-row"><input type="number" id="cvDb" value="20" step="any"><span class="unit">dB</span></div>
+                    </div>
+                    <div class="field" style="margin-top:8px;">
+                        <label>倍数 (V/V)</label>
+                        <div class="iu-row"><input type="number" id="cvRatio" value="10" step="any"><span class="unit">×</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tool-section">
+                <h3>ln(N) & ΔV<sub>BE</sub> @300K 速查表</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table" id="lnTable">
+                        <thead><tr><th>N</th><th>ln(N)</th><th>ΔV<sub>BE</sub> (mV)</th></tr></thead>
+                        <tbody id="lnBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p></footer>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

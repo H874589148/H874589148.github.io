@@ -1,0 +1,49 @@
+/* links/style.css - 资源导航 */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-xl); }
+
+.link-section { margin-bottom: var(--space-xl); }
+.link-section .section-title { margin-bottom: var(--space-lg); }
+
+.link-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--space-md);
+}
+
+.link-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--space-md);
+    background: var(--color-card-bg);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sketch);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.link-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--color-border-sketch);
+}
+
+.lc-name {
+    font-family: var(--font-title);
+    font-size: 1.15rem;
+    color: var(--color-primary);
+}
+
+.lc-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+/* 友情链接占位样式（虚线提示待替换） */
+.link-card.friend {
+    border-style: dashed;
+    background: var(--color-bg-paper);
+}
+.link-card.friend .lc-name { color: var(--color-text-muted); }

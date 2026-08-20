@@ -31,3 +31,27 @@
 
 .info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
 .info-box li { margin-bottom: var(--space-xs); }
+
+/* 多标签补充样式 */
+.tool-row { display: flex; flex-wrap: wrap; gap: var(--space-lg); }
+.tool-row .field { flex: 1; min-width: 180px; }
+.formula-box {
+    font-family: var(--font-mono);
+    background: var(--color-bg-paper);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sketch);
+    padding: var(--space-md) var(--space-lg);
+    line-height: 1.9;
+    overflow-x: auto;
+}
+.lut-hit {
+    margin-top: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(192, 88, 58, 0.06);
+    border: 1.5px dashed var(--color-accent);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+}
+.lut-table td.lut-lcol { font-family: var(--font-mono); font-weight: 700; color: var(--color-text-secondary); background: var(--color-bg-paper); }
+.sketch-table td.bad { color: var(--color-accent); background: rgba(192,88,58,0.06); font-weight:600; }

@@ -14,31 +14,44 @@
 </head>
 <body>
     <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
         <span class="breadcrumb">计算工具 / 反码补码转换</span>
     </nav>
 
     <main class="container">
         <h1>反码补码转换</h1>
-        <p class="tool-desc">支持原码、反码、补码的互转，可自定义位宽，实时计算。</p>
+        <p class="tool-desc">支持原码、反码、补码的互转，可自定义整数位 / 小数位（定点数），十进制支持小数输入，实时计算。</p>
 
         <!-- 参数区 -->
         <div class="tool-section paper-card">
             <div class="tool-row">
-                <div class="field" style="max-width:140px;">
-                    <label for="bitWidth">位宽</label>
-                    <select id="bitWidth">
-                        <option value="4">4 bit</option>
-                        <option value="8" selected>8 bit</option>
-                        <option value="16">16 bit</option>
-                        <option value="32">32 bit</option>
-                        <option value="64">64 bit</option>
-                    </select>
+                <div class="field" style="max-width:130px;">
+                    <label for="intBits">整数位 I</label>
+                    <input type="number" id="intBits" value="7" min="0" max="64" step="1">
+                </div>
+                <div class="field" style="max-width:130px;">
+                    <label for="fracBits">小数位 F</label>
+                    <input type="number" id="fracBits" value="0" min="0" max="64" step="1">
                 </div>
                 <div class="field" style="max-width:180px;">
+                    <label>总位宽 N = 1+I+F</label>
+                    <div class="width-badge" id="widthBadge">8 bit</div>
+                </div>
+            </div>
+            <div class="preset-row">
+                <span class="preset-label">快捷位宽：</span>
+                <button type="button" class="btn btn-sm" onclick="setWidth(4)">4bit</button>
+                <button type="button" class="btn btn-sm" onclick="setWidth(6)">6bit</button>
+                <button type="button" class="btn btn-sm" onclick="setWidth(8)">8bit</button>
+                <button type="button" class="btn btn-sm" onclick="setWidth(16)">16bit</button>
+                <button type="button" class="btn btn-sm" onclick="setWidth(32)">32bit</button>
+            </div>
+            <div class="tool-row" style="margin-top:var(--space-md);">
+                <div class="field" style="max-width:200px;">
                     <label for="inputMode">输入类型</label>
                     <select id="inputMode">
-                        <option value="decimal">十进制真值</option>
+                        <option value="decimal">十进制真值（可含小数）</option>
                         <option value="bin_original">二进制原码</option>
                         <option value="bin_ones">二进制反码</option>
                         <option value="bin_twos">二进制补码</option>
@@ -46,9 +59,10 @@
                 </div>
                 <div class="field">
                     <label for="inputVal">输入值</label>
-                    <input type="text" id="inputVal" placeholder="例如: -85 或 10101010" autocomplete="off">
+                    <input type="text" id="inputVal" placeholder="例如: -10.625 或 10101010" autocomplete="off">
                 </div>
             </div>
+            <p class="range-hint" id="rangeHint"></p>
         </div>
 
         <!-- 结果 -->
@@ -94,10 +108,11 @@
             <div class="info-box">
                 <p><strong>转换规则：</strong></p>
                 <ul>
+                    <li>定点格式：1 位符号 + I 位整数 + F 位小数，总位宽 N = 1+I+F（如 S4.3 表示 I=4,F=3）</li>
+                    <li>真值 = 码值 / 2<sup>F</sup>，分辨率 = 2<sup>-F</sup>，范围 [-2<sup>I</sup>, 2<sup>I</sup> - 2<sup>-F</sup>]</li>
                     <li>正数：原码 = 反码 = 补码（符号位为 0）</li>
-                    <li>负数反码：符号位不变，其余各位取反</li>
-                    <li>负数补码：反码 + 1</li>
-                    <li>特殊：-128 在 8 位补码中表示为 10000000，无对应原码</li>
+                    <li>负数反码：符号位不变，其余各位取反；补码 = 反码 + 1（最低位）</li>
+                    <li>小数点仅为显示分隔，不占实际存储位</li>
                 </ul>
             </div>
         </div>

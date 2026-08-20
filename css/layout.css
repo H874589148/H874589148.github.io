@@ -24,6 +24,43 @@
   color: var(--color-primary);
 }
 
+/* 返回主页按钮 */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body) !important;
+  font-size: 0.95rem !important;
+  font-weight: 400 !important;
+  padding: 4px 12px;
+  border: 2px solid var(--color-border-sketch) !important;
+  border-radius: var(--radius-sm);
+  background: var(--color-card-bg);
+  color: var(--color-text) !important;
+  box-shadow: var(--shadow-sketch);
+  transition: transform 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.back-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--color-border-sketch);
+  color: var(--color-accent) !important;
+}
+
+.back-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.back-btn .back-text {
+  display: inline;
+}
+
+@media (max-width: 600px) {
+  .back-btn .back-text { display: none; }
+}
+
 .top-nav a:hover {
   color: var(--color-accent);
 }

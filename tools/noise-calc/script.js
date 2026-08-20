@@ -4,7 +4,8 @@ var k = 1.38065e-23;  // 玻尔兹曼常数 J/K
 var q = 1.60218e-19;  // 元电荷 C
 
 // 监听所有输入
-['thR','thT','thBW','shI','shBW','fKf','fCox','fW','fL','fFreq','fR'].forEach(function(id){
+['thR','thT','thBW','shI','shBW','fKf','fCox','fW','fL','fFreq','fR',
+ 'ktcC','ktcT','ktcVref','adcVref','adcN','adcFs','adcOsr'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.addEventListener('input', computeAll);
 });
@@ -15,6 +16,8 @@ function computeAll() {
     calcThermal();
     calcShot();
     calcFlicker();
+    calcKtc();
+    calcAdc();
 }
 
 /* ---- 热噪声 ---- */
@@ -85,6 +88,61 @@ function calcFlicker() {
         setText('flickFc', fmtEng(fc, 'Hz'));
     } else {
         setText('flickFc', '请输入等效R');
+    }
+}
+
+/* ---- 开关电容 kT/C 热噪声 ---- */
+function calcKtc() {
+    var C = parseFloat(document.getElementById('ktcC').value);
+    var T = parseFloat(document.getElementById('ktcT').value);
+    var Vref = parseFloat(document.getElementById('ktcVref').value);
+
+    if (isNaN(C) || isNaN(T) || C <= 0 || T < 0) {
+        ['ktcVn2','ktcVrms','ktcEnob'].forEach(function(id){ setText(id, 'N/A'); });
+        return;
+    }
+
+    var Vn2 = k * T / C;              // V²
+    var Vrms = Math.sqrt(Vn2);        // V
+
+    setText('ktcVn2', fmtEng(Vn2, 'V²'));
+    setText('ktcVrms', fmtEng(Vrms, 'V'));
+
+    // ENOB 上限：正弦满摆幅 Vref 峰峰 -> 有效值 Vref/(2√2)
+    if (!isNaN(Vref) && Vref > 0 && Vrms > 0) {
+        var snr = 20 * Math.log10((Vref / (2 * Math.sqrt(2))) / Vrms);
+        var enob = (snr - 1.76) / 6.02;
+        setText('ktcEnob', enob.toFixed(2) + ' bit  (SNR ' + snr.toFixed(1) + ' dB)');
+    } else {
+        setText('ktcEnob', '请输入 Vref');
+    }
+}
+
+/* ---- ADC 量化噪声 ---- */
+function calcAdc() {
+    var Vref = parseFloat(document.getElementById('adcVref').value);
+    var N = parseFloat(document.getElementById('adcN').value);
+    var fs = parseFloat(document.getElementById('adcFs').value);
+    var osr = parseFloat(document.getElementById('adcOsr').value);
+
+    if (isNaN(Vref) || isNaN(N) || Vref <= 0 || N <= 0) {
+        ['adcLsb','adcQrms','adcSqnr','adcBw'].forEach(function(id){ setText(id, 'N/A'); });
+        return;
+    }
+
+    var lsb = Vref / Math.pow(2, N);   // V
+    var qrms = lsb / Math.sqrt(12);    // V
+    var sqnr = 6.02 * N + 1.76;        // dB
+    if (!isNaN(osr) && osr > 1) sqnr += 10 * Math.log10(osr);
+
+    setText('adcLsb', fmtEng(lsb, 'V'));
+    setText('adcQrms', fmtEng(qrms, 'V'));
+    setText('adcSqnr', sqnr.toFixed(2) + ' dB');
+
+    if (!isNaN(fs) && fs > 0) {
+        setText('adcBw', fmtEng(fs / 2, 'Hz'));
+    } else {
+        setText('adcBw', 'N/A');
     }
 }
 

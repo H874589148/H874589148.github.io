@@ -9,6 +9,57 @@ var zeroCount = 0;
 /* ========== 初始化 ========== */
 loadPreset('singlePole');
 
+/* ========== 直流增益单位联动 (dB <-> V/V) ========== */
+function getGainK() {
+    // 返回线性增益 K（供 calcH 使用）
+    var v = parseFloat(document.getElementById('dcGain').value) || 0;
+    var unit = document.getElementById('dcUnit').value;
+    return unit === 'dB' ? Math.pow(10, v / 20) : v;
+}
+
+function updateGainConv() {
+    var v = parseFloat(document.getElementById('dcGain').value);
+    var unit = document.getElementById('dcUnit').value;
+    var conv = document.getElementById('dcConv');
+    if (isNaN(v)) { conv.textContent = ''; return; }
+    if (unit === 'dB') {
+        var vv = Math.pow(10, v / 20);
+        conv.textContent = fmtNum(v) + ' dB = ' + fmtNum(vv) + ' V/V';
+    } else {
+        if (v <= 0) { conv.textContent = fmtNum(v) + ' V/V （需 > 0 才能换算 dB）'; return; }
+        var db = 20 * Math.log10(v);
+        conv.textContent = fmtNum(v) + ' V/V = ' + fmtNum(db) + ' dB';
+    }
+}
+
+function onGainUnitChange() {
+    // 切换单位时把当前值换算并回填另一种表示
+    var el = document.getElementById('dcGain');
+    var unit = document.getElementById('dcUnit').value;
+    var v = parseFloat(el.value);
+    if (!isNaN(v)) {
+        if (unit === 'vv') {
+            // 之前是 dB，现在显示 V/V
+            el.value = fmtNum(Math.pow(10, v / 20));
+        } else {
+            // 之前是 V/V，现在显示 dB
+            el.value = v > 0 ? fmtNum(20 * Math.log10(v)) : 0;
+        }
+    }
+    updateGainConv();
+    drawBode();
+}
+
+function fmtNum(x) {
+    if (!isFinite(x)) return '∞';
+    var r = Math.round(x * 1000) / 1000;
+    return (Math.abs(r) >= 1e4 || (r !== 0 && Math.abs(r) < 1e-3)) ? r.toExponential(2) : String(r);
+}
+
+document.getElementById('dcGain').addEventListener('input', function(){ updateGainConv(); drawBode(); });
+document.getElementById('dcUnit').addEventListener('change', onGainUnitChange);
+updateGainConv();
+
 /* ========== 极点/零点管理 ========== */
 function addPole(freq) {
     freq = freq || 10000;
@@ -96,7 +147,10 @@ function loadPreset(name) {
     var cfg = presets[name];
     if (!cfg) return;
 
+    // 预设 dc 字段统一以 dB 标注
+    document.getElementById('dcUnit').value = 'dB';
     document.getElementById('dcGain').value = cfg.dc;
+    updateGainConv();
     cfg.poles.forEach(function(f){ addPole(f); });
     cfg.zeros.forEach(function(f){ addZero(f); });
 }
@@ -104,8 +158,7 @@ function loadPreset(name) {
 /* ========== Bode 计算 ========== */
 function calcH(f) {
     var w = 2 * Math.PI * f;
-    var KdB = parseFloat(document.getElementById('dcGain').value) || 0;
-    var K = Math.pow(10, KdB / 20);
+    var K = getGainK();  // 统一用线性增益参与计算
 
     // 传递函数 H(jω) = K * Π(1 + jω/wz) / Π(1 + jω/wp)
     // 对于原点极点近似为 0.001Hz -> 实际是积分器
