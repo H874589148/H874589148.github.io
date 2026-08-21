@@ -1,0 +1,62 @@
+/* tools/ntf-plot/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+.formula-box {
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    line-height: 1.9;
+    background: var(--color-bg-paper);
+    border: 1.5px dashed var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+    color: var(--color-text);
+}
+
+.iu-row { display: flex; align-items: center; gap: 6px; }
+.iu-row input { flex: 1; }
+.unit { font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-text-muted); white-space: nowrap; min-width: 20px; }
+
+.hint { font-size: 0.85rem; color: var(--color-text-muted); margin-top: var(--space-sm); min-height: 1.2em; }
+.hint.err { color: var(--color-accent); font-weight: 600; }
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-md);
+}
+.ritem {
+    background: var(--color-card-bg);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sketch);
+    padding: var(--space-md);
+}
+.ritem.big { border-color: var(--color-primary); background: rgba(58,90,140,0.04); }
+.rlabel { display: block; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 4px; }
+.rval { display: block; font-family: var(--font-mono); font-size: 1.25rem; color: var(--color-primary); font-weight: 700; }
+.ritem.big .rval { font-size: 1.5rem; }
+.rsub { display: block; font-size: 0.82rem; color: var(--color-text-muted); margin-top: 4px; }
+.rsub.ok { color: #2a7a3b; }
+.rsub.bad { color: var(--color-accent); font-weight: 600; }
+
+.chart-label {
+    font-family: var(--font-hand);
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+
+.info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
+.info-box li { margin-bottom: var(--space-xs); }
+.info-box code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: rgba(58,90,140,0.08);
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+canvas { width: 100%; height: auto; display: block; }
+
+input:disabled { opacity: 0.45; cursor: not-allowed; }

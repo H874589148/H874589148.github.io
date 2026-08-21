@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科学计算器 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 科学计算器</span>
+    </nav>
+
+    <main class="container">
+        <h1>科学计算器</h1>
+        <p class="tool-desc">自写表达式解析（shunting-yard），支持三角/反三角、对数/指数、开方/幂、阶乘、DEG/RAD 切换与键盘输入。</p>
+
+        <div class="paper-card calc-card">
+            <div class="calc-display">
+                <div class="calc-expr" id="exprLine"><span class="expr-placeholder">0</span></div>
+                <div class="calc-result" id="resultLine"></div>
+            </div>
+            <div class="keypad" id="keypad">
+                <button type="button" class="key key-mode" data-k="DEG" id="degBtn">DEG</button>
+                <button type="button" class="key key-fn" data-k="(">(</button>
+                <button type="button" class="key key-fn" data-k=")">)</button>
+                <button type="button" class="key key-danger" data-k="C">C</button>
+                <button type="button" class="key key-danger" data-k="⌫">⌫</button>
+
+                <button type="button" class="key key-fn" data-k="sin(">sin</button>
+                <button type="button" class="key key-fn" data-k="cos(">cos</button>
+                <button type="button" class="key key-fn" data-k="tan(">tan</button>
+                <button type="button" class="key key-fn" data-k="asin(">sin⁻¹</button>
+                <button type="button" class="key key-fn" data-k="acos(">cos⁻¹</button>
+
+                <button type="button" class="key key-fn" data-k="atan(">tan⁻¹</button>
+                <button type="button" class="key key-fn" data-k="ln(">ln</button>
+                <button type="button" class="key key-fn" data-k="log(">log</button>
+                <button type="button" class="key key-fn" data-k="exp(">exp</button>
+                <button type="button" class="key key-fn" data-k="√(">√x</button>
+
+                <button type="button" class="key key-fn" data-k="sq">x²</button>
+                <button type="button" class="key key-fn" data-k="^">x<sup>y</sup></button>
+                <button type="button" class="key key-fn" data-k="10^(">10<sup>x</sup></button>
+                <button type="button" class="key key-fn" data-k="e^(">e<sup>x</sup></button>
+                <button type="button" class="key key-fn" data-k="!">n!</button>
+
+                <button type="button" class="key key-fn" data-k="π">π</button>
+                <button type="button" class="key key-fn" data-k="e">e</button>
+                <button type="button" class="key key-fn" data-k="Ans">Ans</button>
+                <button type="button" class="key key-fn" data-k="±">±</button>
+                <button type="button" class="key key-op" data-k="÷">÷</button>
+
+                <button type="button" class="key key-num" data-k="7">7</button>
+                <button type="button" class="key key-num" data-k="8">8</button>
+                <button type="button" class="key key-num" data-k="9">9</button>
+                <button type="button" class="key key-op" data-k="×">×</button>
+                <button type="button" class="key key-op" data-k="-">−</button>
+
+                <button type="button" class="key key-num" data-k="4">4</button>
+                <button type="button" class="key key-num" data-k="5">5</button>
+                <button type="button" class="key key-num" data-k="6">6</button>
+                <button type="button" class="key key-op" data-k="+">+</button>
+                <button type="button" class="key key-num" data-k=".">.</button>
+
+                <button type="button" class="key key-num" data-k="1">1</button>
+                <button type="button" class="key key-num" data-k="2">2</button>
+                <button type="button" class="key key-num" data-k="3">3</button>
+                <button type="button" class="key key-num" data-k="0">0</button>
+                <button type="button" class="key key-eq" data-k="=">=</button>
+            </div>
+        </div>
+
+        <div class="paper-card" style="margin-top:var(--space-lg);">
+            <h3>历史记录</h3>
+            <ul class="hist-list" id="histList"></ul>
+            <p class="hint" id="histHint">暂无记录（保留最近 10 条，点击回填表达式）。</p>
+        </div>
+
+        <div class="info-box">
+            <p><strong>说明：</strong></p>
+            <ul>
+                <li>结果保留 12 位有效数字；支持隐式乘法，如 <code>2π</code>、<code>3(4+5)</code>。</li>
+                <li>n! 仅支持 0~170 的非负整数（防止溢出）；ln/log 要求真数 &gt; 0；asin/acos 要求 |x| ≤ 1。</li>
+                <li>DEG/RAD 切换影响三角函数输入与反三角函数输出；± 作用于最后输入的数字。</li>
+                <li>键盘：数字、<code>+ - * / ^ ( ) !</code>、<code>Enter</code>= 计算、<code>Backspace</code>= 删除、<code>Esc</code>= 清空、<code>P</code>= π。</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

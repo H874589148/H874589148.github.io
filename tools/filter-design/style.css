@@ -1,0 +1,73 @@
+/* tools/filter-design/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+.formula-box {
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    line-height: 1.9;
+    background: var(--color-bg-paper);
+    border: 1.5px dashed var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+    color: var(--color-text);
+}
+
+.fd-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+.fd-params .param-block { margin-bottom: var(--space-md); }
+.fd-params h3 { margin-bottom: var(--space-sm); color: var(--color-primary); }
+.fd-params .field { margin-bottom: var(--space-sm); }
+
+.fd-sep { border: none; border-top: 1.5px dashed var(--color-border); margin: var(--space-sm) 0; }
+
+.iu-row { display: flex; align-items: center; gap: 6px; }
+.iu-row input { flex: 1; }
+.unit { font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-text-muted); white-space: nowrap; min-width: 40px; }
+
+.hint { font-size: 0.85rem; color: var(--color-text-muted); margin-top: var(--space-sm); }
+
+.chart-label {
+    font-family: var(--font-hand);
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+
+.result-card { margin-bottom: var(--space-md); }
+.result-card h3 { margin-bottom: var(--space-sm); color: var(--color-primary); }
+.table-scroll { overflow-x: auto; }
+
+.fd-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.fd-table th, .fd-table td {
+    border: 1px solid var(--color-border);
+    padding: 5px 10px;
+    text-align: center;
+    font-family: var(--font-mono);
+}
+.fd-table th { background: var(--color-bg-paper); font-weight: 700; white-space: nowrap; }
+
+.ratio-box {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--color-primary);
+    background: rgba(58,90,140,0.06);
+    border: 1.5px dashed var(--color-primary);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm) var(--space-md);
+    margin-top: var(--space-sm);
+}
+
+.info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
+.info-box li { margin-bottom: var(--space-xs); }
+
+canvas { width: 100%; height: auto; display: block; }
+
+@media (max-width: 860px) {
+    .fd-layout { grid-template-columns: 1fr; }
+}

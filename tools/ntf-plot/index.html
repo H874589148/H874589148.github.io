@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NTF 绘制 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / NTF 绘制</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>噪声传递函数（NTF）绘制</h1>
+        <p class="tool-desc">按 z 域分子/分母多项式系数（z⁻¹ 升幂）绘制 |NTF|² 频谱，输出带内积分噪声与峰值（Lee 准则参考）。</p>
+
+        <div class="formula-box">
+            H(e<sup>jω</sup>) = (Σb<sub>k</sub>·e<sup>−jkω</sup>) / (Σa<sub>k</sub>·e<sup>−jkω</sup>)，ω = 2πf/f<sub>s</sub> ｜
+            |NTF|²<sub>dB</sub> = 10·log₁₀|H|² ｜ 信号带宽 f<sub>B</sub> = f<sub>s</sub>/(2·OSR)
+        </div>
+
+        <div class="paper-card">
+            <div class="tool-row">
+                <div class="field">
+                    <label for="coefB">分子系数 b（z⁻¹ 升幂，空格/逗号分隔）</label>
+                    <input type="text" id="coefB" value="1 -2 1" spellcheck="false">
+                </div>
+                <div class="field">
+                    <label for="coefA">分母系数 a</label>
+                    <input type="text" id="coefA" value="1" spellcheck="false">
+                </div>
+            </div>
+            <div class="tool-row">
+                <div class="field">
+                    <label for="fs">采样频率 f<sub>s</sub></label>
+                    <div class="iu-row"><input type="text" id="fs" value="1M"><span class="unit">Hz</span></div>
+                </div>
+                <div class="field">
+                    <label for="osr">过采样比 OSR</label>
+                    <div class="iu-row"><input type="number" id="osr" value="64" min="1" step="any"><span class="unit"></span></div>
+                </div>
+            </div>
+            <div class="tool-row">
+                <div class="field">
+                    <label for="rangeMode">频率范围</label>
+                    <select id="rangeMode">
+                        <option value="band" selected>信号带宽 0 ~ f<sub>s</sub>/(2·OSR)</option>
+                        <option value="nyquist">奈奎斯特 0 ~ f<sub>s</sub>/2</option>
+                        <option value="custom">自定义 f<sub>min</sub> ~ f<sub>max</sub></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="fMin">f<sub>min</sub>（自定义时有效）</label>
+                    <div class="iu-row"><input type="text" id="fMin" value="0" disabled><span class="unit">Hz</span></div>
+                </div>
+                <div class="field">
+                    <label for="fMax">f<sub>max</sub>（自定义时有效）</label>
+                    <div class="iu-row"><input type="text" id="fMax" value="500k" disabled><span class="unit">Hz</span></div>
+                </div>
+                <div class="field">
+                    <label for="yMode">纵轴 |NTF|²</label>
+                    <select id="yMode">
+                        <option value="db" selected>dB（10·log₁₀）</option>
+                        <option value="lin">线性</option>
+                    </select>
+                </div>
+            </div>
+            <p class="hint" id="msgLine"></p>
+        </div>
+
+        <div class="result-grid" style="margin-top:var(--space-lg);">
+            <div class="ritem">
+                <span class="rlabel">信号带宽 f<sub>B</sub> = f<sub>s</sub>/(2·OSR)</span>
+                <span class="rval" id="statFB">-</span>
+            </div>
+            <div class="ritem big">
+                <span class="rlabel">带内积分噪声功率（0~f<sub>B</sub> 内 |NTF|² 均值）</span>
+                <span class="rval" id="statIB">-</span>
+                <span class="rsub" id="statIBDb"></span>
+            </div>
+            <div class="ritem big">
+                <span class="rlabel">峰值 |NTF|（扫描 0 ~ f<sub>s</sub>/2）</span>
+                <span class="rval" id="statPeak">-</span>
+                <span class="rsub" id="statLee"></span>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-label" id="chartTitle">|NTF|² 频谱（dB，线性频轴）</div>
+            <canvas id="ntfCanvas" width="700" height="340"></canvas>
+        </div>
+
+        <div class="info-box">
+            <p><strong>说明：</strong></p>
+            <ul>
+                <li>系数按 <strong>z⁻¹ 升幂</strong>排列（DSP 标准约定）。例：<code>1 -2 1</code> 表示 (1−z⁻¹)²；<code>1 -1 0.5</code> 表示 1 − z⁻¹ + 0.5z⁻²。</li>
+                <li>带内积分噪声功率 = 0 ~ f<sub>B</sub> 内 |NTF|² 的平均值，即量化噪声经整形后残留在信号带内的功率比例（相对平坦量化噪声归一化）。</li>
+                <li>Lee 准则（经验）：单比特 ΔΣ 调制器要求 max|NTF| ≲ 1.5（对应 |NTF|² ≈ 3.5 dB）。峰值扫描范围固定为 0 ~ f<sub>s</sub>/2，与显示范围无关。</li>
+                <li>频率轴为线性刻度，600 点；dB 模式显示下限 -120 dB。</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

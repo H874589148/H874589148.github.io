@@ -115,6 +115,26 @@
                 <div class="card-title">正态分布置信区间</div>
                 <div class="card-desc">拖动区间实时计算正态分布概率与阴影</div>
             </a>
+            <a href="tools/filter-design/index.html" class="nav-card">
+                <div class="card-icon" id="icon-filter"></div>
+                <div class="card-title">滤波器设计</div>
+                <div class="card-desc">6 种架构最小面积 RC 求解，幅频/噪声实时分析</div>
+            </a>
+            <a href="tools/ntf-plot/index.html" class="nav-card">
+                <div class="card-icon" id="icon-ntf"></div>
+                <div class="card-title">NTF 绘制</div>
+                <div class="card-desc">z 域系数输入，|NTF|² 频谱与带内积分噪声</div>
+            </a>
+            <a href="tools/latex-render/index.html" class="nav-card">
+                <div class="card-icon" id="icon-tex"></div>
+                <div class="card-title">LaTeX 实时渲染</div>
+                <div class="card-desc">实时预览，SVG/PNG/JPG 导出，常用符号查找表</div>
+            </a>
+            <a href="tools/calculator/index.html" class="nav-card">
+                <div class="card-icon" id="icon-calculator"></div>
+                <div class="card-title">科学计算器</div>
+                <div class="card-desc">表达式解析，三角/对数/阶乘，DEG/RAD 切换</div>
+            </a>
         </div>
 
         <hr class="divider-sketch">
@@ -150,7 +170,9 @@
     <!-- 页脚 -->
     <footer class="site-footer">
         <p>EE工具箱 &copy; 2026 &mdash; Built with pencil & passion</p>
+        <div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div>
     </footer>
+    <script async src="https://cn.vercount.one/js"></script>
 
     <script src="js/common.js"></script>
     <script>
@@ -165,6 +187,10 @@
         document.getElementById('icon-bandgap').innerHTML = Icons.bandgap;
         document.getElementById('icon-gaussian').innerHTML = Icons.gaussian;
         document.getElementById('icon-layout').innerHTML = Icons.layout;
+        document.getElementById('icon-filter').innerHTML = Icons.filter;
+        document.getElementById('icon-ntf').innerHTML = Icons.ntf;
+        document.getElementById('icon-tex').innerHTML = Icons.tex;
+        document.getElementById('icon-calculator').innerHTML = Icons.calculator;
         document.getElementById('icon-book').innerHTML = Icons.book;
         document.getElementById('icon-links').innerHTML = Icons.links;
         document.getElementById('icon-game').innerHTML = Icons.game;

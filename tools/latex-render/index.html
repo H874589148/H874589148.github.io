@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX 实时渲染 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / LaTeX 实时渲染</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>LaTeX 实时渲染</h1>
+        <p class="tool-desc">输入 LaTeX 公式实时预览（MathJax v3，display 模式），支持导出 SVG / PNG / JPG 与一键复制源码，下方附常用符号查找表（点击插入）。</p>
+
+        <div class="lr-grid">
+            <div class="paper-card">
+                <h3>源码</h3>
+                <textarea id="texInput" rows="8" spellcheck="false">H(s) = \frac{\omega_0^2}{s^2 + \dfrac{\omega_0}{Q}\,s + \omega_0^2}</textarea>
+                <div class="btn-row">
+                    <button class="btn" id="btnCopy" type="button">复制源码</button>
+                    <button class="btn btn-primary" id="btnSvg" type="button">下载 SVG</button>
+                    <button class="btn" id="btnPng" type="button">下载 PNG</button>
+                    <button class="btn" id="btnJpg" type="button">下载 JPG</button>
+                </div>
+                <p class="hint" id="copyMsg"></p>
+            </div>
+            <div class="paper-card">
+                <h3>预览</h3>
+                <div class="math-preview" id="renderPreview"><span class="preview-hint">正在加载 MathJax…（需联网）</span></div>
+                <p class="hint" id="renderMsg"></p>
+            </div>
+        </div>
+
+        <div class="paper-card" style="margin-top:var(--space-lg);">
+            <h3>常用符号查找表</h3>
+            <p class="hint">点击符号插入到源码光标处并自动重渲染。</p>
+            <div id="symTable"></div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>说明：</strong></p>
+            <ul>
+                <li>渲染引擎：MathJax v3（tex-svg 组件，CDN 加载，<strong>需联网</strong>；加载失败不影响页面其余部分）。</li>
+                <li>按 display 模式渲染；输入停顿 300ms 后自动刷新。语法错误以红字提示，不会中断页面。</li>
+                <li>导出：SVG 直接序列化下载（矢量，推荐）；PNG / JPG 经 Canvas 3× 缩放导出（JPG 自动填白底）。</li>
+                <li>插入符号时 \dfrac 等结构中的占位字符可直接替换。</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" onerror="onMathJaxFail()"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+/* tools/latex-render/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+.lr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+    align-items: stretch;
+}
+
+.paper-card h3 { margin-bottom: var(--space-sm); color: var(--color-primary); }
+
+#texInput {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1.7;
+    min-height: 180px;
+}
+
+.btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+.btn-row .btn { padding: var(--space-sm) var(--space-md); font-size: 0.95rem; }
+
+.hint { font-size: 0.85rem; color: var(--color-text-muted); margin-top: var(--space-sm); min-height: 1.2em; }
+.hint.err { color: var(--color-accent); font-weight: 600; }
+.hint.ok { color: #2a7a3b; }
+
+.math-preview {
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1.5px dashed var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    padding: var(--space-md);
+    overflow-x: auto;
+    color: #222;
+}
+.math-preview mjx-container { margin: 0; }
+.preview-hint { font-size: 0.92rem; color: var(--color-text-muted); }
+
+/* ---- 符号查找表 ---- */
+.sym-group { margin-bottom: var(--space-md); }
+.sym-group h4 {
+    font-family: var(--font-hand);
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+.chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    padding: 4px 10px;
+    border: 1.5px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    background: var(--color-card-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--color-border-sketch);
+    transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+    min-width: 36px;
+    text-align: center;
+}
+.chip:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--color-border-sketch);
+    background: rgba(58,90,140,0.06);
+}
+.chip:active { transform: translate(1px, 1px); box-shadow: none; }
+.chip.glyph { font-family: var(--font-body); font-size: 1.05rem; }
+
+.info-box { margin-top: var(--space-lg); }
+.info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
+.info-box li { margin-bottom: var(--space-xs); }
+
+@media (max-width: 900px) {
+    .lr-grid { grid-template-columns: 1fr; }
+}

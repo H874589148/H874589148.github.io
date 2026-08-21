@@ -109,6 +109,21 @@
   border-bottom-color: var(--color-border);
 }
 
+/* 访客/浏览量统计（Vercount，不蒜子兼容；数据返回前容器隐藏） */
+.site-stats {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-sm);
+  margin-bottom: 0;
+  opacity: 0.85;
+}
+
+.site-stats span {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
 /* 主页专用布局 */
 .home-container {
   max-width: 1100px;

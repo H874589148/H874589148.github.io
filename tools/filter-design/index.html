@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滤波器设计 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 滤波器设计</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>滤波器设计</h1>
+        <p class="tool-desc">选择架构与目标频率，按版图密度给出最小面积 RC 取值（可直接修改任一器件值联动重算），实时绘制幅频曲线与电阻热噪声性能。</p>
+
+        <div class="formula-box">
+            RC: f<sub>c</sub> = 1/(2πRC) ｜ 最小面积: R* = √(ρ<sub>R</sub>/(2πf<sub>c</sub>·ρ<sub>C</sub>)) ｜
+            噪声: e<sub>n</sub> = √(4kTR)，V<sub>n,rms</sub> = √(∫4kTR·|H(f)|²df)
+        </div>
+
+        <div class="fd-layout">
+            <aside class="fd-params">
+                <div class="param-block paper-card">
+                    <h3>架构选择</h3>
+                    <div class="field">
+                        <label for="arch">滤波器架构</label>
+                        <select id="arch">
+                            <option value="rc-lp" selected>一阶 RC 低通</option>
+                            <option value="rc-hp">一阶 RC 高通</option>
+                            <option value="sk-lp">Sallen-Key 低通（二阶 Butterworth）</option>
+                            <option value="sk-hp">Sallen-Key 高通（二阶 Butterworth）</option>
+                            <option value="rc-bp">无源 RC-CR 带通</option>
+                            <option value="mfb-bp">MFB 有源带通（增益 -1）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>设计目标</h3>
+                    <div class="field" id="fcField">
+                        <label for="fc">特征频率 f<sub>c</sub></label>
+                        <div class="iu-row"><input type="text" id="fc" value="10k"><span class="unit">Hz</span></div>
+                    </div>
+                    <div class="field" id="fLField" style="display:none;">
+                        <label for="fL">下转折频率 f<sub>L</sub>（高通臂）</label>
+                        <div class="iu-row"><input type="text" id="fL" value="1k"><span class="unit">Hz</span></div>
+                    </div>
+                    <div class="field" id="fHField" style="display:none;">
+                        <label for="fH">上转折频率 f<sub>H</sub>（低通臂）</label>
+                        <div class="iu-row"><input type="text" id="fH" value="100k"><span class="unit">Hz</span></div>
+                    </div>
+                    <div class="field" id="f0Field" style="display:none;">
+                        <label for="f0">中心频率 f<sub>0</sub></label>
+                        <div class="iu-row"><input type="text" id="f0" value="10k"><span class="unit">Hz</span></div>
+                    </div>
+                    <div class="field" id="qField" style="display:none;">
+                        <label for="q0">品质因数 Q（&gt;0.71）</label>
+                        <div class="iu-row"><input type="number" id="q0" value="2" step="any" min="0.72"><span class="unit"></span></div>
+                    </div>
+                    <hr class="fd-sep">
+                    <div class="field">
+                        <label for="fst">校验：阻带频率 f<sub>st</sub></label>
+                        <div class="iu-row"><input type="text" id="fst" value="100k"><span class="unit">Hz</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="astop">目标抑制 A<sub>stop</sub></label>
+                        <div class="iu-row"><input type="number" id="astop" value="40" step="any" min="0"><span class="unit">dB</span></div>
+                    </div>
+                    <p class="hint" id="stopInfo"></p>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>版图密度 / 温度</h3>
+                    <div class="field">
+                        <label for="rhoR">电阻密度 ρ<sub>R</sub></label>
+                        <div class="iu-row"><input type="number" id="rhoR" value="100" step="any" min="0"><span class="unit">Ω/µm²</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="rhoC">电容密度 ρ<sub>C</sub></label>
+                        <div class="iu-row"><input type="number" id="rhoC" value="1" step="any" min="0"><span class="unit">fF/µm²</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="tempK">温度 T</label>
+                        <div class="iu-row"><input type="number" id="tempK" value="290" step="any" min="0"><span class="unit">K</span></div>
+                    </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>器件取值</h3>
+                    <p class="hint">默认给最小面积解；修改任意一项，其余按频率约束联动重算。</p>
+                    <div id="compFields"></div>
+                    <button class="btn" id="optBtn" type="button" style="margin-top:var(--space-sm);">恢复最小面积解</button>
+                </div>
+            </aside>
+
+            <div class="fd-main">
+                <div class="paper-card result-card">
+                    <h3>设计结果</h3>
+                    <div class="table-scroll">
+                        <table class="fd-table">
+                            <thead><tr><th>器件</th><th>取值</th><th>面积 (µm²)</th></tr></thead>
+                            <tbody id="compBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="ratio-box" id="areaInfo"></p>
+                    <p class="hint" id="noiseInfo"></p>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-label">幅频特性 |H(f)| (dB)</div>
+                    <canvas id="magCanvas" width="700" height="260"></canvas>
+                </div>
+                <div class="chart-container" style="margin-top:var(--space-md);">
+                    <div class="chart-label">输出噪声谱密度 √(Σ4kTRᵢ)·|H(f)|（nV/√Hz，对数轴）</div>
+                    <canvas id="noiseCanvas" width="700" height="220"></canvas>
+                </div>
+
+                <div class="info-box" style="margin-top:var(--space-md);">
+                    <p><strong>模型假设（工程估算）：</strong></p>
+                    <ul>
+                        <li>每个电阻的热噪声经主路径 |H(f)| 到达输出（各噪声源功率叠加）。</li>
+                        <li>积分噪声为<strong>绘图频段内</strong>的数值积分（f<sub>ref</sub>/100 ~ f<sub>ref</sub>×100）；高通类实际带宽受运放限制，结果偏保守。</li>
+                        <li>Sallen-Key 采用单位增益 Butterworth 设计（低通等 R、C<sub>1</sub>=2C<sub>2</sub>；高通等 C、R<sub>2</sub>=2R<sub>1</sub>）。</li>
+                        <li>RC-CR 带通忽略级间负载效应；MFB 中频增益固定为 -1、C<sub>1</sub>=C<sub>2</sub>。</li>
+                        <li>面积 = ΣRᵢ/ρ<sub>R</sub> + ΣCᵢ/ρ<sub>C</sub>，仅比较 RC 无源部分，不含运放。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
