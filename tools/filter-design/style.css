@@ -68,6 +68,13 @@
 
 canvas { width: 100%; height: auto; display: block; }
 
+/* 拓扑示意图 */
+.topo-fig { margin-top: var(--space-sm); text-align: center; }
+.topo-svg { width: 100%; max-width: 300px; height: auto; }
+.topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.topo-svg .td { fill: #4a4a4a; }
+.topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }
+
 @media (max-width: 860px) {
     .fd-layout { grid-template-columns: 1fr; }
 }

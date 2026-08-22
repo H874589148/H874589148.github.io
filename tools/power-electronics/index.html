@@ -32,10 +32,12 @@
                     <button class="topo-btn" data-topo="boost" onclick="selectTopo('boost')">Boost</button>
                     <button class="topo-btn" data-topo="buckboost" onclick="selectTopo('buckboost')">Buck-Boost</button>
                     <button class="topo-btn" data-topo="flyback" onclick="selectTopo('flyback')">Flyback</button>
+                    <button class="topo-btn" data-topo="llc" onclick="selectTopo('llc')">LLC</button>
+                    <button class="topo-btn" data-topo="dsd" onclick="selectTopo('dsd')">DSD</button>
                 </div>
 
                 <h3 style="margin-top:var(--space-lg);">参数</h3>
-                <div class="field">
+                <div class="field" id="dutyField">
                     <label>占空比 D</label>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <input type="range" id="dutySlider" min="5" max="95" value="50" step="1" oninput="updateDuty(this.value)">
@@ -63,18 +65,39 @@
                         <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">kHz</span>
                     </div>
                 </div>
-                <div class="field">
+                <div class="field" id="lField">
                     <label for="lval">电感 L</label>
                     <div style="display:flex;align-items:center;gap:6px;">
                         <input type="number" id="lval" value="10" step="any" min="0">
                         <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µH</span>
                     </div>
                 </div>
-                <div class="field">
+                <div class="field" id="coutField">
                     <label for="cout">输出电容 C<sub>out</sub></label>
                     <div style="display:flex;align-items:center;gap:6px;">
                         <input type="number" id="cout" value="100" step="any" min="0">
                         <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µF</span>
+                    </div>
+                </div>
+                <div class="field" id="lrField" style="display:none;">
+                    <label for="lrval">谐振电感 L<sub>r</sub></label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="lrval" value="10" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µH</span>
+                    </div>
+                </div>
+                <div class="field" id="crField" style="display:none;">
+                    <label for="crval">谐振电容 C<sub>r</sub></label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="crval" value="47" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">nF</span>
+                    </div>
+                </div>
+                <div class="field" id="lmField" style="display:none;">
+                    <label for="lmval">励磁电感 L<sub>m</sub></label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="lmval" value="47" step="any" min="0">
+                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µH</span>
                     </div>
                 </div>
                 <div class="field">

@@ -64,3 +64,25 @@
     color: var(--color-primary);
     font-weight: 600;
 }
+
+/* ---- 放大器结构噪声 tab ---- */
+#noiseTabs { margin-bottom: var(--space-lg); }
+.amp-h { margin-bottom: var(--space-sm); color: var(--color-primary); font-size: 1.05rem; }
+.hint { font-size: 0.85rem; color: var(--color-text-muted); margin-top: var(--space-sm); }
+.chart-container { margin-top: var(--space-md); }
+.chart-label {
+    font-family: var(--font-hand);
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+canvas { width: 100%; height: auto; display: block; }
+
+/* 结构示意图 */
+.topo-fig { margin-top: var(--space-sm); text-align: center; }
+.topo-svg { width: 100%; max-width: 400px; height: auto; }
+.topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.topo-svg .thick { stroke-width: 3.5; }
+.topo-svg .tc { fill: #fffcf7; }
+.topo-svg .td { fill: #4a4a4a; }
+.topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }

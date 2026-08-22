@@ -41,8 +41,10 @@
                             <option value="sk-hp">Sallen-Key 高通（二阶 Butterworth）</option>
                             <option value="rc-bp">无源 RC-CR 带通</option>
                             <option value="mfb-bp">MFB 有源带通（增益 -1）</option>
+                            <option value="notch">无源双 T 带阻（陷波，Q=1/4）</option>
                         </select>
                     </div>
+                    <div class="topo-fig" id="topoFig"></div>
                 </div>
 
                 <div class="param-block paper-card">
@@ -132,6 +134,7 @@
                         <li>积分噪声为<strong>绘图频段内</strong>的数值积分（f<sub>ref</sub>/100 ~ f<sub>ref</sub>×100）；高通类实际带宽受运放限制，结果偏保守。</li>
                         <li>Sallen-Key 采用单位增益 Butterworth 设计（低通等 R、C<sub>1</sub>=2C<sub>2</sub>；高通等 C、R<sub>2</sub>=2R<sub>1</sub>）。</li>
                         <li>RC-CR 带通忽略级间负载效应；MFB 中频增益固定为 -1、C<sub>1</sub>=C<sub>2</sub>。</li>
+                        <li>双 T 带阻：R<sub>3</sub>=R/2、C<sub>3</sub>=2C（可用单位件串/并联实现），Q 固定为 1/4，f<sub>0</sub> 处理想陷波。</li>
                         <li>面积 = ΣRᵢ/ρ<sub>R</sub> + ΣCᵢ/ρ<sub>C</sub>，仅比较 RC 无源部分，不含运放。</li>
                     </ul>
                 </div>

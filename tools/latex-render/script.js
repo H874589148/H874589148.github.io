@@ -5,7 +5,8 @@
 var mathjaxReady = false;
 window.MathJax = {
     tex: { packages: { '[+]': ['ams', 'boldsymbol', 'configmacros'] } },
-    svg: { fontCache: 'global' },
+    svg: { fontCache: 'local' },   /* 字形 defs 内嵌每个公式 SVG：显示与导出均自包含 */
+    options: { enableAssistiveMml: false },
     startup: {
         typeset: false,
         ready: function () {
@@ -47,10 +48,12 @@ function doRender() {
         setMsg('', false);
         return;
     }
-    MathJax.tex2svgPromise(tex, { display: true }).then(function (node) {
-        el.renderPreview.innerHTML = '';
-        el.renderPreview.appendChild(node);
-        var err = node.querySelector('[data-mjx-error]');
+    /* 完整排版管线：样式表与字体缓存随 typeset 自动注入，
+       避免 tex2svgPromise 独立转换导致的 assistive-mml 副本可见 / 字形引用悬空问题 */
+    el.renderPreview.textContent = '\\[' + tex + '\\]';
+    MathJax.typesetClear([el.renderPreview]);
+    MathJax.typesetPromise([el.renderPreview]).then(function () {
+        var err = el.renderPreview.querySelector('[data-mjx-error]');
         if (err) setMsg('语法错误：' + err.getAttribute('data-mjx-error'), true);
         else setMsg('', false);
     }).catch(function (err) {
@@ -224,20 +227,35 @@ var SYMS = [
 function escAttr(s) { return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
 
 (function renderSymTable() {
-    var html = '';
-    SYMS.forEach(function (g) {
-        html += '<div class="sym-group"><h4>' + g[0] + '</h4><div class="chip-grid">';
+    var nav = '<div class="tab-nav">';
+    var panels = '';
+    SYMS.forEach(function (g, gi) {
+        nav += '<button type="button" class="tab-btn' + (gi === 0 ? ' active' : '') +
+               '" data-tab="' + gi + '">' + g[0] + '</button>';
+        panels += '<div class="tab-panel' + (gi === 0 ? ' active' : '') + '" data-panel="' + gi + '"><div class="chip-grid">';
         g[1].forEach(function (it) {
-            html += '<button type="button" class="chip' + (g[2] ? ' glyph' : '') +
-                    '" data-code="' + escAttr(it[1]) + '" title="' + escAttr(it[1]) + '">' + it[0] + '</button>';
+            panels += '<button type="button" class="chip2' + (g[2] ? ' glyph' : '') +
+                      '" data-code="' + escAttr(it[1]) + '" title="' + escAttr(it[1]) + '">' +
+                      '<span class="chip2-sym">' + it[0] + '</span>' +
+                      '<span class="chip2-code">' + escAttr(it[1]) + '</span></button>';
         });
-        html += '</div></div>';
+        panels += '</div></div>';
     });
-    el.symTable.innerHTML = html;
+    el.symTable.innerHTML = nav + panels;
 })();
 
 el.symTable.addEventListener('click', function (e) {
-    var chip = e.target.closest('.chip');
+    var tab = e.target.closest('.tab-btn');
+    if (tab) {
+        var idx = tab.getAttribute('data-tab');
+        var btns = el.symTable.querySelectorAll('.tab-btn');
+        var pns = el.symTable.querySelectorAll('.tab-panel');
+        var i;
+        for (i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i] === tab);
+        for (i = 0; i < pns.length; i++) pns[i].classList.toggle('active', pns[i].getAttribute('data-panel') === idx);
+        return;
+    }
+    var chip = e.target.closest('.chip2');
     if (!chip) return;
     insertAtCursor(chip.getAttribute('data-code'));
 });

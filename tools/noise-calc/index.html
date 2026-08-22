@@ -23,6 +23,12 @@
         <h1>噪声快速计算</h1>
         <p class="tool-desc">热噪声（Johnson）、散粒噪声（Shot）、闪烁噪声（1/f）参数实时计算。</p>
 
+        <div class="tab-nav" id="noiseTabs">
+            <button type="button" class="tab-btn active" data-tab="basic">基础噪声计算</button>
+            <button type="button" class="tab-btn" data-tab="amp">放大器结构噪声</button>
+        </div>
+
+        <div class="tab-panel active" data-panel="basic">
         <!-- ===== 热噪声 ===== -->
         <section class="tool-section">
             <h2 class="sec-heading">热噪声 (Johnson-Nyquist Noise)</h2>
@@ -244,6 +250,152 @@
                 q = 1.60218 × 10⁻¹⁹ C（元电荷）
             </div>
         </div>
+        </div><!-- /tab-panel basic -->
+
+        <div class="tab-panel" data-panel="amp">
+        <!-- ===== 放大器结构噪声 ===== -->
+        <section class="tool-section">
+            <h2 class="sec-heading">放大器结构噪声（等效输入参考）</h2>
+            <div class="formula-box">
+                v²<sub>n,th</sub> = 2·(8kTγ/g<sub>m1</sub>)·(1 + Σg<sub>mi</sub>/g<sub>m1</sub>) &nbsp;|&nbsp;
+                v²<sub>n,1/f</sub>(f) = (2/f)·[KF<sub>n</sub>/(C<sub>ox</sub>W<sub>1</sub>L<sub>1</sub>) + Σ(g<sub>mi</sub>/g<sub>m1</sub>)²·KF/(C<sub>ox</sub>W<sub>i</sub>L<sub>i</sub>)]
+            </div>
+
+            <div class="paper-card">
+                <h3 class="amp-h">放大器结构</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="ampType">结构选择</label>
+                        <select id="ampType">
+                            <option value="ota5" selected>五管 OTA（差分对 + 电流镜负载）</option>
+                            <option value="telescopic">套筒式共源共栅（telescopic）</option>
+                            <option value="folded">折叠式共源共栅（folded-cascode）</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="topo-fig" id="ampFig"></div>
+            </div>
+
+            <div class="paper-card">
+                <h3 class="amp-h">公共参数</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="ampT">温度 T</label>
+                        <div class="input-unit-row"><input type="number" id="ampT" value="300" step="any"><span class="unit">K</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampGamma">热噪声系数 γ</label>
+                        <div class="input-unit-row"><input type="number" id="ampGamma" value="0.667" step="any"><span class="unit"></span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampCox">栅氧电容 C<sub>ox</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampCox" value="8" step="any"><span class="unit">fF/µm²</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampKFn">KF<sub>n</sub>（NMOS 闪烁系数）</label>
+                        <div class="input-unit-row"><input type="number" id="ampKFn" value="1e-25" step="any"><span class="unit">V²·F</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampKFp">KF<sub>p</sub>（PMOS 闪烁系数）</label>
+                        <div class="input-unit-row"><input type="number" id="ampKFp" value="3e-26" step="any"><span class="unit">V²·F</span></div>
+                    </div>
+                </div>
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="ampFL">积分下限 f<sub>L</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampFL" value="1" step="any"><span class="unit">Hz</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampFH">积分上限 f<sub>H</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampFH" value="1e6" step="any"><span class="unit">Hz</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="paper-card">
+                <h3 class="amp-h">器件参数（g<sub>m</sub> = 2I<sub>D</sub>/V<sub>ov</sub> 自动换算）</h3>
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="ampId1">输入对管 I<sub>D1</sub>（每管）</label>
+                        <div class="input-unit-row"><input type="number" id="ampId1" value="50" step="any"><span class="unit">µA</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampVov1">输入对管 V<sub>ov1</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampVov1" value="200" step="any"><span class="unit">mV</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampW1">W<sub>1</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampW1" value="20" step="any"><span class="unit">µm</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampL1">L<sub>1</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampL1" value="1" step="any"><span class="unit">µm</span></div>
+                    </div>
+                </div>
+                <div class="tool-row">
+                    <div class="field">
+                        <label for="ampIdL">负载管 I<sub>DL</sub>（每管）</label>
+                        <div class="input-unit-row"><input type="number" id="ampIdL" value="50" step="any"><span class="unit">µA</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampVovL">负载管 V<sub>ovL</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampVovL" value="200" step="any"><span class="unit">mV</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampWL">W<sub>L</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampWL" value="40" step="any"><span class="unit">µm</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampLL">L<sub>L</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampLL" value="2" step="any"><span class="unit">µm</span></div>
+                    </div>
+                </div>
+                <div class="tool-row" id="foldRow" style="display:none;">
+                    <div class="field">
+                        <label for="ampIdF">折叠电流源管 I<sub>DF</sub>（每管）</label>
+                        <div class="input-unit-row"><input type="number" id="ampIdF" value="100" step="any"><span class="unit">µA</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampVovF">折叠管 V<sub>ovF</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampVovF" value="200" step="any"><span class="unit">mV</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampWF">W<sub>F</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampWF" value="40" step="any"><span class="unit">µm</span></div>
+                    </div>
+                    <div class="field">
+                        <label for="ampLF">L<sub>F</sub></label>
+                        <div class="input-unit-row"><input type="number" id="ampLF" value="1" step="any"><span class="unit">µm</span></div>
+                    </div>
+                </div>
+                <p class="hint" id="ampGmInfo"></p>
+            </div>
+
+            <div class="paper-card">
+                <h3 class="amp-h">噪声性能</h3>
+                <div class="result-grid">
+                    <div class="ritem"><span class="rlabel">热噪声谱密度 v<sub>n,th</sub></span><span class="rval" id="ampVth">-</span></div>
+                    <div class="ritem"><span class="rlabel">1/f 拐角频率 f<sub>c</sub></span><span class="rval" id="ampFc">-</span></div>
+                    <div class="ritem big"><span class="rlabel">带宽积分噪声 V<sub>rms</sub></span><span class="rval" id="ampVrms">-</span></div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-label">等效输入噪声谱密度（nV/√Hz，log-log；虚线：热噪声平台与 1/f 分量）</div>
+                <canvas id="ampCanvas" width="700" height="260"></canvas>
+            </div>
+
+            <div class="info-box" style="margin-top:12px;">
+                <p><strong>模型假设（一阶等效输入模型）：</strong></p>
+                <ul>
+                    <li>差分两管噪声功率叠加（×2）；负载/折叠管按 (g<sub>m</sub>/g<sub>m1</sub>)² 折算到输入。</li>
+                    <li>cascode 管噪声贡献忽略（源极简并近似）；失配、版图寄生与栅电阻噪声不计。</li>
+                    <li>套筒式与五管 OTA 噪声形式相同（负载均为 PMOS 电流源管）。</li>
+                    <li>积分噪声 V<sub>rms</sub> = √( v²<sub>n,th</sub>·(f<sub>H</sub>−f<sub>L</sub>) + A<sub>1/f</sub>·ln(f<sub>H</sub>/f<sub>L</sub>) )。</li>
+                </ul>
+            </div>
+        </section>
+        </div><!-- /tab-panel amp -->
     </main>
 
     <footer class="site-footer">
@@ -254,5 +406,6 @@
 
     <script src="../../js/common.js"></script>
     <script src="script.js"></script>
+    <script src="amp-noise.js"></script>
 </body>
 </html>

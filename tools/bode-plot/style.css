@@ -128,3 +128,17 @@
     .bode-layout { grid-template-columns: 1fr; }
     .bode-params { position: static; }
 }
+
+/* Type-II / Type-III 预设拓扑公式卡 */
+.preset-info { margin-top: var(--space-xl); }
+.preset-info h3 { color: var(--color-primary); font-size: 1.1rem; margin-bottom: var(--space-md); }
+.preset-info-body { display: flex; gap: var(--space-xl); align-items: flex-start; flex-wrap: wrap; }
+.preset-info-fig { flex: 0 1 400px; min-width: 280px; }
+.preset-info-formulas { flex: 1 1 320px; }
+.preset-info-formulas .formula-box { margin: 0 0 var(--space-md); font-size: 0.95rem; line-height: 2; }
+.preset-info-formulas .info-box { font-size: 0.9rem; }
+
+.topo-svg { width: 100%; max-width: 400px; height: auto; display: block; margin: 0 auto; }
+.topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.topo-svg .td { fill: #4a4a4a; }
+.topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }
