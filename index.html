@@ -15,23 +15,26 @@
             position: relative;
             display: inline-block;
         }
-        .home-header h1::after {
-            content: '';
-            position: absolute;
-            left: -8px;
-            right: -8px;
-            bottom: -6px;
-            height: 4px;
-            background: var(--color-accent);
-            border-radius: 2px;
-            transform: rotate(-0.8deg);
-        }
+
+            .home-header h1::after {
+                content: '';
+                position: absolute;
+                left: -8px;
+                right: -8px;
+                bottom: -6px;
+                height: 4px;
+                background: var(--color-accent);
+                border-radius: 2px;
+                transform: rotate(-0.8deg);
+            }
+
         .home-header .subtitle {
             font-family: var(--font-handwrite);
             font-size: 1.3rem;
             color: var(--color-text-secondary);
             margin-top: var(--space-md);
         }
+
         .home-header .tagline {
             font-size: 0.95rem;
             color: var(--color-text-muted);
@@ -166,6 +169,22 @@
             </a>
         </div>
     </div>
+
+    <!-- Live 2D YueXinMao -->
+    <link rel="stylesheet" href="css/yuexinmiao-widget.css">
+    <div id="yuexinmiao-root"></div>
+    <script src="js/yuexinmiao-widget.js"></script>
+    <script>
+        YuexinmiaoWidget.init({
+            mount: '#yuexinmiao-root',
+            spritesheet: 'assets/images/spritesheet.webp',
+            width: 128,          // 显示宽度(px)，高度按比例自适应
+            right: 24,           // 距右边缘
+            bottom: 24,          // 距底边
+            speak: true,         // 自动冒泡
+            autoIdle: true       // 待机时随机小动作
+        });
+    </script>
 
     <!-- 页脚 -->
     <footer class="site-footer">

@@ -64,6 +64,8 @@ function cellDist(r, c, p) {
         case 'rl': return p.cols - 1 - c;
         case 'tb': return r;
         case 'bt': return p.rows - 1 - r;
+        case 'tl2br': return r + c;                      // 左上 d=0 → 右下 d 最大
+        case 'bl2tr': return (p.rows - 1 - r) + c;      // 左下 d=0 → 右上 d 最大
         case 'radial':
             var dx = (c + 0.5) - state.center.x;
             var dy = (r + 0.5) - state.center.y;
@@ -74,7 +76,9 @@ function cellDist(r, c, p) {
 
 function maxDist(p) {
     if (p.dir !== 'radial') {
-        return (p.dir === 'lr' || p.dir === 'rl') ? p.cols - 1 : p.rows - 1;
+        if (p.dir === 'lr' || p.dir === 'rl') return p.cols - 1;
+        if (p.dir === 'tb' || p.dir === 'bt') return p.rows - 1;
+        return (p.cols - 1) + (p.rows - 1);   // 斜向：横纵各跨一遍
     }
     var m = 0, cx = state.center.x, cy = state.center.y;
     [[0, 0], [p.cols, 0], [0, p.rows], [p.cols, p.rows]].forEach(function (pt) {
