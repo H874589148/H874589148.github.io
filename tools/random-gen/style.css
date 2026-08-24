@@ -1,0 +1,103 @@
+/* tools/random-gen/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+/* ---- Tab1：随机数生成 ---- */
+.rng-panel { padding: var(--space-lg); }
+
+.rng-params {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-md);
+}
+
+.rng-field label {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    color: var(--color-text-secondary);
+}
+.rng-field input[type="number"] {
+    width: 110px;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+}
+
+.rng-check label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    padding-bottom: 8px;
+}
+.rng-check input { accent-color: var(--color-primary); width: 16px; height: 16px; }
+
+.hint { font-size: 0.85rem; color: var(--color-text-muted); margin-top: var(--space-sm); min-height: 1.2em; }
+
+.rng-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.rng-card {
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    background: var(--color-card-bg);
+    padding: 14px 4px;
+    text-align: center;
+    font-family: var(--font-hand);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    box-shadow: 2px 2px 0 rgba(74, 74, 74, 0.12);
+}
+.rng-card:nth-child(3n+1) { transform: rotate(-1.2deg); }
+.rng-card:nth-child(3n+2) { transform: rotate(0.8deg); }
+
+.rng-stats {
+    margin-top: var(--space-md);
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    color: var(--color-text-secondary);
+}
+
+/* ---- Tab2：摇骰子 ---- */
+.dice-panel { padding: var(--space-xl); }
+
+.dice-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.dice-box { width: 180px; height: 180px; cursor: pointer; }
+.dice-svg { width: 100%; height: 100%; }
+.dice-svg .dice-body {
+    fill: #fffdf8;
+    stroke: #4a4a4a;
+    stroke-width: 4;
+}
+.dice-svg circle { fill: #c0583a; }
+
+.dice-box.shaking { animation: dice-shake 0.18s linear infinite; }
+@keyframes dice-shake {
+    0%   { transform: rotate(-4deg) translateY(0); }
+    50%  { transform: rotate(4deg) translateY(-4px); }
+    100% { transform: rotate(-4deg) translateY(0); }
+}
+
+.dice-res {
+    font-family: var(--font-hand);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    min-height: 1.4em;
+}
+
+.info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
+.info-box li { margin-bottom: var(--space-xs); }

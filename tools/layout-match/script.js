@@ -13,7 +13,7 @@ var state = {
 
 /* ---- 元素索引 ---- */
 var el = {};
-['rows', 'cols', 'groups', 'gradDir', 'gradPol', 'gradSlope',
+['rows', 'cols', 'groups', 'gradDir', 'gradPol', 'gradOrder', 'gradSlope', 'slopeUnit',
  'centerField', 'centerBtn', 'centerInfo',
  'gridTable', 'centerDot', 'gridInfo',
  'statBody', 'centroidInfo', 'mmTable', 'mmHint', 'ratioBox',
@@ -36,7 +36,8 @@ function getParams() {
         K:    clampInt(el.groups.value, 1, 8, 2),
         dir:  el.gradDir.value,
         sign: el.gradPol.value === 'l2h' ? 1 : -1,   // 低→高 沿指向递增；高→低 递减
-        s:    s / 100                                 // %/格 → 比例/格
+        order: el.gradOrder.value === '2' ? 2 : 1,   // 梯度阶数：1 线性 / 2 抛物
+        s:    s / 100                                 // %/格ⁿ → 比例/格ⁿ
     };
 }
 
@@ -87,7 +88,7 @@ function maxDist(p) {
     return m;
 }
 
-function cellValue(r, c, p) { return 1 + p.sign * p.s * cellDist(r, c, p); }
+function cellValue(r, c, p) { return 1 + p.sign * p.s * Math.pow(cellDist(r, c, p), p.order); }
 
 function heatColor(v, maxDev) {
     var dev = v - 1;
@@ -263,9 +264,12 @@ function update() {
     renderGrid(p, maxDev);
 
     /* 网格信息行 */
-    var totalGrad = p.s * maxDist(p) * 100;
+    var md = maxDist(p);
+    var totalGrad = p.s * Math.pow(md, p.order) * 100;
+    el.slopeUnit.textContent = p.order === 2 ? '%/格²' : '%/格';
     el.gridInfo.textContent = '阵列 ' + p.rows + '×' + p.cols + ' ｜ 全阵列总梯度 ≈ ' +
-        totalGrad.toFixed(2) + ' %（max d = ' + maxDist(p).toFixed(2) + ' 格，斜率 ' + (p.s * 100) + ' %/格）';
+        totalGrad.toFixed(2) + ' %（max d = ' + md.toFixed(2) + ' 格，斜率 ' + (p.s * 100) +
+        (p.order === 2 ? ' %/格²' : ' %/格') + '）';
 
     /* 统计与结果 */
     var stats = groupStats(p);
@@ -319,7 +323,7 @@ el.centerBtn.addEventListener('click', function () {
 });
 
 /* ---- 控件监听 ---- */
-['rows', 'cols', 'groups', 'gradDir', 'gradPol', 'gradSlope', 'inlOrder'].forEach(function (id) {
+['rows', 'cols', 'groups', 'gradDir', 'gradPol', 'gradOrder', 'gradSlope', 'inlOrder'].forEach(function (id) {
     el[id].addEventListener('input', update);
     el[id].addEventListener('change', update);
 });

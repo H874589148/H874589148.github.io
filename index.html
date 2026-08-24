@@ -54,6 +54,79 @@
             width: 56px;
             height: 56px;
         }
+        /* 右上角站内搜索框 */
+        .home-header {
+            position: relative;
+        }
+
+        .search-box {
+            position: absolute;
+            top: var(--space-xxl);
+            right: 0;
+            display: flex;
+            align-items: center;
+        }
+
+            .search-box svg {
+                position: absolute;
+                left: 10px;
+                width: 16px;
+                height: 16px;
+                stroke: var(--color-text-muted);
+                pointer-events: none;
+            }
+
+            .search-box input {
+                width: 240px;
+                padding: 8px 30px 8px 34px;
+                font-family: var(--font-body);
+                font-size: 0.95rem;
+                color: var(--color-text);
+                background: var(--color-card-bg);
+                border: 2px solid var(--color-border-sketch);
+                border-radius: var(--radius-sm);
+                box-shadow: var(--shadow-sm);
+                outline: none;
+                transition: border-color 0.2s;
+            }
+
+                .search-box input:focus {
+                    border-color: var(--color-primary);
+                }
+
+            .search-box .search-clear {
+                position: absolute;
+                right: 8px;
+                border: none;
+                background: none;
+                color: var(--color-text-muted);
+                font-size: 1.1rem;
+                line-height: 1;
+                cursor: pointer;
+                display: none;
+                padding: 0 4px;
+            }
+
+                .search-box .search-clear:hover {
+                    color: var(--color-accent);
+                }
+
+        #searchEmpty {
+            color: var(--color-text-muted);
+            font-size: 1.05rem;
+            margin-top: var(--space-xl);
+        }
+
+        @media (max-width: 760px) {
+            .search-box {
+                position: static;
+                margin-top: var(--space-md);
+            }
+
+                .search-box input {
+                    width: 100%;
+                }
+        }
     </style>
 </head>
 <body>
@@ -63,6 +136,12 @@
             <h1>EE工具箱</h1>
             <p class="subtitle">Electronic Engineering Toolkit</p>
             <p class="tagline">电子工程科研计算与可视化工具集 -- 手绘风格，专注效率</p>
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+                <input type="text" id="siteSearch" placeholder="搜索工具，如 bode、噪声、骰子…" autocomplete="off">
+                <button class="search-clear" id="searchClear" type="button" title="清除">&times;</button>
+            </div>
+            <p id="searchEmpty" style="display:none;">没有匹配的工具，换个关键词试试~</p>
         </header>
 
         <!-- ========== 计算工具 ========== -->
@@ -83,21 +162,6 @@
                 <div class="card-title">噪声快速计算</div>
                 <div class="card-desc">热噪声、散粒噪声、闪烁噪声参数计算</div>
             </a>
-            <a href="tools/layout-match/index.html" class="nav-card">
-                <div class="card-icon" id="icon-layout"></div>
-                <div class="card-title">版图失配计算</div>
-                <div class="card-desc">网格阵列 + 浓度梯度，实时评估组间失配与 INL/DNL</div>
-            </a>
-            <a href="tools/base-converter/index.html" class="nav-card">
-                <div class="card-icon" id="icon-binary"></div>
-                <div class="card-title">进制转换</div>
-                <div class="card-desc">二/八/十/十六进制快速互转，支持小数与浮点数</div>
-            </a>
-            <a href="tools/complement-code/index.html" class="nav-card">
-                <div class="card-icon" id="icon-complement"></div>
-                <div class="card-title">反码补码转换</div>
-                <div class="card-desc">原码、反码、补码互转，支持自定义位宽</div>
-            </a>
             <a href="tools/power-electronics/index.html" class="nav-card">
                 <div class="card-icon" id="icon-power"></div>
                 <div class="card-title">电力电子波形</div>
@@ -113,11 +177,6 @@
                 <div class="card-title">密勒补偿 Bode 图</div>
                 <div class="card-desc">两级运放极点分裂与相位裕度实时分析</div>
             </a>
-            <a href="tools/gaussian/index.html" class="nav-card">
-                <div class="card-icon" id="icon-gaussian"></div>
-                <div class="card-title">正态分布置信区间</div>
-                <div class="card-desc">拖动区间实时计算正态分布概率与阴影</div>
-            </a>
             <a href="tools/filter-design/index.html" class="nav-card">
                 <div class="card-icon" id="icon-filter"></div>
                 <div class="card-title">滤波器设计</div>
@@ -128,19 +187,64 @@
                 <div class="card-title">NTF 绘制</div>
                 <div class="card-desc">z 域系数输入，|NTF|² 频谱与带内积分噪声</div>
             </a>
-            <a href="tools/latex-render/index.html" class="nav-card">
-                <div class="card-icon" id="icon-tex"></div>
-                <div class="card-title">LaTeX 实时渲染</div>
-                <div class="card-desc">实时预览，SVG/PNG/JPG 导出，常用符号查找表</div>
-            </a>
             <a href="tools/calculator/index.html" class="nav-card">
                 <div class="card-icon" id="icon-calculator"></div>
                 <div class="card-title">科学计算器</div>
                 <div class="card-desc">表达式解析，三角/对数/阶乘，DEG/RAD 切换</div>
             </a>
+            <a href="tools/least-squares/index.html" class="nav-card">
+                <div class="card-icon" id="icon-lsq"></div>
+                <div class="card-title">最小二乘拟合</div>
+                <div class="card-desc">x/y 数据拟合 y=ax+b，附 R² 与可调坐标范围</div>
+            </a>
         </div>
 
         <hr class="divider-sketch">
+
+        <!-- ========== 版图设计 ========== -->
+        <h2 class="section-title">版图设计</h2>
+        <div class="card-grid">
+            <a href="tools/layout-match/index.html" class="nav-card">
+                <div class="card-icon" id="icon-layout"></div>
+                <div class="card-title">版图失配计算</div>
+                <div class="card-desc">网格阵列 + 浓度梯度，实时评估组间失配与 INL/DNL</div>
+            </a>
+            <a href="tools/wire-res/index.html" class="nav-card">
+                <div class="card-icon" id="icon-wire"></div>
+                <div class="card-title">版图寄生阻抗</div>
+                <div class="card-desc">走线段方块电阻累加，段阻值/占比/IR 压降实时显示</div>
+            </a>
+        </div>
+
+        <!-- ========== 常用工具 ========== -->
+        <h2 class="section-title">常用工具</h2>
+        <div class="card-grid">
+            <a href="tools/latex-render/index.html" class="nav-card">
+                <div class="card-icon" id="icon-tex"></div>
+                <div class="card-title">LaTeX 实时渲染</div>
+                <div class="card-desc">实时预览，SVG/PNG/JPG 导出，常用符号查找表</div>
+            </a>
+            <a href="tools/base-converter/index.html" class="nav-card">
+                <div class="card-icon" id="icon-binary"></div>
+                <div class="card-title">进制转换</div>
+                <div class="card-desc">二/八/十/十六进制快速互转，支持小数与浮点数</div>
+            </a>
+            <a href="tools/complement-code/index.html" class="nav-card">
+                <div class="card-icon" id="icon-complement"></div>
+                <div class="card-title">反码补码转换</div>
+                <div class="card-desc">原码、反码、补码互转，支持自定义位宽</div>
+            </a>
+            <a href="tools/gaussian/index.html" class="nav-card">
+                <div class="card-icon" id="icon-gaussian"></div>
+                <div class="card-title">正态分布置信区间</div>
+                <div class="card-desc">拖动区间实时计算正态分布概率与阴影</div>
+            </a>
+            <a href="tools/random-gen/index.html" class="nav-card">
+                <div class="card-icon" id="icon-dice"></div>
+                <div class="card-title">随机数生成</div>
+                <div class="card-desc">范围随机数批量生成卡片，附摇骰子动画</div>
+            </a>
+        </div>
 
         <!-- ========== 学术分享 ========== -->
         <h2 class="section-title">学术分享</h2>
@@ -210,9 +314,92 @@
         document.getElementById('icon-ntf').innerHTML = Icons.ntf;
         document.getElementById('icon-tex').innerHTML = Icons.tex;
         document.getElementById('icon-calculator').innerHTML = Icons.calculator;
+        document.getElementById('icon-wire').innerHTML = Icons.wire;
+        document.getElementById('icon-lsq').innerHTML = Icons.lsq;
+        document.getElementById('icon-dice').innerHTML = Icons.dice;
         document.getElementById('icon-book').innerHTML = Icons.book;
         document.getElementById('icon-links').innerHTML = Icons.links;
         document.getElementById('icon-game').innerHTML = Icons.game;
+    </script>
+    <script>
+        /* ========== 站内功能搜索：标题/描述/补充关键词实时过滤 ==========
+           匹配文本 = 卡片文字 + SEARCH_KEYS 中按 href 前缀补充的中英文关键词 */
+        var SEARCH_KEYS = {
+            'tools/bandgap/': '带隙 基准 电压 vbe trim bandgap 温漂',
+            'tools/current-mirror/': '电流镜 失配 mirror mismatch mos 蒙特卡洛',
+            'tools/noise-calc/': '噪声 热噪声 散粒 闪烁 noise 运放 放大器',
+            'tools/power-electronics/': '电力电子 buck boost 升降压 反激 flyback llc dsd 电感 纹波 dcm ccm 占空比 开关电源 拓扑',
+            'tools/bode-plot/': 'bode 波特图 零极点 频响 相位 裕度 补偿',
+            'tools/miller-comp/': 'miller 密勒 补偿 两级运放 极点分裂 相位裕度 零点',
+            'tools/filter-design/': '滤波器 filter rc 低通 高通 带通 带阻 陷波 sallen 有源',
+            'tools/ntf-plot/': 'ntf 噪声整形 sigma delta 调制 频谱 量化',
+            'tools/calculator/': '计算器 表达式 三角 对数 阶乘 calculator',
+            'tools/least-squares/': '最小二乘 拟合 线性 回归 fit 直线',
+            'tools/layout-match/': '版图 失配 梯度 匹配 layout inl dnl 阵列',
+            'tools/wire-res/': '版图 寄生 阻抗 电阻 走线 方块 wire ir 压降',
+            'tools/latex-render/': 'latex 公式 渲染 tex svg 导出 符号',
+            'tools/base-converter/': '进制 二进制 八进制 十六进制 hex bin oct dec 转换',
+            'tools/complement-code/': '原码 反码 补码 位宽 有符号',
+            'tools/gaussian/': '正态 高斯 分布 概率 置信区间 gaussian',
+            'tools/random-gen/': '随机数 骰子 随机 random dice 抽取',
+            'blog/': '论文 博客 笔记 blog paper 分享',
+            'links/': '链接 导航 资源 网站 links 友链',
+            'games/': '游戏 小游戏 休闲 game'
+        };
+        (function initSearch() {
+            var input = document.getElementById('siteSearch');
+            var clearBtn = document.getElementById('searchClear');
+            var emptyTip = document.getElementById('searchEmpty');
+            var cards = Array.prototype.slice.call(document.querySelectorAll('.nav-card'));
+            /* 预生成检索文本（标题+描述+补充关键词），小写化 */
+            cards.forEach(function (card) {
+                var href = card.getAttribute('href') || '';
+                var extra = '';
+                Object.keys(SEARCH_KEYS).forEach(function (prefix) {
+                    if (href.indexOf(prefix) === 0) extra = SEARCH_KEYS[prefix];
+                });
+                card._haystack = (card.textContent + ' ' + extra).toLowerCase();
+            });
+            function doSearch() {
+                var q = input.value.trim().toLowerCase();
+                clearBtn.style.display = q ? '' : 'none';
+                var anyVisible = false;
+                document.querySelectorAll('.card-grid').forEach(function (grid) {
+                    var gridVisible = false;
+                    grid.querySelectorAll('.nav-card').forEach(function (card) {
+                        var show = !q || card._haystack.indexOf(q) !== -1;
+                        card.style.display = show ? '' : 'none';
+                        if (show) gridVisible = true;
+                    });
+                    /* 整组无可见卡片时，联动隐藏分组标题与其前的分隔线 */
+                    var title = grid.previousElementSibling;
+                    if (title && title.classList.contains('section-title')) {
+                        title.style.display = gridVisible ? '' : 'none';
+                        var divider = title.previousElementSibling;
+                        if (divider && divider.classList.contains('divider-sketch')) {
+                            divider.style.display = gridVisible ? '' : 'none';
+                        }
+                    }
+                    if (gridVisible) anyVisible = true;
+                });
+                emptyTip.style.display = (q && !anyVisible) ? '' : 'none';
+            }
+            input.addEventListener('input', doSearch);
+            clearBtn.addEventListener('click', function () {
+                input.value = '';
+                doSearch();
+                input.focus();
+            });
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') { input.value = ''; doSearch(); return; }
+                if (e.key === 'Enter' && input.value.trim()) {
+                    /* 回车直达第一个可见结果 */
+                    for (var i = 0; i < cards.length; i++) {
+                        if (cards[i].style.display !== 'none') { location.href = cards[i].href; return; }
+                    }
+                }
+            });
+        })();
     </script>
 </body>
 </html>

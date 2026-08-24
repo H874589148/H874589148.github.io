@@ -44,6 +44,15 @@
                         <span class="duty-val" id="dutyVal">50%</span>
                     </div>
                 </div>
+                <div class="field" id="modeField">
+                    <label for="modeSel">工作模式（Buck）</label>
+                    <select id="modeSel">
+                        <option value="auto" selected>自动（按负载判定）</option>
+                        <option value="ccm">强制 CCM</option>
+                        <option value="dcm">强制 DCM</option>
+                    </select>
+                    <p class="hint" id="modeHint"></p>
+                </div>
                 <div class="field">
                     <label for="vin">输入电压 V<sub>in</sub></label>
                     <div style="display:flex;align-items:center;gap:6px;">
@@ -55,7 +64,10 @@
                     <label for="iLoad">负载电流 I<sub>L</sub></label>
                     <div style="display:flex;align-items:center;gap:6px;">
                         <input type="number" id="iLoad" value="2" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">A</span>
+                        <select id="iLoadUnit">
+                            <option value="A" selected>A</option>
+                            <option value="mA">mA</option>
+                        </select>
                     </div>
                 </div>
                 <div class="field">
@@ -119,12 +131,19 @@
 
             <!-- 波形图区 -->
             <div class="pe-charts">
-                <div class="topo-desc paper-card" id="topoDesc"></div>
+                <div class="topo-desc paper-card">
+                    <div class="topo-fig" id="topoFig"></div>
+                    <div id="topoDescText"></div>
+                </div>
 
                 <!-- 波形 Canvas -->
                 <div class="chart-container" id="waveArea">
                     <div class="chart-label" id="waveTitle">波形</div>
                     <canvas id="waveCanvas" width="700" height="480"></canvas>
+                </div>
+
+                <div class="info-box" style="margin-top:var(--space-md);">
+                    <p><strong>模型说明：</strong>V<sub>out</sub> 纹波由输出侧电流（Buck/DSD 为电感电流，Boost/Buck-Boost 为二极管电流，Flyback 为二次侧电流）对输出电容实时积分得到，属纯电容纹波模型，忽略电容 ESR/ESL；Buck 断流期（DCM）开关节点画为 V<sub>out</sub> 平台，忽略寄生振铃；强制 CCM 假设同步整流；拓扑图为静态示意，不随参数变化。</p>
                 </div>
             </div>
         </div>

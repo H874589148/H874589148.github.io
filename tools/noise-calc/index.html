@@ -316,7 +316,7 @@
                 <h3 class="amp-h">器件参数（g<sub>m</sub> = 2I<sub>D</sub>/V<sub>ov</sub> 自动换算）</h3>
                 <div class="tool-row">
                     <div class="field">
-                        <label for="ampId1">输入对管 I<sub>D1</sub>（每管）</label>
+                        <label for="ampId1">输入对管 M1/M2 I<sub>D1</sub>（每管）</label>
                         <div class="input-unit-row"><input type="number" id="ampId1" value="50" step="any"><span class="unit">µA</span></div>
                     </div>
                     <div class="field">
@@ -334,7 +334,7 @@
                 </div>
                 <div class="tool-row">
                     <div class="field">
-                        <label for="ampIdL">负载管 I<sub>DL</sub>（每管）</label>
+                        <label for="ampIdL">负载管 M3/M4 I<sub>DL</sub>（每管）</label>
                         <div class="input-unit-row"><input type="number" id="ampIdL" value="50" step="any"><span class="unit">µA</span></div>
                     </div>
                     <div class="field">
@@ -352,7 +352,7 @@
                 </div>
                 <div class="tool-row" id="foldRow" style="display:none;">
                     <div class="field">
-                        <label for="ampIdF">折叠电流源管 I<sub>DF</sub>（每管）</label>
+                        <label for="ampIdF">折叠电流源管 M7/M8 I<sub>DF</sub>（每管）</label>
                         <div class="input-unit-row"><input type="number" id="ampIdF" value="100" step="any"><span class="unit">µA</span></div>
                     </div>
                     <div class="field">
@@ -389,7 +389,7 @@
                 <p><strong>模型假设（一阶等效输入模型）：</strong></p>
                 <ul>
                     <li>差分两管噪声功率叠加（×2）；负载/折叠管按 (g<sub>m</sub>/g<sub>m1</sub>)² 折算到输入。</li>
-                    <li>cascode 管噪声贡献忽略（源极简并近似）；失配、版图寄生与栅电阻噪声不计。</li>
+                    <li>cascode 管噪声贡献忽略（源极简并近似；折叠式中对应 M5/M6）；失配、版图寄生与栅电阻噪声不计。</li>
                     <li>套筒式与五管 OTA 噪声形式相同（负载均为 PMOS 电流源管）。</li>
                     <li>积分噪声 V<sub>rms</sub> = √( v²<sub>n,th</sub>·(f<sub>H</sub>−f<sub>L</sub>) + A<sub>1/f</sub>·ln(f<sub>H</sub>/f<sub>L</sub>) )。</li>
                 </ul>

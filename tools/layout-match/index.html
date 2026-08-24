@@ -24,7 +24,7 @@
         <p class="tool-desc">用 M×N 网格模拟版图上的单元器件阵列：相同数字 = 同一器件的单元（0 = dummy 不参与），施加方向/径向浓度梯度，实时评估组间失配、质心偏移与 INL/DNL 线性度。</p>
 
         <div class="formula-box">
-            v(x,y) = 1 ± s·d(x,y)（单位器件归一化）｜
+            v(x,y) = 1 ± s·d(x,y)<sup>n</sup>（n=1 线性 / n=2 抛物，单位器件归一化）｜
             组间失配 Δ<sub>ij</sub> = (v&#772;<sub>i</sub> − v&#772;<sub>j</sub>)/v&#772;<sub>j</sub> × 100% ｜
             DNL<sub>i</sub> = step<sub>i</sub>/LSB − 1，INL<sub>k</sub> = ΣDNL
         </div>
@@ -69,8 +69,15 @@
                         </select>
                     </div>
                     <div class="field">
+                        <label for="gradOrder">梯度阶数</label>
+                        <select id="gradOrder">
+                            <option value="1" selected>一阶（线性）</option>
+                            <option value="2">二阶（抛物）</option>
+                        </select>
+                    </div>
+                    <div class="field">
                         <label for="gradSlope">梯度斜率 s</label>
-                        <div class="iu-row"><input type="number" id="gradSlope" value="0.5" step="any" min="0"><span class="unit">%/格</span></div>
+                        <div class="iu-row"><input type="number" id="gradSlope" value="0.5" step="any" min="0"><span class="unit" id="slopeUnit">%/格</span></div>
                     </div>
                     <div class="field" id="centerField" style="display:none;">
                         <button class="btn" id="centerBtn" type="button">点选中心点</button>

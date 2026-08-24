@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机数生成 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 随机数生成</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>随机数生成</h1>
+        <p class="tool-desc">在指定范围内批量生成随机整数并以卡片展示；或摇一颗骰子，约 3 秒后随机停下。</p>
+
+        <div class="tab-nav" id="rgTabs">
+            <button class="tab-btn active" data-tab="gen" type="button">随机数生成</button>
+            <button class="tab-btn" data-tab="dice" type="button">摇骰子</button>
+        </div>
+
+        <!-- Tab1：随机数生成 -->
+        <div class="tab-panel active" data-panel="gen">
+            <div class="paper-card rng-panel">
+                <div class="rng-params">
+                    <div class="rng-field">
+                        <label for="rMin">下限 min</label>
+                        <input type="number" id="rMin" value="1" step="1">
+                    </div>
+                    <div class="rng-field">
+                        <label for="rMax">上限 max</label>
+                        <input type="number" id="rMax" value="100" step="1">
+                    </div>
+                    <div class="rng-field">
+                        <label for="rNum">数量 n</label>
+                        <input type="number" id="rNum" value="10" min="1" max="200" step="1">
+                    </div>
+                    <div class="rng-field rng-check">
+                        <label for="rNoDup"><input type="checkbox" id="rNoDup"> 不重复</label>
+                    </div>
+                    <button class="btn" id="rGenBtn" type="button">生成</button>
+                </div>
+                <p class="hint" id="rHint"></p>
+                <div class="rng-cards" id="rCards"></div>
+                <p class="rng-stats" id="rStats"></p>
+            </div>
+            <div class="info-box" style="margin-top:var(--space-md);">
+                <p><strong>说明：</strong></p>
+                <ul>
+                    <li>范围为闭区间 [min, max] 内的整数（输入自动取整，需 min ≤ max）。</li>
+                    <li>默认允许重复（每次独立均匀抽取）；勾选「不重复」后为不放回抽取，此时要求 n ≤ max−min+1。</li>
+                    <li>数量上限 200；统计行给出个数 / 最小 / 最大 / 均值 / 总和。</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab2：摇骰子 -->
+        <div class="tab-panel" data-panel="dice">
+            <div class="paper-card dice-panel">
+                <div class="dice-wrap">
+                    <div class="dice-box" id="diceBox" title="点击摇骰子"></div>
+                    <p class="dice-res" id="diceRes">点击骰子或按钮开始</p>
+                    <button class="btn" id="diceBtn" type="button">摇一摇</button>
+                </div>
+            </div>
+            <div class="info-box" style="margin-top:var(--space-md);">
+                <p><strong>说明：</strong>标准 6 面骰，点击后面点快速翻滚并逐渐减速，约 2.5~3.5 秒（随机）后定格。</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

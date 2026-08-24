@@ -81,6 +81,15 @@ input[type="range"] {
 .chart-container { padding: var(--space-sm); }
 .chart-container canvas { width: 100%; height: auto; }
 
+.hint { font-size: 0.82rem; color: var(--color-text-muted); margin-top: 6px; min-height: 1.1em; }
+
+/* 拓扑示意图（手绘 SVG，风格同 filter-design） */
+.topo-fig { text-align: center; margin-bottom: var(--space-sm); }
+.topo-svg { width: 100%; max-width: 430px; height: auto; }
+.topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.topo-svg .td { fill: #4a4a4a; }
+.topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }
+
 @media (max-width: 900px) {
     .pe-layout { grid-template-columns: 1fr; }
     .pe-ctrl { position: static; }

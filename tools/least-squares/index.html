@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最小二乘拟合 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 最小二乘拟合</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>最小二乘拟合</h1>
+        <p class="tool-desc">输入一组 x、y 数据，实时最小二乘拟合直线 y = a·x + b 并绘制散点与拟合线；坐标范围默认按数据上下外扩 10%，可在此基础上手动调整。</p>
+
+        <div class="formula-box">
+            a = Σ(x−x̄)(y−ȳ) / Σ(x−x̄)² ｜ b = ȳ − a·x̄ ｜ R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub>
+        </div>
+
+        <div class="lsq-layout">
+            <aside class="lsq-params">
+                <div class="param-block paper-card">
+                    <h3>数据输入</h3>
+                    <div class="field">
+                        <label for="lsqX">x 数据（逗号 / 空格 / 换行分隔）</label>
+                        <textarea id="lsqX" rows="4">1, 2, 3, 4</textarea>
+                    </div>
+                    <div class="field">
+                        <label for="lsqY">y 数据（与 x 一一对应）</label>
+                        <textarea id="lsqY" rows="4">2, 4, 5, 4</textarea>
+                    </div>
+                    <p class="hint" id="lsqHint"></p>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>坐标范围</h3>
+                    <div class="lsq-range">
+                        <div class="field"><label for="xMin">x 最小</label><input type="number" id="xMin" step="any"></div>
+                        <div class="field"><label for="xMax">x 最大</label><input type="number" id="xMax" step="any"></div>
+                        <div class="field"><label for="yMin">y 最小</label><input type="number" id="yMin" step="any"></div>
+                        <div class="field"><label for="yMax">y 最大</label><input type="number" id="yMax" step="any"></div>
+                    </div>
+                    <button class="btn" id="lsqAuto" type="button">自动范围（外扩 10%）</button>
+                </div>
+
+                <div class="paper-card result-card">
+                    <h3>拟合结果</h3>
+                    <table class="lsq-table">
+                        <tbody>
+                            <tr><td>斜率 a</td><td id="lsqA">-</td></tr>
+                            <tr><td>截距 b</td><td id="lsqB">-</td></tr>
+                            <tr><td>决定系数 R²</td><td id="lsqR2">-</td></tr>
+                            <tr><td>数据点数 n</td><td id="lsqN">-</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </aside>
+
+            <div class="lsq-main">
+                <div class="chart-container">
+                    <div class="chart-label">散点与拟合直线（y = a·x + b）</div>
+                    <canvas id="lsqCanvas" width="700" height="440"></canvas>
+                </div>
+
+                <div class="info-box" style="margin-top:var(--space-md);">
+                    <p><strong>说明：</strong></p>
+                    <ul>
+                        <li>普通最小二乘（OLS）：最小化 Σ(yᵢ − a·xᵢ − b)²，闭式解 a = Σ(x−x̄)(y−ȳ)/Σ(x−x̄)²、b = ȳ − a·x̄。</li>
+                        <li>R² 为决定系数（1 − SS<sub>res</sub>/SS<sub>tot</sub>），越接近 1 拟合越好；y 全部相同时 SS<sub>tot</sub> = 0，R² 按 1 处理。</li>
+                        <li>修改任一坐标范围输入框即切换为手动范围；点「自动范围」恢复按数据外扩 10%（数据跨度为 0 时兜底 ±1）。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

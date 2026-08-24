@@ -23,11 +23,17 @@
         <h1>滤波器设计</h1>
         <p class="tool-desc">选择架构与目标频率，按版图密度给出最小面积 RC 取值（可直接修改任一器件值联动重算），实时绘制幅频曲线与电阻热噪声性能。</p>
 
+        <div class="tab-nav" id="fdTabs">
+            <button class="tab-btn active" data-tab="fwd" type="button">正向设计：频率 → 器件</button>
+            <button class="tab-btn" data-tab="rev" type="button">反向计算：器件 → 频率</button>
+        </div>
+
         <div class="formula-box">
             RC: f<sub>c</sub> = 1/(2πRC) ｜ 最小面积: R* = √(ρ<sub>R</sub>/(2πf<sub>c</sub>·ρ<sub>C</sub>)) ｜
             噪声: e<sub>n</sub> = √(4kTR)，V<sub>n,rms</sub> = √(∫4kTR·|H(f)|²df)
         </div>
 
+        <div class="tab-panel active" data-panel="fwd">
         <div class="fd-layout">
             <aside class="fd-params">
                 <div class="param-block paper-card">
@@ -140,6 +146,79 @@
                 </div>
             </div>
         </div>
+        </div><!-- /tab-panel fwd -->
+
+        <div class="tab-panel" data-panel="rev">
+            <div class="fd-layout">
+                <aside class="fd-params">
+                    <div class="param-block paper-card">
+                        <h3>架构选择</h3>
+                        <div class="field">
+                            <label for="rArch">滤波器架构</label>
+                            <select id="rArch">
+                                <option value="rc-lp" selected>一阶 RC 低通</option>
+                                <option value="rc-hp">一阶 RC 高通</option>
+                                <option value="sk-lp">Sallen-Key 低通（单位增益）</option>
+                                <option value="sk-hp">Sallen-Key 高通（单位增益）</option>
+                                <option value="rc-bp">无源 RC-CR 带通</option>
+                                <option value="mfb-bp">MFB 有源带通</option>
+                                <option value="notch">无源双 T 带阻（陷波）</option>
+                            </select>
+                        </div>
+                        <div class="topo-fig" id="rTopoFig"></div>
+                    </div>
+
+                    <div class="param-block paper-card">
+                        <h3>器件取值</h3>
+                        <p class="hint">按实际取值填写（支持 10k、2.2n 等工程记号），器件配比自由。</p>
+                        <div id="rCompFields"></div>
+                    </div>
+
+                    <div class="param-block paper-card">
+                        <h3>分析选项</h3>
+                        <div class="field">
+                            <label for="rTemp">温度 T</label>
+                            <div class="iu-row"><input type="number" id="rTemp" value="290" step="any" min="0"><span class="unit">K</span></div>
+                        </div>
+                        <div class="field">
+                            <label for="rFst">校验频率 f<sub>st</sub>（可选）</label>
+                            <div class="iu-row"><input type="text" id="rFst" value="" placeholder="留空跳过"><span class="unit">Hz</span></div>
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="fd-main">
+                    <div class="paper-card result-card">
+                        <h3>反算结果</h3>
+                        <div class="table-scroll">
+                            <table class="fd-table">
+                                <tbody id="rResultBody"></tbody>
+                            </table>
+                        </div>
+                        <p class="hint" id="rNoiseInfo"></p>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-label">幅频特性 |H(f)| (dB)</div>
+                        <canvas id="rMagCanvas" width="700" height="260"></canvas>
+                    </div>
+                    <div class="chart-container" style="margin-top:var(--space-md);">
+                        <div class="chart-label">输出噪声谱密度 √(Σ4kTRᵢ)·|H(f)|（nV/√Hz，对数轴）</div>
+                        <canvas id="rNoiseCanvas" width="700" height="220"></canvas>
+                    </div>
+
+                    <div class="info-box" style="margin-top:var(--space-md);">
+                        <p><strong>模型假设（反算通用式，不假设器件配比）：</strong></p>
+                        <ul>
+                            <li>RC 一阶：f<sub>c</sub> = 1/(2πR<sub>1</sub>C<sub>1</sub>)；SK 低通：H = 1/(1+jωC<sub>2</sub>(R<sub>1</sub>+R<sub>2</sub>)+(jω)²R<sub>1</sub>R<sub>2</sub>C<sub>1</sub>C<sub>2</sub>)；SK 高通：H = (jω)²R<sub>1</sub>R<sub>2</sub>C<sub>1</sub>C<sub>2</sub>/(1+jω(R<sub>1</sub>(C<sub>1</sub>+C<sub>2</sub>)+R<sub>2</sub>C<sub>2</sub>)+(jω)²R<sub>1</sub>R<sub>2</sub>C<sub>1</sub>C<sub>2</sub>)。</li>
+                            <li>MFB 带通：f<sub>0</sub> = √(G<sub>12</sub>/(R<sub>3</sub>C<sub>1</sub>C<sub>2</sub>))/2π（G<sub>12</sub> = 1/R<sub>1</sub>+1/R<sub>2</sub>），Q = ω<sub>0</sub>C<sub>1</sub>C<sub>2</sub>R<sub>3</sub>/(C<sub>1</sub>+C<sub>2</sub>)，中频增益 H<sub>0</sub> = −C<sub>1</sub>R<sub>3</sub>/(R<sub>1</sub>(C<sub>1</sub>+C<sub>2</sub>))；运放按理想（增益带宽 ∞）处理。</li>
+                            <li>RC-CR 带通忽略级间负载效应；双 T 带阻按标称配比（R<sub>3</sub>=R/2、C<sub>3</sub>=2C），Q 固定 1/4。</li>
+                            <li>噪声口径：e<sub>n</sub> = √(Σ4kTRᵢ)·|H(f)|，ΣRᵢ 为全部电阻之和（双 T 为 2.5R）；积分噪声为绘图频段（f<sub>ref</sub>/100 ~ f<sub>ref</sub>×100）内的数值积分。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
@@ -147,5 +226,6 @@
 
     <script src="../../js/common.js"></script>
     <script src="script.js"></script>
+    <script src="rev-calc.js"></script>
 </body>
 </html>
