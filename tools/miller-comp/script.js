@@ -10,6 +10,22 @@ IN_IDS.forEach(function(id){
     }
 });
 
+/* 参数单位切换：保持物理量不变，仅换算输入框读数（模式同 rzUnit） */
+function bindUnit(inputId, selId) {
+    var inp = document.getElementById(inputId);
+    var sel = document.getElementById(selId);
+    var factorPrev = parseFloat(sel.value);
+    sel.addEventListener('change', function () {
+        var v = parseFloat(inp.value);
+        var f = parseFloat(sel.value);
+        if (isFinite(v)) inp.value = parseFloat((v * factorPrev / f).toPrecision(6));
+        factorPrev = f;
+        update();
+    });
+}
+[['gm1', 'gm1Unit'], ['gm2', 'gm2Unit'], ['ro1', 'ro1Unit'], ['ro2', 'ro2Unit'], ['co2', 'co2Unit']]
+    .forEach(function (pr) { bindUnit(pr[0], pr[1]); });
+
 /* 调零电阻单位切换：保持物理阻值不变，换算滑块读数 */
 var rzSlider = document.getElementById('rz');
 var rzUnitSel = document.getElementById('rzUnit');
@@ -43,12 +59,12 @@ fPreset.addEventListener('change', function () {
 
 function getParams() {
     return {
-        gm1: parseFloat(document.getElementById('gm1').value) * 1e-3,   // mA/V -> S
-        ro1: parseFloat(document.getElementById('ro1').value) * 1e3,    // kΩ -> Ω
+        gm1: parseFloat(document.getElementById('gm1').value) * parseFloat(document.getElementById('gm1Unit').value),   // µA/V 或 mA/V -> S
+        ro1: parseFloat(document.getElementById('ro1').value) * parseFloat(document.getElementById('ro1Unit').value),   // kΩ 或 MΩ -> Ω
         co1: parseFloat(document.getElementById('co1').value) * 1e-12,  // pF -> F
-        gm2: parseFloat(document.getElementById('gm2').value) * 1e-3,
-        ro2: parseFloat(document.getElementById('ro2').value) * 1e3,
-        co2: parseFloat(document.getElementById('co2').value) * 1e-12,
+        gm2: parseFloat(document.getElementById('gm2').value) * parseFloat(document.getElementById('gm2Unit').value),
+        ro2: parseFloat(document.getElementById('ro2').value) * parseFloat(document.getElementById('ro2Unit').value),
+        co2: parseFloat(document.getElementById('co2').value) * parseFloat(document.getElementById('co2Unit').value),   // pF 或 fF -> F
         cc:  parseFloat(document.getElementById('cc').value) * 1e-12,
         rz:  parseFloat(rzSlider.value) * parseFloat(rzUnitSel.value)  // Ω（含单位换算）
     };

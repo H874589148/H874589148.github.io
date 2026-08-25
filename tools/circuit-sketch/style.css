@@ -1,0 +1,97 @@
+/* tools/circuit-sketch/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+/* ---- 工具栏 ---- */
+.ck-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+}
+.ck-toolbar .btn { font-size: 0.85rem; padding: 5px 10px; }
+.tb-sep { width: 1.5px; height: 22px; background: var(--color-border-sketch); margin: 0 4px; }
+.btn-danger { border-color: #c0583a; color: #c0583a; }
+.btn-danger:hover { background: #c0583a; color: #fff; }
+
+/* ---- 三栏布局 ---- */
+.ck-layout {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr) 210px;
+    gap: var(--space-md);
+    align-items: start;
+}
+.ck-palette h3, .ck-props h3 { margin-bottom: var(--space-xs); color: var(--color-primary); }
+.hint { font-size: 0.82rem; color: var(--color-text-muted); margin-top: var(--space-xs); }
+
+/* 器件面板 */
+#palList { display: flex; flex-direction: column; gap: 6px; margin-top: var(--space-sm); }
+.pal-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border: 1.5px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    background: var(--color-card-bg);
+    cursor: grab;
+    user-select: none;
+}
+.pal-item:hover { border-color: var(--color-primary); background: rgba(58,90,140,0.05); }
+.pal-item svg { flex-shrink: 0; }
+.pal-item span { font-size: 0.85rem; color: var(--color-text); }
+
+/* 画布 */
+.chart-label {
+    font-family: var(--font-hand);
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+#ckStatus { font-family: var(--font-mono); font-size: 0.82rem; color: var(--color-text-muted); margin-left: 10px; }
+.ck-canvas-wrap {
+    overflow: auto;
+    max-height: 72vh;
+    border: 1.5px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    background: #fffdf8;
+    cursor: crosshair;
+}
+#ckCanvas { display: block; user-select: none; }
+
+/* 属性栏 */
+.ck-props .field { margin-bottom: var(--space-sm); }
+.ck-props label { font-size: 0.9rem; color: var(--color-text-secondary); display: block; margin-bottom: 2px; }
+.iu-row { display: flex; align-items: center; gap: 6px; }
+#propColor { width: 44px; height: 30px; padding: 0 2px; }
+.ck-swatches { display: flex; gap: 4px; }
+.ck-swatch {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    border: 1.5px solid rgba(0,0,0,0.25);
+    cursor: pointer;
+}
+.ck-swatch:hover { transform: scale(1.15); }
+
+/* 拖放幻影 */
+#ckGhost {
+    position: fixed;
+    pointer-events: none;
+    opacity: 0.55;
+    z-index: 1000;
+    display: none;
+}
+
+/* 画布置中的提示 */
+.info-box { margin-top: var(--space-md); }
+.info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
+.info-box li { margin-bottom: var(--space-xs); font-size: 0.9rem; }
+
+@media (max-width: 980px) {
+    .ck-layout { grid-template-columns: 1fr; }
+    .ck-palette { order: 1; }
+    .ck-canvas-col { order: 2; }
+    .ck-props { order: 3; }
+    #palList { flex-direction: row; flex-wrap: wrap; }
+}

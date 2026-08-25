@@ -40,9 +40,43 @@
 .lm-actions .btn { flex: 1 1 45%; }
 
 /* ---- 网格编辑区 ---- */
-.grid-card { margin-bottom: var(--space-md); }
+/* 冻结：页面下滚查看结果表时网格吸附视口顶部（paper-card 自带背景可覆盖下方内容） */
+.grid-card { margin-bottom: var(--space-md); position: sticky; top: 12px; z-index: 5; }
 .grid-scroll { overflow-x: auto; padding: var(--space-xs); }
 .grid-wrap { display: inline-block; position: relative; }
+
+/* 网格 + 右侧操作列布局 */
+.grid-flex { display: flex; gap: var(--space-md); align-items: flex-start; }
+.grid-left { flex: 1; min-width: 0; }
+.grid-side { width: 132px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--space-md); }
+.side-group h4 { margin: 0 0 var(--space-xs); color: var(--color-primary); font-size: 0.95rem; }
+.side-actions { display: flex; flex-direction: column; gap: 6px; }
+.side-actions .btn { width: 100%; font-size: 0.85rem; padding: 6px 4px; }
+
+/* 数字卡（组号填充） */
+.num-cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.num-card {
+    width: 34px;
+    height: 34px;
+    border: 2px solid currentColor;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: grab;
+    user-select: none;
+    background: var(--color-card-bg);
+    transition: transform 0.08s, box-shadow 0.08s;
+}
+.num-card:hover { transform: scale(1.1); }
+.num-card.sel { box-shadow: 0 0 0 3px var(--color-accent); transform: scale(1.1); }
+.num-card.nc-dummy {
+    border-style: dashed;
+    background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,0.03) 4px, rgba(0,0,0,0.03) 8px);
+}
 
 #gridTable { border-collapse: collapse; }
 #gridTable td {
@@ -119,4 +153,11 @@
 
 @media (max-width: 860px) {
     .lm-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+    .grid-flex { flex-direction: column; }
+    .grid-side { width: 100%; }
+    .side-actions { flex-direction: row; flex-wrap: wrap; }
+    .side-actions .btn { width: auto; flex: 1 1 45%; }
 }

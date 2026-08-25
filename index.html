@@ -162,11 +162,6 @@
                 <div class="card-title">噪声快速计算</div>
                 <div class="card-desc">热噪声、散粒噪声、闪烁噪声参数计算</div>
             </a>
-            <a href="tools/power-electronics/index.html" class="nav-card">
-                <div class="card-icon" id="icon-power"></div>
-                <div class="card-title">电力电子波形</div>
-                <div class="card-desc">不同拓扑与占空比下的工作波形实时绘制</div>
-            </a>
             <a href="tools/bode-plot/index.html" class="nav-card">
                 <div class="card-icon" id="icon-bode"></div>
                 <div class="card-title">零极点 Bode 图</div>
@@ -187,15 +182,15 @@
                 <div class="card-title">NTF 绘制</div>
                 <div class="card-desc">z 域系数输入，|NTF|² 频谱与带内积分噪声</div>
             </a>
-            <a href="tools/calculator/index.html" class="nav-card">
-                <div class="card-icon" id="icon-calculator"></div>
-                <div class="card-title">科学计算器</div>
-                <div class="card-desc">表达式解析，三角/对数/阶乘，DEG/RAD 切换</div>
-            </a>
             <a href="tools/least-squares/index.html" class="nav-card">
                 <div class="card-icon" id="icon-lsq"></div>
                 <div class="card-title">最小二乘拟合</div>
                 <div class="card-desc">x/y 数据拟合 y=ax+b，附 R² 与可调坐标范围</div>
+            </a>
+            <a href="tools/calculator/index.html" class="nav-card">
+                <div class="card-icon" id="icon-calculator"></div>
+                <div class="card-title">科学计算器</div>
+                <div class="card-desc">表达式解析，三角/对数/阶乘，DEG/RAD 切换</div>
             </a>
         </div>
 
@@ -219,10 +214,25 @@
         <!-- ========== 常用工具 ========== -->
         <h2 class="section-title">常用工具</h2>
         <div class="card-grid">
+            <a href="tools/circuit-sketch/index.html" class="nav-card">
+                <div class="card-icon" id="icon-schematic"></div>
+                <div class="card-title">电路示意图编辑器</div>
+                <div class="card-desc">论文级原理图绘制：器件拖放、正交连线，SVG/PNG 导出</div>
+            </a>
+            <a href="tools/wavedrom/index.html" class="nav-card">
+                <div class="card-icon" id="icon-waveform"></div>
+                <div class="card-title">波形编辑器</div>
+                <div class="card-desc">WaveDrom 时序图：点击改电平、填字填色，SVG/PNG 导出</div>
+            </a>
             <a href="tools/latex-render/index.html" class="nav-card">
                 <div class="card-icon" id="icon-tex"></div>
                 <div class="card-title">LaTeX 实时渲染</div>
                 <div class="card-desc">实时预览，SVG/PNG/JPG 导出，常用符号查找表</div>
+            </a>
+            <a href="tools/power-electronics/index.html" class="nav-card">
+                <div class="card-icon" id="icon-power"></div>
+                <div class="card-title">电力电子波形</div>
+                <div class="card-desc">不同拓扑与占空比下的工作波形实时绘制</div>
             </a>
             <a href="tools/base-converter/index.html" class="nav-card">
                 <div class="card-icon" id="icon-binary"></div>
@@ -316,6 +326,8 @@
         document.getElementById('icon-calculator').innerHTML = Icons.calculator;
         document.getElementById('icon-wire').innerHTML = Icons.wire;
         document.getElementById('icon-lsq').innerHTML = Icons.lsq;
+                document.getElementById('icon-schematic').innerHTML = Icons.schematic;
+                document.getElementById('icon-waveform').innerHTML = Icons.waveform;
         document.getElementById('icon-dice').innerHTML = Icons.dice;
         document.getElementById('icon-book').innerHTML = Icons.book;
         document.getElementById('icon-links').innerHTML = Icons.links;
@@ -342,6 +354,8 @@
             'tools/complement-code/': '原码 反码 补码 位宽 有符号',
             'tools/gaussian/': '正态 高斯 分布 概率 置信区间 gaussian',
             'tools/random-gen/': '随机数 骰子 随机 random dice 抽取',
+            'tools/circuit-sketch/': '电路 示意图 原理图 schematic 编辑器 绘图 visio 运放 连线 论文',
+            'tools/wavedrom/': '波形 时序 wavedrom 数字 时钟 编辑器 timing 填色',
             'blog/': '论文 博客 笔记 blog paper 分享',
             'links/': '链接 导航 资源 网站 links 友链',
             'games/': '游戏 小游戏 休闲 game'

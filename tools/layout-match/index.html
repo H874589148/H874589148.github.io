@@ -85,28 +85,39 @@
                     </div>
                 </div>
 
-                <div class="param-block paper-card">
-                    <h3>快捷填充</h3>
-                    <div class="lm-actions">
-                        <button class="btn" id="fillSame" type="button">全填 1</button>
-                        <button class="btn" id="fillInter" type="button">插指 ABAB</button>
-                        <button class="btn" id="fillCC" type="button">共质心对称</button>
-                        <button class="btn" id="fillRand" type="button">随机填充</button>
-                        <button class="btn" id="fillClear" type="button">清空</button>
-                    </div>
-                </div>
             </aside>
 
             <div class="lm-main">
                 <div class="paper-card grid-card">
-                    <div class="chart-label">版图网格（点击格子循环改组号；格底色 = 归一化浓度，暖色偏高、冷色偏低）</div>
-                    <div class="grid-scroll">
-                        <div class="grid-wrap" id="gridWrap">
-                            <table id="gridTable"></table>
-                            <div class="center-dot" id="centerDot" style="display:none;"></div>
+                    <div class="chart-label">版图网格（拖拽数字卡或点击格子填充；格底色 = 归一化浓度，暖色偏高、冷色偏低）</div>
+                    <div class="grid-flex">
+                        <div class="grid-left">
+                            <div class="grid-scroll">
+                                <div class="grid-wrap" id="gridWrap">
+                                    <table id="gridTable"></table>
+                                    <div class="center-dot" id="centerDot" style="display:none;"></div>
+                                </div>
+                            </div>
+                            <p class="grid-info" id="gridInfo"></p>
+                        </div>
+                        <div class="grid-side">
+                            <div class="side-group">
+                                <h4>组号填充</h4>
+                                <div class="num-cards" id="numCards"></div>
+                                <p class="hint">拖拽到格子，或点选后连点格子（Esc 取消）</p>
+                            </div>
+                            <div class="side-group">
+                                <h4>快捷填充</h4>
+                                <div class="side-actions">
+                                    <button class="btn" id="fillSame" type="button">全填 1</button>
+                                    <button class="btn" id="fillInter" type="button">插指 ABAB</button>
+                                    <button class="btn" id="fillCC" type="button">共质心对称</button>
+                                    <button class="btn" id="fillRand" type="button">随机填充</button>
+                                    <button class="btn" id="fillClear" type="button">清空</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <p class="grid-info" id="gridInfo"></p>
                 </div>
 
                 <div class="paper-card result-card">

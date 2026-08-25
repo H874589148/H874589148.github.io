@@ -53,6 +53,27 @@
                     <button class="btn" id="lsqAuto" type="button">自动范围（外扩 10%）</button>
                 </div>
 
+                <div class="param-block paper-card">
+                    <h3>图表标注</h3>
+                    <div class="field">
+                        <label for="lsqTitle">图表标题</label>
+                        <input type="text" id="lsqTitle" placeholder="如：Vout–Vin 传输特性">
+                    </div>
+                    <div class="field">
+                        <label for="lsqXLabel">x 轴标题 / 单位</label>
+                        <input type="text" id="lsqXLabel" placeholder="如：Vin (V)">
+                    </div>
+                    <div class="field">
+                        <label for="lsqYLabel">y 轴标题 / 单位</label>
+                        <input type="text" id="lsqYLabel" placeholder="如：Vout (V)">
+                    </div>
+                    <div class="field">
+                        <label for="lsqShowCoord" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="checkbox" id="lsqShowCoord"> 显示数据点坐标（可拖动标签）
+                        </label>
+                    </div>
+                </div>
+
                 <div class="paper-card result-card">
                     <h3>拟合结果</h3>
                     <table class="lsq-table">
@@ -78,6 +99,7 @@
                         <li>普通最小二乘（OLS）：最小化 Σ(yᵢ − a·xᵢ − b)²，闭式解 a = Σ(x−x̄)(y−ȳ)/Σ(x−x̄)²、b = ȳ − a·x̄。</li>
                         <li>R² 为决定系数（1 − SS<sub>res</sub>/SS<sub>tot</sub>），越接近 1 拟合越好；y 全部相同时 SS<sub>tot</sub> = 0，R² 按 1 处理。</li>
                         <li>修改任一坐标范围输入框即切换为手动范围；点「自动范围」恢复按数据外扩 10%（数据跨度为 0 时兜底 ±1）。</li>
+                        <li>勾选「显示数据点坐标」后每个散点旁标注 (x, y)（工程记号），可用鼠标拖动标签调整位置，标签位置按数据点序号保留。</li>
                     </ul>
                 </div>
             </div>

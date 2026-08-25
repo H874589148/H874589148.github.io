@@ -67,13 +67,24 @@
         <div class="tab-panel" data-panel="dice">
             <div class="paper-card dice-panel">
                 <div class="dice-wrap">
+                    <div class="dice-ctrl">
+                        <label for="diceCount">骰子数量</label>
+                        <select id="diceCount">
+                            <option value="1" selected>1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                        </select>
+                    </div>
                     <div class="dice-box" id="diceBox" title="点击摇骰子"></div>
                     <p class="dice-res" id="diceRes">点击骰子或按钮开始</p>
                     <button class="btn" id="diceBtn" type="button">摇一摇</button>
                 </div>
             </div>
             <div class="info-box" style="margin-top:var(--space-md);">
-                <p><strong>说明：</strong>标准 6 面骰，点击后面点快速翻滚并逐渐减速，约 2.5~3.5 秒（随机）后定格。</p>
+                <p><strong>说明：</strong>标准 6 面骰，数量可选 1~6 颗；点击后面点快速翻滚并逐渐减速，约 2.5~3.5 秒（随机）后同时定格，多颗时附总和。</p>
             </div>
         </div>
     </main>

@@ -4,10 +4,14 @@
 
 var le = {};
 ['lsqX', 'lsqY', 'lsqHint', 'xMin', 'xMax', 'yMin', 'yMax', 'lsqAuto',
- 'lsqA', 'lsqB', 'lsqR2', 'lsqN', 'lsqCanvas']
+ 'lsqA', 'lsqB', 'lsqR2', 'lsqN', 'lsqCanvas',
+ 'lsqTitle', 'lsqXLabel', 'lsqYLabel', 'lsqShowCoord']
     .forEach(function (id) { le[id] = document.getElementById(id); });
 
 var autoRange = true;   // 范围框被手动修改 → 转手动；「自动范围」按钮恢复
+var labelPos = [];      // 每个数据点的坐标标签像素偏移 {dx,dy}（相对散点锚点）
+var labelRects = [];    // 本次绘制的标签屏幕矩形（拖拽命中检测）
+var labelAnchors = [];  // 本次绘制的散点屏幕坐标
 
 /* 解析数据文本：逗号 / 分号 / 顿号 / 空格 / 换行分隔，无法解析的 token 计数跳过 */
 function parseSeries(txt) {
@@ -31,6 +35,8 @@ function clearResults(msg) {
     le.lsqB.textContent = '-';
     le.lsqR2.textContent = '-';
     le.lsqN.textContent = '-';
+    labelRects = [];
+    labelAnchors = [];
     var canvas = le.lsqCanvas;
     var ctx = canvas.getContext('2d');
     ctx.save();
@@ -60,6 +66,9 @@ function update() {
     }
     var n = xs.length;
     if (n < 2) return clearResults(warn + '至少需要 2 组数据点');
+    /* 标签偏移按点序号保留：数据增多补默认、减少截断 */
+    if (labelPos.length > n) labelPos.length = n;
+    while (labelPos.length < n) labelPos.push({ dx: 8, dy: -10 });
 
     var mx = 0, my = 0, i;
     for (i = 0; i < n; i++) { mx += xs[i]; my += ys[i]; }
@@ -114,7 +123,11 @@ function drawFit(xs, ys, a, b, r2, x0, x1, y0, y1) {
     var ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    var PAD = { top: 16, right: 20, bottom: 40, left: 64 };
+    var title = le.lsqTitle.value.trim();
+    var xLabel = le.lsqXLabel.value.trim();
+    var yLabel = le.lsqYLabel.value.trim();
+    /* PAD 随标注有无自适应：图标题占顶部、y 轴标题占左侧 */
+    var PAD = { top: title ? 40 : 16, right: 20, bottom: 40, left: yLabel ? 88 : 64 };
     var cw = w - PAD.left - PAD.right;
     var ch = h - PAD.top - PAD.bottom;
     ctx.fillStyle = '#fffcf7';
@@ -180,6 +193,48 @@ function drawFit(xs, ys, a, b, r2, x0, x1, y0, y1) {
     }
     ctx.restore();
 
+    /* 图表标题与轴标题（用户可填，含单位；y 轴标题竖排） */
+    if (title) {
+        ctx.font = 'bold 17px Patrick Hand, cursive';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#2c2c2c';
+        ctx.fillText(title, PAD.left + cw / 2, 25);
+    }
+    if (xLabel) {
+        ctx.font = '13px Patrick Hand, cursive';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#5a5a5a';
+        ctx.fillText(xLabel, PAD.left + cw / 2, PAD.top + ch + 34);
+    }
+    if (yLabel) {
+        ctx.save();
+        ctx.translate(16, PAD.top + ch / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.font = '13px Patrick Hand, cursive';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#5a5a5a';
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+    }
+
+    /* 散点屏幕锚点 + 可拖动的坐标标签（clip 之外，允许标签出绘图框） */
+    labelAnchors = [];
+    labelRects = [];
+    for (i = 0; i < xs.length; i++) labelAnchors.push({ x: xPos(xs[i]), y: yPos(ys[i]) });
+    if (le.lsqShowCoord.checked) {
+        ctx.font = '11px Fira Code, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#5a5a5a';
+        for (i = 0; i < xs.length; i++) {
+            var lp = labelPos[i];
+            var txt = '(' + formatEngineering(xs[i]) + ', ' + formatEngineering(ys[i]) + ')';
+            var px = labelAnchors[i].x + lp.dx, py = labelAnchors[i].y + lp.dy;
+            ctx.fillText(txt, px, py);
+            var tw = ctx.measureText(txt).width;
+            labelRects.push({ x: px - 3, y: py - 11, w: tw + 6, h: 14 });
+        }
+    }
+
     /* 图内左上标注：表达式（系数工程记号，b 负值自动变号）与 R² */
     function sgnNum(val, lead) {
         var s = formatEngineering(Math.abs(val));
@@ -201,6 +256,43 @@ function drawFit(xs, ys, a, b, r2, x0, x1, y0, y1) {
 ['xMin', 'xMax', 'yMin', 'yMax'].forEach(function (id) {
     le[id].addEventListener('input', function () { autoRange = false; update(); });
 });
+['lsqTitle', 'lsqXLabel', 'lsqYLabel'].forEach(function (id) {
+    le[id].addEventListener('input', update);
+});
+le.lsqShowCoord.addEventListener('change', update);
 le.lsqAuto.addEventListener('click', function () { autoRange = true; update(); });
+
+/* ---- 坐标标签拖拽：命中标签矩形后跟随鼠标（纯像素偏移） ---- */
+var dragLabel = -1;
+function hitLabel(mx, my) {
+    for (var i = labelRects.length - 1; i >= 0; i--) {
+        var r = labelRects[i];
+        if (mx >= r.x - 6 && mx <= r.x + r.w + 6 && my >= r.y - 6 && my <= r.y + r.h + 6) return i;
+    }
+    return -1;
+}
+le.lsqCanvas.addEventListener('mousedown', function (e) {
+    if (!le.lsqShowCoord.checked) return;
+    var rect = le.lsqCanvas.getBoundingClientRect();
+    var idx = hitLabel(e.clientX - rect.left, e.clientY - rect.top);
+    if (idx >= 0) { dragLabel = idx; e.preventDefault(); }
+});
+window.addEventListener('mousemove', function (e) {
+    if (dragLabel < 0) return;
+    var rect = le.lsqCanvas.getBoundingClientRect();
+    labelPos[dragLabel] = {
+        dx: e.clientX - rect.left - labelAnchors[dragLabel].x,
+        dy: e.clientY - rect.top - labelAnchors[dragLabel].y
+    };
+    update();
+});
+window.addEventListener('mouseup', function () { dragLabel = -1; });
+le.lsqCanvas.addEventListener('mousemove', function (e) {
+    if (dragLabel >= 0) { le.lsqCanvas.style.cursor = 'move'; return; }
+    if (!le.lsqShowCoord.checked) { le.lsqCanvas.style.cursor = ''; return; }
+    var rect = le.lsqCanvas.getBoundingClientRect();
+    le.lsqCanvas.style.cursor =
+        hitLabel(e.clientX - rect.left, e.clientY - rect.top) >= 0 ? 'move' : '';
+});
 
 update();

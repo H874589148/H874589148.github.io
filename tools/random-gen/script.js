@@ -3,7 +3,7 @@
 
 var el = {};
 ['rMin', 'rMax', 'rNum', 'rNoDup', 'rGenBtn', 'rHint', 'rCards', 'rStats',
- 'diceBox', 'diceBtn', 'diceRes']
+ 'diceBox', 'diceBtn', 'diceRes', 'diceCount']
     .forEach(function (id) { el[id] = document.getElementById(id); });
 
 /* ---- tab 切换 ---- */
@@ -105,34 +105,52 @@ var DICE_DOTS = {
     6: [[32, 32], [32, 60], [32, 88], [88, 32], [88, 60], [88, 88]]
 };
 
-function renderDice(face) {
+/* 单颗骰子 SVG（viewBox 120×120） */
+function diceSvg(face) {
     var dots = '';
     DICE_DOTS[face].forEach(function (p) {
         dots += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="9.5"/>';
     });
-    el.diceBox.innerHTML =
-        '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="dice-svg">' +
+    return '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="dice-svg">' +
         '<rect x="8" y="8" width="104" height="104" rx="18" class="dice-body"/>' + dots + '</svg>';
 }
+
+/* 渲染一排骰子；数量多时单颗自适应缩小 */
+function renderAll(faces) {
+    var sz = Math.min(180, Math.floor(560 / faces.length));
+    var html = '';
+    faces.forEach(function (f) {
+        html += '<div class="dice-slot" style="width:' + sz + 'px;height:' + sz + 'px;">' + diceSvg(f) + '</div>';
+    });
+    el.diceBox.innerHTML = html;
+}
+
+function diceCount() { return parseInt(el.diceCount.value, 10) || 1; }
 
 var rolling = false;
 function rollDice() {
     if (rolling) return;
     rolling = true;
     el.diceBtn.disabled = true;
+    el.diceCount.disabled = true;
     el.diceBox.classList.add('shaking');
     el.diceRes.textContent = '滚动中…';
 
+    var n = diceCount();
     var dur = 2500 + Math.random() * 1000;   // 总时长 2.5~3.5 s 随机
     var t0 = performance.now();
     var delay = 90;                          // 初始翻面间隔，末段指数增大（减速）
     (function tick() {
-        var face = randInt(1, 6);
-        renderDice(face);
+        var faces = [];
+        for (var i = 0; i < n; i++) faces.push(randInt(1, 6));
+        renderAll(faces);
         if (performance.now() - t0 >= dur) {
-            el.diceRes.textContent = '点数：' + face;
+            var sum = 0;
+            faces.forEach(function (f) { sum += f; });
+            el.diceRes.textContent = '点数：' + faces.join('　') + (n > 1 ? ' ｜ 总和 ' + sum : '');
             el.diceBox.classList.remove('shaking');
             el.diceBtn.disabled = false;
+            el.diceCount.disabled = false;
             rolling = false;
             return;
         }
@@ -143,7 +161,14 @@ function rollDice() {
 
 el.diceBtn.addEventListener('click', rollDice);
 el.diceBox.addEventListener('click', rollDice);
+el.diceCount.addEventListener('change', function () {
+    if (rolling) return;
+    var faces = [];
+    for (var i = 0; i < diceCount(); i++) faces.push(randInt(1, 6));
+    renderAll(faces);
+    el.diceRes.textContent = '点击骰子或按钮开始';
+});
 
 /* ---- 初始化 ---- */
 generate();
-renderDice(5);
+renderAll([5]);

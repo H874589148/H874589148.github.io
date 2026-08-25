@@ -15,7 +15,7 @@ var state = {
 var el = {};
 ['rows', 'cols', 'groups', 'gradDir', 'gradPol', 'gradOrder', 'gradSlope', 'slopeUnit',
  'centerField', 'centerBtn', 'centerInfo',
- 'gridTable', 'centerDot', 'gridInfo',
+ 'gridTable', 'centerDot', 'gridInfo', 'numCards',
  'statBody', 'centroidInfo', 'mmTable', 'mmHint', 'ratioBox',
  'inlOrder', 'inlSummary', 'inlBody'
 ].forEach(function (id) { el[id] = document.getElementById(id); });
@@ -147,7 +147,7 @@ function renderGrid(p, maxDev) {
 function renderStats(p, stats) {
     var html = '';
     if (stats.length === 0) {
-        html = '<tr><td colspan="6">请点击网格填入组号（0 = dummy 不参与统计）</td></tr>';
+        html = '<tr><td colspan="6">请拖拽数字卡或点击格子填入组号（0 = dummy 不参与统计）</td></tr>';
     } else {
         var ref = stats[0];
         stats.forEach(function (st) {
@@ -243,6 +243,7 @@ function renderInl(p, stats) {
 function update() {
     var p = getParams();
     ensureDims(p);
+    if (builtK !== p.K) buildNumCards(p.K);   // 组数变化时重建数字卡面板
 
     /* 中心点控件仅径向模式可用 */
     var isRadial = p.dir === 'radial';
@@ -278,6 +279,48 @@ function update() {
     renderInl(p, stats);
 }
 
+/* ---- 数字卡面板（组号填充：拖拽 / 点选双模式） ---- */
+var pickGroup = -1;      // 点选模式选中的组号（-1 = 未选中）
+var builtK = -1;         // 上次构建面板时的组数
+
+function buildNumCards(K) {
+    var html = '';
+    for (var g = 0; g <= K; g++) {
+        var color = g === 0 ? '#8a8a8a' : GROUP_COLORS[(g - 1) % GROUP_COLORS.length];
+        html += '<div class="num-card' + (g === 0 ? ' nc-dummy' : '') + '" draggable="true" data-g="' + g + '"' +
+                ' style="color:' + color + '" title="' + (g === 0 ? '0 = dummy（置空该格）' : '填入组 ' + g) + '">' + g + '</div>';
+    }
+    el.numCards.innerHTML = html;
+    builtK = K;
+    pickGroup = -1;
+}
+
+function setPick(g) {
+    pickGroup = g;
+    var cards = el.numCards.children;
+    for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.toggle('sel', +cards[i].getAttribute('data-g') === g);
+    }
+}
+
+el.numCards.addEventListener('dragstart', function (e) {
+    var card = e.target.closest('.num-card');
+    if (!card) return;
+    e.dataTransfer.setData('text/plain', card.getAttribute('data-g'));
+    e.dataTransfer.effectAllowed = 'copy';
+});
+
+el.numCards.addEventListener('click', function (e) {
+    var card = e.target.closest('.num-card');
+    if (!card) return;
+    var g = +card.getAttribute('data-g');
+    setPick(pickGroup === g ? -1 : g);   // 再点同一卡取消选中
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && pickGroup >= 0) setPick(-1);
+});
+
 /* ---- 快捷填充 ---- */
 function fillWith(fn) {
     var p = getParams();
@@ -301,19 +344,37 @@ document.getElementById('fillRand').addEventListener('click', function () {
 });
 document.getElementById('fillClear').addEventListener('click', function () { fillWith(function () { return 0; }); });
 
-/* ---- 网格点击：循环改组号 / 点选中心 ---- */
+/* ---- 网格点击：点选中心 / 数字卡点选填充 / 循环改组号（兜底） ---- */
 el.gridTable.addEventListener('click', function (e) {
     var td = e.target;
     if (td.tagName !== 'TD') return;
     var r = +td.getAttribute('data-r'), c = +td.getAttribute('data-c');
-    if (state.pickingCenter) {
+    if (state.pickingCenter) {              // 中心点选与填充互斥：优先响应中心选取
         state.center = { x: c + 0.5, y: r + 0.5 };
         state.pickingCenter = false;
         el.centerBtn.textContent = '点选中心点';
-    } else {
+    } else if (pickGroup >= 0) {            // 数字卡点选模式：直接填入选中组号
+        state.grid[r][c] = pickGroup;
+    } else {                                // 兜底：点击循环 0→K
         var p = getParams();
         state.grid[r][c] = (state.grid[r][c] + 1) % (p.K + 1);
     }
+    update();
+});
+
+/* 数字卡拖放填充 */
+el.gridTable.addEventListener('dragover', function (e) {
+    if (e.target.tagName === 'TD') { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
+});
+el.gridTable.addEventListener('drop', function (e) {
+    var td = e.target;
+    if (td.tagName !== 'TD') return;
+    e.preventDefault();
+    if (state.pickingCenter) return;        // 中心点选模式下忽略拖放
+    var g = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (isNaN(g)) return;
+    var p = getParams();
+    state.grid[+td.getAttribute('data-r')][+td.getAttribute('data-c')] = Math.max(0, Math.min(p.K, g));
     update();
 });
 

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电路示意图编辑器 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">常用工具 / 电路示意图编辑器</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>电路示意图编辑器</h1>
+        <p class="tool-desc">面向论文绘图的轻量原理图编辑器：标准直线符号、10px 网格吸附、端口吸附正交连线，一键导出论文级 SVG / PNG 矢量图。所有编辑自动保存在本地浏览器。</p>
+
+        <!-- 工具栏 -->
+        <div class="paper-card ck-toolbar">
+            <button class="btn btn-primary" id="toolSelect" type="button" title="选择/移动（Esc）">选择</button>
+            <button class="btn" id="toolWire" type="button" title="正交连线：点起点 → 点终点（W）">连线</button>
+            <span class="tb-sep"></span>
+            <button class="btn" id="undoBtn" type="button" title="撤销 (Ctrl+Z)">↩ 撤销</button>
+            <button class="btn" id="redoBtn" type="button" title="重做 (Ctrl+Y)">↪ 重做</button>
+            <span class="tb-sep"></span>
+            <button class="btn" id="copyBtn" type="button" title="复制 (Ctrl+C)">复制</button>
+            <button class="btn" id="pasteBtn" type="button" title="粘贴 (Ctrl+V)">粘贴</button>
+            <button class="btn" id="delBtn" type="button" title="删除 (Del)">删除</button>
+            <span class="tb-sep"></span>
+            <button class="btn" id="rotBtn" type="button" title="旋转 90° (R)">旋转</button>
+            <button class="btn" id="fhBtn" type="button" title="水平镜像 (H)">镜像↔</button>
+            <button class="btn" id="fvBtn" type="button" title="垂直镜像 (V)">镜像↕</button>
+            <span class="tb-sep"></span>
+            <button class="btn" id="alL" type="button" title="左对齐">左</button>
+            <button class="btn" id="alCX" type="button" title="水平居中对齐">中↔</button>
+            <button class="btn" id="alR" type="button" title="右对齐">右</button>
+            <button class="btn" id="alT" type="button" title="顶对齐">顶</button>
+            <button class="btn" id="alCY" type="button" title="垂直居中对齐">中↕</button>
+            <button class="btn" id="alB" type="button" title="底对齐">底</button>
+            <button class="btn" id="dsH" type="button" title="水平等间距（≥3 项）">均布↔</button>
+            <button class="btn" id="dsV" type="button" title="垂直等间距（≥3 项）">均布↕</button>
+            <span class="tb-sep"></span>
+            <button class="btn" id="grpBtn" type="button" title="成组 (Ctrl+G)">成组</button>
+            <button class="btn" id="ungrpBtn" type="button" title="解组 (Ctrl+Shift+G)">解组</button>
+            <span class="tb-sep"></span>
+            <button class="btn" id="zTop" type="button" title="置顶">置顶</button>
+            <button class="btn" id="zUp" type="button" title="上移一层">上移</button>
+            <button class="btn" id="zDown" type="button" title="下移一层">下移</button>
+            <button class="btn" id="zBottom" type="button" title="置底">置底</button>
+            <span class="tb-sep"></span>
+            <button class="btn btn-primary" id="expSvg" type="button" title="导出裁剪后的矢量 SVG">导出 SVG</button>
+            <button class="btn" id="expPng" type="button" title="导出 2x PNG">导出 PNG</button>
+            <button class="btn" id="expJson" type="button" title="导出 JSON 工程文件">存 JSON</button>
+            <button class="btn" id="impJson" type="button" title="导入 JSON 工程文件">读 JSON</button>
+            <input type="file" id="impFile" accept=".json,application/json" style="display:none;">
+            <button class="btn btn-danger" id="clearBtn" type="button" title="清空画布（需确认）">清空</button>
+        </div>
+
+        <div class="ck-layout">
+            <!-- 左：器件面板 -->
+            <aside class="paper-card ck-palette">
+                <h3>器件库</h3>
+                <p class="hint">拖到画布，或点击放到中心</p>
+                <div id="palList"></div>
+            </aside>
+
+            <!-- 中：画布 -->
+            <div class="ck-canvas-col">
+                <div class="paper-card ck-canvas-card">
+                    <div class="chart-label">画布（1600×1100，网格 10px）<span id="ckStatus"></span></div>
+                    <div class="ck-canvas-wrap" id="ckWrap">
+                        <svg id="ckCanvas" width="1600" height="1100" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <pattern id="ckGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+                                    <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#efe9dc" stroke-width="1"/>
+                                </pattern>
+                                <pattern id="ckGrid5" width="50" height="50" patternUnits="userSpaceOnUse">
+                                    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#e3dcc8" stroke-width="1"/>
+                                </pattern>
+                            </defs>
+                            <rect width="1600" height="1100" fill="#fffdf8"/>
+                            <rect width="1600" height="1100" fill="url(#ckGrid)"/>
+                            <rect width="1600" height="1100" fill="url(#ckGrid5)"/>
+                            <g id="layerMain"></g>
+                            <g id="layerOverlay"></g>
+                        </svg>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <p><strong>快捷键与操作：</strong></p>
+                    <ul>
+                        <li><strong>W</strong> 连线模式 / <strong>Esc</strong> 回选择模式或取消连线；连线时端点自动吸附 20px 内的器件端口（红圈提示），拐点自动走正交路径。</li>
+                        <li><strong>R</strong> 旋转 90°，<strong>H</strong>/<strong>V</strong> 水平/垂直镜像；<strong>Ctrl+C/V</strong> 复制粘贴，<strong>Del</strong> 删除，<strong>Ctrl+Z/Y</strong> 撤销重做。</li>
+                        <li><strong>Ctrl+G</strong> 成组 / <strong>Ctrl+Shift+G</strong> 解组；空白处拖拽 = 框选；Ctrl+单击 = 多选。</li>
+                        <li>选中连线后可直接<strong>拖动某一水平/垂直段</strong>平移（相邻段自动伸缩）；<strong>双击</strong>器件/功能块编辑文字标签。</li>
+                        <li>器件移动吸附 10px 网格；「对齐/均布」需选中 ≥2 / ≥3 项。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 右：属性栏 -->
+            <aside class="paper-card ck-props">
+                <h3>属性</h3>
+                <p class="hint" id="selInfo">未选中任何对象</p>
+                <div class="field">
+                    <label for="propWidth">线宽</label>
+                    <select id="propWidth">
+                        <option value="1">1 px</option>
+                        <option value="1.5" selected>1.5 px</option>
+                        <option value="2">2 px</option>
+                        <option value="3">3 px</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="propColor">颜色</label>
+                    <div class="iu-row">
+                        <input type="color" id="propColor" value="#1a1a1a">
+                        <div class="ck-swatches" id="ckSwatches"></div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="propDash">线型</label>
+                    <select id="propDash">
+                        <option value="" selected>实线</option>
+                        <option value="7 4">虚线</option>
+                        <option value="2 3">点线</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="propText">文字标签</label>
+                    <input type="text" id="propText" placeholder="双击器件也可编辑">
+                </div>
+                <p class="hint">修改即时作用于全部选中对象。</p>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

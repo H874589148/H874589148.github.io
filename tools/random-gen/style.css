@@ -75,8 +75,20 @@
     gap: var(--space-md);
 }
 
-.dice-box { width: 180px; height: 180px; cursor: pointer; }
-.dice-svg { width: 100%; height: 100%; }
+.dice-box {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    min-height: 120px;
+    cursor: pointer;
+}
+.dice-slot { flex: 0 0 auto; }
+.dice-ctrl { display: flex; align-items: center; gap: 8px; }
+.dice-ctrl label { font-size: 0.95rem; color: var(--color-text-secondary); }
+.dice-ctrl select { width: auto; }
+.dice-svg { width: 100%; height: 100%; display: block; }
 .dice-svg .dice-body {
     fill: #fffdf8;
     stroke: #4a4a4a;

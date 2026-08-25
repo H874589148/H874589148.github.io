@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>波形编辑器 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">常用工具 / 波形编辑器</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>波形编辑器（WaveDrom）</h1>
+        <p class="tool-desc">数字时序波形编辑器：左侧编辑 WaveJSON，右侧实时渲染；也可以直接在波形图上点击改电平、改数据块文字与颜色、双击重命名信号、右键插入/删除时间槽。</p>
+
+        <div class="paper-card wd-toolbar">
+            <button class="btn" id="addSig" type="button" title="末尾添加普通信号">+ 信号</button>
+            <button class="btn" id="addClk" type="button" title="末尾添加时钟信号">+ 时钟</button>
+            <button class="btn" id="insSlot" type="button" title="所有信号末尾插入一个时间槽">+ 时间槽</button>
+            <button class="btn" id="delSlot" type="button" title="所有信号末尾删除一个时间槽">− 时间槽</button>
+            <span class="tb-sep"></span>
+            <button class="btn btn-primary" id="expSvg" type="button">导出 SVG</button>
+            <button class="btn" id="expPng" type="button">导出 PNG</button>
+        </div>
+
+        <div class="wd-layout">
+            <div class="paper-card wd-editor">
+                <h3>WaveJSON 源码</h3>
+                <textarea id="wdJson" spellcheck="false"></textarea>
+                <p class="wd-err" id="wdErr"></p>
+            </div>
+            <div class="paper-card wd-view">
+                <div class="chart-label">波形预览（点击槽位切换 0→1→x→z→. ｜ 点击色块改文字/颜色 ｜ 双击名字重命名 ｜ 右键槽位插入/删除）</div>
+                <div class="wd-out" id="wdOut"></div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>说明：</strong></p>
+            <ul>
+                <li>本工具基于开源库 <a href="https://wavedrom.com" target="_blank" rel="noopener">WaveDrom</a>（MIT），库文件已本地化（js/vendor/wavedrom.min.js），加载失败时自动回退 CDN。</li>
+                <li>wave 字符串常用字符：<code>0/1</code> 电平、<code>.</code> 保持、<code>x</code> 不确定、<code>z</code> 高阻、<code>p/n</code> 时钟、<code>2~9</code> 数据块（配合 data 数组填文字）、<code>|</code> 时间标记分隔。</li>
+                <li>高级语法（edge 箭头、phase、period 等）可直接在左侧 JSON 手写，图形编辑与 JSON 实时双向同步。</li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- 数据槽编辑面板 -->
+    <div class="wd-pop" id="wdPanel" style="display:none;">
+        <h4>数据块</h4>
+        <div class="field">
+            <label for="wdPanelText">文字</label>
+            <input type="text" id="wdPanelText">
+        </div>
+        <div class="field">
+            <label for="wdPanelColor">颜色</label>
+            <select id="wdPanelColor"></select>
+        </div>
+        <div class="wd-pop-btns">
+            <button class="btn btn-primary" id="wdPanelOk" type="button">应用</button>
+            <button class="btn" id="wdPanelDel" type="button">删除此槽</button>
+        </div>
+    </div>
+
+    <!-- 右键菜单 -->
+    <div class="wd-pop wd-menu" id="wdMenu" style="display:none;">
+        <button class="wd-menu-item" id="wdMenuIns" type="button">在此槽前插入时间槽</button>
+        <button class="wd-menu-item" id="wdMenuDel" type="button">删除此时间槽</button>
+    </div>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/vendor/wavedrom.min.js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

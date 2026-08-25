@@ -1,0 +1,114 @@
+/* tools/wavedrom/style.css */
+.tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
+
+/* ---- 工具栏 ---- */
+.wd-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+}
+.wd-toolbar .btn { font-size: 0.85rem; padding: 5px 10px; }
+.tb-sep { width: 1.5px; height: 22px; background: var(--color-border-sketch); margin: 0 4px; }
+
+/* ---- 编辑器 + 预览 双栏 ---- */
+.wd-layout {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+    gap: var(--space-md);
+    align-items: stretch;
+    margin-bottom: var(--space-md);
+}
+.wd-editor h3 { margin-bottom: var(--space-xs); color: var(--color-primary); }
+#wdJson {
+    width: 100%;
+    min-height: 380px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    resize: vertical;
+    white-space: pre;
+}
+.wd-err {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: #c0583a;
+    min-height: 1.2em;
+    margin-top: 6px;
+    margin-bottom: 0;
+}
+
+.chart-label {
+    font-family: var(--font-hand);
+    font-size: 1.02rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+.wd-out {
+    position: relative;
+    overflow: auto;
+    max-height: 70vh;
+    padding: var(--space-xs);
+}
+.wd-out svg { display: block; }
+
+/* 透明热区层：与渲染 SVG 1:1 对齐 */
+.wd-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    cursor: pointer;
+}
+
+/* ---- 浮层：数据槽面板 / 右键菜单 ---- */
+.wd-pop {
+    position: fixed;
+    z-index: 1000;
+    background: var(--color-card-bg);
+    border: 1.5px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-sm) var(--space-md);
+    min-width: 190px;
+}
+.wd-pop h4 { margin: 0 0 var(--space-xs); color: var(--color-primary); font-size: 0.95rem; }
+.wd-pop .field { margin-bottom: var(--space-xs); }
+.wd-pop label { font-size: 0.85rem; color: var(--color-text-secondary); display: block; margin-bottom: 2px; }
+.wd-pop-btns { display: flex; gap: 6px; margin-top: var(--space-xs); }
+.wd-pop-btns .btn { font-size: 0.82rem; padding: 4px 8px; }
+
+.wd-menu { padding: 4px; min-width: 0; }
+.wd-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 6px 10px;
+    font-size: 0.88rem;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+.wd-menu-item:hover { background: rgba(58,90,140,0.10); }
+
+/* 颜色下拉选项色块提示（option 背景色） */
+#wdPanelColor { width: 100%; }
+
+.info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
+.info-box li { margin-bottom: var(--space-xs); font-size: 0.9rem; }
+.info-box code {
+    font-family: var(--font-mono);
+    background: var(--color-bg-paper);
+    border: 1px solid var(--color-border-sketch);
+    border-radius: 3px;
+    padding: 0 4px;
+}
+
+@media (max-width: 900px) {
+    .wd-layout { grid-template-columns: 1fr; }
+}
