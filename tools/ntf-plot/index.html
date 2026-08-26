@@ -31,6 +31,18 @@
         <div class="paper-card">
             <div class="tool-row">
                 <div class="field">
+                    <label for="ntfTpl">常见 NTF 模板（一键载入系数）</label>
+                    <select id="ntfTpl">
+                        <option value="" selected>自定义（手动输入系数）</option>
+                        <option value="ntf1">1 阶：(1−z⁻¹)</option>
+                        <option value="cifb2">2 阶 CIFB：(1−z⁻¹)²/(1−z⁻¹+0.5z⁻²)</option>
+                        <option value="cifb3">3 阶 CIFB：(1−z⁻¹)³/[(1−z⁻¹+0.5z⁻²)(1−0.5z⁻¹)]</option>
+                        <option value="crff3">3 阶 CRFF：(1−z⁻¹)³/(1−0.6z⁻¹)³</option>
+                    </select>
+                </div>
+            </div>
+            <div class="tool-row">
+                <div class="field">
                     <label for="coefB">分子系数 b（z⁻¹ 升幂，空格/逗号分隔）</label>
                     <input type="text" id="coefB" value="1 -2 1" spellcheck="false">
                 </div>
@@ -73,6 +85,13 @@
                         <option value="lin">线性</option>
                     </select>
                 </div>
+                <div class="field">
+                    <label for="xMode">频率轴</label>
+                    <select id="xMode">
+                        <option value="linear" selected>线性</option>
+                        <option value="log">对数</option>
+                    </select>
+                </div>
             </div>
             <p class="hint" id="msgLine"></p>
         </div>
@@ -105,7 +124,8 @@
                 <li>系数按 <strong>z⁻¹ 升幂</strong>排列（DSP 标准约定）。例：<code>1 -2 1</code> 表示 (1−z⁻¹)²；<code>1 -1 0.5</code> 表示 1 − z⁻¹ + 0.5z⁻²。</li>
                 <li>带内积分噪声功率 = 0 ~ f<sub>B</sub> 内 |NTF|² 的平均值，即量化噪声经整形后残留在信号带内的功率比例（相对平坦量化噪声归一化）。</li>
                 <li>Lee 准则（经验）：单比特 ΔΣ 调制器要求 max|NTF| ≲ 1.5（对应 |NTF|² ≈ 3.5 dB）。峰值扫描范围固定为 0 ~ f<sub>s</sub>/2，与显示范围无关。</li>
-                <li>频率轴为线性刻度，600 点；dB 模式显示下限 -120 dB。</li>
+                <li>频率轴线性/对数可切换（对数模式起点自动取 f<sub>max</sub>/10⁴）；600 点采样；dB 模式显示下限 -120 dB。</li>
+                <li>图上红圈标注峰值位置，并给出其相对信号带宽 f<sub>B</sub> 的带内/带外归属（NTF 峰值落在带内会恶化带内噪声）。模板系数为教学示例，极点均在单位圆内。</li>
             </ul>
         </div>
     </main>

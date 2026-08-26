@@ -6,6 +6,10 @@ var zeros = [];   // [{freq: Hz}]
 var poleCount = 0;
 var zeroCount = 0;
 
+/* 绘区边距（drawCanvas 与鼠标取点共用）与最近绘制频率范围 */
+var PLOT_PAD = { top: 16, right: 20, bottom: 36, left: 54 };
+var lastRange = { fStart: 1, fEnd: 1e8 };
+
 /* ========== 初始化 ========== */
 loadPreset('singlePole');
 
@@ -214,12 +218,22 @@ function drawBode() {
         phases.push(h.phase);
     });
 
+    // 零极点标记（曲线对应频率处：极点红 ×，零点蓝 ○）
+    var magMk = [], phMk = [];
+    poles.concat(zeros).forEach(function (it, idx) {
+        var kind = idx < poles.length ? 'pole' : 'zero';
+        var h = calcH(Math.max(it.freq, 1e-6));
+        magMk.push({ f: it.freq, y: h.mag, kind: kind });
+        phMk.push({ f: it.freq, y: h.phase, kind: kind });
+    });
+
     drawCanvas('magCanvas', freqs, mags, {
         color: '#3a5a8c',
         yLabel: 'dB',
         yUnit: 'dB',
         gridLines: [-40,-20,0,20,40,60,80],
-        zeroLine: 0
+        zeroLine: 0,
+        markers: magMk
     });
 
     drawCanvas('phaseCanvas', freqs, phases, {
@@ -227,8 +241,12 @@ function drawBode() {
         yLabel: '°',
         yUnit: '°',
         gridLines: [-180,-135,-90,-45,0,45,90],
-        zeroLine: -180
+        zeroLine: -180,
+        markers: phMk
     });
+
+    lastRange.fStart = freqs[0];
+    lastRange.fEnd = freqs[freqs.length - 1];
 
     // 计算裕度
     calcMargins(freqs, mags, phases);
@@ -245,7 +263,7 @@ function drawCanvas(canvasId, freqs, vals, opts) {
     var ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    var PAD = { top: 16, right: 20, bottom: 36, left: 54 };
+    var PAD = PLOT_PAD;
     var cw = w - PAD.left - PAD.right;
     var ch = h - PAD.top - PAD.bottom;
 
@@ -337,6 +355,32 @@ function drawCanvas(canvasId, freqs, vals, opts) {
         else ctx.lineTo(px, py);
     }
     ctx.stroke();
+
+    // 零极点标记：极点红 ×，零点蓝 ○ + 频率文字
+    if (opts.markers) {
+        opts.markers.forEach(function (mk) {
+            if (mk.f < freqs[0] || mk.f > freqs[freqs.length - 1]) return;
+            var mx = xPos(Math.max(mk.f, 1e-9));
+            var my = Math.max(PAD.top + 6, Math.min(PAD.top + ch - 6, yPos(mk.y)));
+            ctx.lineWidth = 2;
+            if (mk.kind === 'pole') {
+                ctx.strokeStyle = '#c0583a';
+                ctx.beginPath();
+                ctx.moveTo(mx - 5, my - 5); ctx.lineTo(mx + 5, my + 5);
+                ctx.moveTo(mx + 5, my - 5); ctx.lineTo(mx - 5, my + 5);
+                ctx.stroke();
+            } else {
+                ctx.strokeStyle = '#3a5a8c';
+                ctx.beginPath();
+                ctx.arc(mx, my, 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.fillStyle = mk.kind === 'pole' ? '#c0583a' : '#3a5a8c';
+            ctx.font = '10px Fira Code, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(fmtFreq(mk.f), mx, mk.kind === 'pole' ? my - 10 : my + 18);
+        });
+    }
 }
 
 function fmtFreq(f) {
@@ -500,3 +544,314 @@ function updatePresetInfo(name) {
 function hidePresetInfo() {
     document.getElementById('presetInfo').style.display = 'none';
 }
+
+/* ========== 传递函数表达式解析（s 多项式分式） ========== */
+/* 支持 s、s^2/s²/s³、科学计数法、+ - * / 与括号、隐式乘法（如 2e4*s、2(s+1)）；
+   不支持延迟项 e^(−sτ) 与超越函数（明确报错）。 */
+
+function tokenizeTF(src) {
+    var toks = [];
+    var i = 0;
+    while (i < src.length) {
+        var ch = src[i];
+        if (/\s/.test(ch)) { i++; continue; }
+        if (/[0-9.]/.test(ch)) {
+            var m = src.slice(i).match(/^[0-9]*\.?[0-9]+([eE][+-]?[0-9]+)?/);
+            if (!m) throw new Error('数字解析失败（位置 ' + (i + 1) + '）');
+            toks.push({ t: 'num', v: parseFloat(m[0]) });
+            i += m[0].length;
+            continue;
+        }
+        if (ch === 's' || ch === 'S') { toks.push({ t: 's' }); i++; continue; }
+        if (ch === 'e' || ch === 'E') {
+            throw new Error('检测到字母 e：仅支持 s 的多项式分式，不支持延迟项 e^(−sτ) 或自然常数 e');
+        }
+        if ('+-*/^()'.indexOf(ch) >= 0) { toks.push({ t: ch }); i++; continue; }
+        if (ch === '²') { toks.push({ t: '^' }); toks.push({ t: 'num', v: 2 }); i++; continue; }
+        if (ch === '³') { toks.push({ t: '^' }); toks.push({ t: 'num', v: 3 }); i++; continue; }
+        if (/[a-zA-Z]/.test(ch)) throw new Error('无法识别的符号「' + ch + '」：仅支持 s 的多项式分式，不支持延迟项/超越函数');
+        throw new Error('无法识别的字符「' + ch + '」');
+    }
+    return toks;
+}
+
+/* 多项式运算（系数升幂数组） */
+function pAdd(a, b) { var n = Math.max(a.length, b.length), r = []; for (var i = 0; i < n; i++) r.push((a[i] || 0) + (b[i] || 0)); return r; }
+function pSub(a, b) { var n = Math.max(a.length, b.length), r = []; for (var i = 0; i < n; i++) r.push((a[i] || 0) - (b[i] || 0)); return r; }
+function pMul(a, b) {
+    var r = [], i, j;
+    for (i = 0; i < a.length + b.length - 1; i++) r.push(0);
+    for (i = 0; i < a.length; i++) for (j = 0; j < b.length; j++) r[i + j] += a[i] * b[j];
+    return r;
+}
+function pScale(a, c) { return a.map(function (v) { return v * c; }); }
+function pPow(a, n) { var r = [1]; for (var i = 0; i < n; i++) r = pMul(r, a); return r; }
+
+/* 递归下降解析：expr → 升幂系数数组 */
+function parsePolyStr(str) {
+    var toks = tokenizeTF(str);
+    var pos = 0;
+    function peek() { return toks[pos]; }
+    function parseFactor() {
+        var tk = peek();
+        if (!tk) throw new Error('表达式不完整');
+        if (tk.t === '+') { pos++; return parseFactor(); }
+        if (tk.t === '-') { pos++; return pScale(parseFactor(), -1); }
+        var base;
+        if (tk.t === 'num') { pos++; base = [tk.v]; }
+        else if (tk.t === 's') { pos++; base = [0, 1]; }
+        else if (tk.t === '(') {
+            pos++;
+            base = parseExpr();
+            if (!peek() || peek().t !== ')') throw new Error('括号不匹配');
+            pos++;
+        } else throw new Error('此处应为数字、s 或括号');
+        if (peek() && peek().t === '^') {
+            pos++;
+            var e = peek();
+            if (!e || e.t !== 'num' || e.v !== Math.floor(e.v) || e.v < 0 || e.v > 8)
+                throw new Error('幂指数仅支持 0~8 的非负整数');
+            pos++;
+            base = pPow(base, e.v);
+        }
+        return base;
+    }
+    function parseTerm() {
+        var left = parseFactor();
+        while (peek()) {
+            var tk = peek();
+            if (tk.t === '*') { pos++; left = pMul(left, parseFactor()); }
+            else if (tk.t === '/') {
+                pos++;
+                var d = parseFactor();
+                if (d.length > 1 || d[0] === 0) throw new Error('除法仅支持除以常数；分母请整体写在最外层 / 右侧');
+                left = pScale(left, 1 / d[0]);
+            }
+            else if (tk.t === 'num' || tk.t === 's' || tk.t === '(') { left = pMul(left, parseFactor()); }  // 隐式乘法
+            else break;
+        }
+        return left;
+    }
+    function parseExpr() {
+        var left = parseTerm();
+        while (peek() && (peek().t === '+' || peek().t === '-')) {
+            var op = toks[pos++].t;
+            left = op === '+' ? pAdd(left, parseTerm()) : pSub(left, parseTerm());
+        }
+        return left;
+    }
+    var r = parseExpr();
+    if (pos < toks.length) throw new Error('表达式存在无法解析的剩余部分');
+    /* 去除高次零系数（含浮点尘埃） */
+    var cmax = 0;
+    r.forEach(function (v) { cmax = Math.max(cmax, Math.abs(v)); });
+    while (r.length > 1 && Math.abs(r[r.length - 1]) <= cmax * 1e-12) r.pop();
+    return r;
+}
+
+/* 按最外层 / 拆分为 分子/分母 两个多项式 */
+function parseTFExpr(src) {
+    var depth = 0, slash = -1;
+    for (var i = 0; i < src.length; i++) {
+        var ch = src[i];
+        if (ch === '(') depth++;
+        else if (ch === ')') { depth--; if (depth < 0) throw new Error('括号不匹配'); }
+        else if (ch === '/' && depth === 0) {
+            if (slash >= 0) throw new Error('仅支持一个最外层除号（分子 / 分母）');
+            slash = i;
+        }
+    }
+    if (depth !== 0) throw new Error('括号不匹配');
+    var num = parsePolyStr(slash >= 0 ? src.slice(0, slash) : src);
+    var den = slash >= 0 ? parsePolyStr(src.slice(slash + 1)) : [1];
+    if (den.length === 1 && den[0] === 0) throw new Error('分母不能为 0');
+    var nz = false;
+    num.forEach(function (v) { if (v !== 0) nz = true; });
+    if (!nz) throw new Error('分子不能为 0');
+    return { num: num, den: den };
+}
+
+/* 剥去原点因子（s^k）：返回 {co: 剩余升幂系数, n: 原点根个数} */
+function stripOrigin(co) {
+    var n = 0;
+    while (n < co.length - 1 && co[n] === 0) n++;
+    return { co: co.slice(n), n: n };
+}
+
+/* 综合除法降阶：升幂多项式 ÷ (s − r) */
+function deflateAsc(co, r) {
+    var rev = co.slice().reverse();
+    var q = [rev[0]];
+    for (var i = 1; i < rev.length - 1; i++) q.push(rev[i] + r * q[i - 1]);
+    return q.reverse();
+}
+
+/* 牛顿迭代求实根（多起点；失败返回 null） */
+function newtonRealRoot(co) {
+    function f(x) { var v = 0; for (var i = co.length - 1; i >= 0; i--) v = v * x + co[i]; return v; }
+    function df(x) { var v = 0; for (var i = co.length - 1; i >= 1; i--) v = v * x + i * co[i]; return v; }
+    var starts = [1, -1, 10, -10, 100, -100, 1e3, -1e3, 1e4, -1e4, 1e-2, -1e-2, 1e-4, -1e-4, 1e6, -1e6];
+    for (var s = 0; s < starts.length; s++) {
+        var x = starts[s];
+        for (var it = 0; it < 200; it++) {
+            var fv = f(x);
+            if (fv === 0) return x;
+            var dv = df(x);
+            if (dv === 0) break;
+            var nx = x - fv / dv;
+            if (!isFinite(nx)) break;
+            if (Math.abs(nx - x) <= 1e-12 * Math.max(1, Math.abs(nx))) {
+                if (Math.abs(f(nx)) <= 1e-6 * Math.max(1, Math.abs(co[0]))) return nx;
+                break;
+            }
+            x = nx;
+        }
+    }
+    return null;
+}
+
+/* 多项式求根（升幂系数，常数项非零）：≤2 次解析，≥3 次牛顿 + 综合除法降阶 */
+function polyRoots(co) {
+    var roots = [];
+    while (co.length > 3) {
+        var r = newtonRealRoot(co);
+        if (r === null) throw new Error('高次多项式未找到实根（可能全为复根）：请拆分为低次因式相乘的形式');
+        roots.push({ re: r, im: 0 });
+        co = deflateAsc(co, r);
+    }
+    if (co.length === 3) {
+        var a = co[2], b = co[1], c = co[0];
+        var disc = b * b - 4 * a * c;
+        if (disc >= 0) {
+            var sq = Math.sqrt(disc);
+            var q = -0.5 * (b + (b >= 0 ? sq : -sq));   // 数值稳定形式
+            roots.push({ re: q / a, im: 0 });
+            roots.push({ re: c / q, im: 0 });
+        } else {
+            var re = -b / (2 * a), im = Math.sqrt(-disc) / (2 * a);
+            roots.push({ re: re, im: im });
+            roots.push({ re: re, im: -im });
+        }
+    } else if (co.length === 2) {
+        roots.push({ re: -co[0] / co[1], im: 0 });
+    }
+    return roots;
+}
+
+/* 解析 TF 表达式并载入零极点列表 + 直流增益 */
+function applyTF() {
+    var src = document.getElementById('tfExpr').value.trim();
+    var msg = document.getElementById('tfMsg');
+    function fail(t) { msg.textContent = '✗ ' + t; msg.className = 'hint tf-err'; }
+    if (!src) { fail('请输入传递函数表达式，例如 (s+1e4)/(s^2+2e4*s+1e8)'); return; }
+    try {
+        var tf = parseTFExpr(src);
+        var sn = stripOrigin(tf.num);   // 原点零点（s 因子）
+        var sd = stripOrigin(tf.den);   // 原点极点
+        var gain = sn.co[0] / sd.co[0];
+        if (!isFinite(gain) || gain === 0) throw new Error('直流增益无效');
+        var zRoots = polyRoots(sn.co);
+        var pRoots = polyRoots(sd.co);
+        var hasComplex = false, hasRHP = false;
+        function fOf(r) {
+            if (Math.abs(r.im) > 1e-6 * Math.max(1, Math.abs(r.re))) hasComplex = true;
+            if (r.re > 1e-6 * Math.max(1, Math.abs(r.im))) hasRHP = true;
+            var a = Math.sqrt(r.re * r.re + r.im * r.im);
+            return Math.max(a, 1e-3) / (2 * Math.PI);
+        }
+        poles = []; zeros = []; poleCount = 0; zeroCount = 0;
+        zRoots.forEach(function (r) { zeroCount++; zeros.push({ id: 'z' + zeroCount, freq: fOf(r) }); });
+        pRoots.forEach(function (r) { poleCount++; poles.push({ id: 'p' + poleCount, freq: fOf(r) }); });
+        var k;
+        for (k = 0; k < sn.n; k++) { zeroCount++; zeros.push({ id: 'z' + zeroCount, freq: 0.001 }); }  // 原点零点近似
+        for (k = 0; k < sd.n; k++) { poleCount++; poles.push({ id: 'p' + poleCount, freq: 0.001 }); }  // 原点极点近似
+
+        document.getElementById('dcUnit').value = 'dB';
+        document.getElementById('dcGain').value = fmtNum(20 * Math.log10(Math.abs(gain)));
+        updateGainConv();
+        renderPZList('poleList', poles, 'pole');
+        renderPZList('zeroList', zeros, 'zero');
+        hidePresetInfo();
+        drawBode();
+
+        var note = '✓ 已载入：直流增益 ' + fmtNum(20 * Math.log10(Math.abs(gain))) + ' dB，' +
+            zeros.length + ' 个零点，' + poles.length + ' 个极点（按 |根|/2π 折算）。';
+        if (sn.n + sd.n > 0) note += ' 原点零/极点以 0.001 Hz 近似。';
+        if (gain < 0) note += ' 原增益为负：额外 180° 相位未计入。';
+        if (hasComplex) note += ' 含共轭复根：已折算为同频一阶因子，谐振峰形仅为近似。';
+        if (hasRHP) note += ' 含右半平面根：幅频按 |根| 折算，相频与实际不同。';
+        msg.textContent = note;
+        msg.className = 'hint';
+    } catch (err) {
+        fail(err.message);
+    }
+}
+
+document.getElementById('tfApply').addEventListener('click', applyTF);
+document.getElementById('tfExpr').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); applyTF(); }
+});
+
+/* ========== 鼠标取点（十字准线 + 读数框） ========== */
+function setupProbe(canvasId) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas || !canvas.parentElement) return;
+    var wrap = canvas.parentElement;   // .bode-plot-wrap
+    var ov = document.createElement('canvas');
+    ov.className = 'bode-probe';
+    wrap.appendChild(ov);
+    var tip = document.createElement('div');
+    tip.className = 'bode-tip';
+    tip.style.display = 'none';
+    wrap.appendChild(tip);
+
+    canvas.addEventListener('mousemove', function (e) {
+        var w = canvas.clientWidth, h = canvas.clientHeight;
+        if (!w || !h) return;
+        var dpr = window.devicePixelRatio || 1;
+        ov.width = w * dpr;
+        ov.height = h * dpr;
+        var oc = ov.getContext('2d');
+        oc.scale(dpr, dpr);
+        oc.clearRect(0, 0, w, h);
+
+        var rect = canvas.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+        var PAD = PLOT_PAD;
+        var cw = w - PAD.left - PAD.right, ch = h - PAD.top - PAD.bottom;
+        if (x < PAD.left || x > PAD.left + cw || y < PAD.top || y > PAD.top + ch) {
+            tip.style.display = 'none';
+            return;
+        }
+        var lf = Math.log10(lastRange.fStart) +
+            (x - PAD.left) / cw * (Math.log10(lastRange.fEnd) - Math.log10(lastRange.fStart));
+        var f = Math.pow(10, lf);
+        var hv = calcH(f);
+        /* 十字准线 */
+        oc.strokeStyle = 'rgba(74,74,74,0.55)';
+        oc.lineWidth = 1;
+        oc.setLineDash([4, 4]);
+        oc.beginPath();
+        oc.moveTo(x, PAD.top); oc.lineTo(x, PAD.top + ch);
+        oc.moveTo(PAD.left, y); oc.lineTo(PAD.left + cw, y);
+        oc.stroke();
+        oc.setLineDash([]);
+        /* 读数框 */
+        tip.textContent = 'f = ' + formatEngineering(f) + 'Hz ｜ |H| = ' + hv.mag.toFixed(2) +
+            ' dB ｜ ∠H = ' + hv.phase.toFixed(1) + '°';
+        tip.style.display = '';
+        var tx = x + 14, ty = y + 12;
+        if (tx > w - 220) tx = x - 224;
+        if (ty > h - 36) ty = y - 34;
+        tip.style.left = tx + 'px';
+        tip.style.top = ty + 'px';
+    });
+    canvas.addEventListener('mouseleave', function () {
+        var oc = ov.getContext('2d');
+        oc.clearRect(0, 0, ov.width, ov.height);
+        tip.style.display = 'none';
+    });
+}
+setupProbe('magCanvas');
+setupProbe('phaseCanvas');

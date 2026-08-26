@@ -29,6 +29,14 @@
             <button class="btn" id="insSlot" type="button" title="所有信号末尾插入一个时间槽">+ 时间槽</button>
             <button class="btn" id="delSlot" type="button" title="所有信号末尾删除一个时间槽">− 时间槽</button>
             <span class="tb-sep"></span>
+            <select class="wd-tpl" id="wdTpl" title="一键载入时序模板（载入前确认覆盖）">
+                <option value="" selected>载入模板…</option>
+                <option value="spi">SPI（SCLK / CS / MOSI / MISO）</option>
+                <option value="i2c">I2C（SCL / SDA）</option>
+                <option value="hs2">两相握手（req / ack）</option>
+                <option value="hs4">四相握手（req / ack / data）</option>
+            </select>
+            <span class="tb-sep"></span>
             <button class="btn btn-primary" id="expSvg" type="button">导出 SVG</button>
             <button class="btn" id="expPng" type="button">导出 PNG</button>
         </div>
@@ -38,6 +46,7 @@
                 <h3>WaveJSON 源码</h3>
                 <textarea id="wdJson" spellcheck="false"></textarea>
                 <p class="wd-err" id="wdErr"></p>
+                <button class="btn wd-copy-min" id="wdCopyMin" type="button" style="display:none">复制最小复现</button>
             </div>
             <div class="paper-card wd-view">
                 <div class="chart-label">波形预览（点击槽位切换 0→1→x→z→. ｜ 点击色块改文字/颜色 ｜ 双击名字重命名 ｜ 右键槽位插入/删除）</div>
@@ -48,7 +57,9 @@
         <div class="info-box">
             <p><strong>说明：</strong></p>
             <ul>
-                <li>本工具基于开源库 <a href="https://wavedrom.com" target="_blank" rel="noopener">WaveDrom</a>（MIT），库文件已本地化（js/vendor/wavedrom.min.js），加载失败时自动回退 CDN。</li>
+                <li>本工具基于开源库 <a href="https://wavedrom.com" target="_blank" rel="noopener">WaveDrom</a>（MIT），库按 本地 vendor → cdnjs → unpkg → jsdelivr 顺序动态加载，单源 5 秒超时自动切换下一源，全部失败时红字提示。</li>
+                <li>工具栏「载入模板」可一键填入 SPI、I2C、两相 / 四相握手时序预设（载入前会确认覆盖当前内容）。</li>
+                <li>JSON 出错时，编辑器下方出现「复制最小复现」按钮，一键打包当前 JSON 与错误信息，便于反馈排查。</li>
                 <li>wave 字符串常用字符：<code>0/1</code> 电平、<code>.</code> 保持、<code>x</code> 不确定、<code>z</code> 高阻、<code>p/n</code> 时钟、<code>2~9</code> 数据块（配合 data 数组填文字）、<code>|</code> 时间标记分隔。</li>
                 <li>高级语法（edge 箭头、phase、period 等）可直接在左侧 JSON 手写，图形编辑与 JSON 实时双向同步。</li>
             </ul>
@@ -81,7 +92,7 @@
     <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
     <script async src="https://cn.vercount.one/js"></script>
 
-    <script src="../../js/vendor/wavedrom.min.js"></script>
+    <!-- WaveDrom 库由 script.js 动态加载（vendor → cdnjs → unpkg → jsdelivr 回退链） -->
     <script src="../../js/common.js"></script>
     <script src="script.js"></script>
 </body>

@@ -42,6 +42,23 @@
 .pal-item svg { flex-shrink: 0; }
 .pal-item span { font-size: 0.85rem; color: var(--color-text); }
 
+/* 模板分组（器件面板下方） */
+.ck-tpl-title { margin-top: var(--space-md); }
+.ck-tpl-list { display: flex; flex-direction: column; gap: 6px; margin-top: var(--space-xs); }
+.ck-tpl-list .btn { font-size: 0.85rem; padding: 5px 10px; text-align: left; }
+
+/* 导出透明背景复选 */
+.ck-exp-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+.ck-exp-opt input { cursor: pointer; }
+
 /* 画布 */
 .chart-label {
     font-family: var(--font-hand);
@@ -94,4 +111,5 @@
     .ck-canvas-col { order: 2; }
     .ck-props { order: 3; }
     #palList { flex-direction: row; flex-wrap: wrap; }
+    .ck-tpl-list { flex-direction: row; flex-wrap: wrap; }
 }

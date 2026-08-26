@@ -36,7 +36,7 @@
                     <h3>第一级</h3>
                     <div class="field">
                         <label for="gm1">跨导 g<sub>m1</sub></label>
-                        <div class="iu-row"><input type="number" id="gm1" value="1000" step="any" min="0"><select id="gm1Unit" style="width:auto;"><option value="1e-6" selected>µA/V</option><option value="1e-3">mA/V</option></select></div>
+                        <div class="iu-row"><input type="number" id="gm1" value="100" step="any" min="0"><select id="gm1Unit" style="width:auto;"><option value="1e-6" selected>µA/V</option><option value="1e-3">mA/V</option></select></div>
                     </div>
                     <div class="field">
                         <label for="ro1">输出电阻 R<sub>o1</sub></label>
@@ -52,7 +52,7 @@
                     <h3>第二级</h3>
                     <div class="field">
                         <label for="gm2">跨导 g<sub>m2</sub></label>
-                        <div class="iu-row"><input type="number" id="gm2" value="5000" step="any" min="0"><select id="gm2Unit" style="width:auto;"><option value="1e-6" selected>µA/V</option><option value="1e-3">mA/V</option></select></div>
+                        <div class="iu-row"><input type="number" id="gm2" value="500" step="any" min="0"><select id="gm2Unit" style="width:auto;"><option value="1e-6" selected>µA/V</option><option value="1e-3">mA/V</option></select></div>
                     </div>
                     <div class="field">
                         <label for="ro2">输出电阻 R<sub>o2</sub></label>
@@ -83,7 +83,19 @@
                             </select>
                         </div>
                         <p style="margin-top:4px;font-size:0.82rem;color:var(--color-text-muted);">R<sub>z</sub> = 1/g<sub>m2</sub> 时零点移至无穷；R<sub>z</sub> &gt; 1/g<sub>m2</sub> 零点进入左半平面（有利相位）。</p>
+                        <button class="btn" id="rzPreset" type="button" style="margin-top:6px;">R<sub>z</sub> = 1/g<sub>m2</sub> 一键预设</button>
                     </div>
+                </div>
+
+                <div class="param-block paper-card">
+                    <h3>PM 目标反解</h3>
+                    <div class="field">
+                        <label for="pmTarget">目标相位裕度 PM</label>
+                        <div class="iu-row"><input type="number" id="pmTarget" value="60" step="1" min="30" max="80"><span class="unit">°</span></div>
+                    </div>
+                    <p id="pmSug" style="font-size:0.85rem;line-height:1.7;color:var(--color-text-secondary);">—</p>
+                    <button class="btn btn-primary" id="pmApply" type="button">应用建议值</button>
+                    <p style="margin-top:6px;font-size:0.78rem;color:var(--color-text-muted);">依据：PM ≈ 90° − atan(GBW/f<sub>p2</sub>)，GBW = g<sub>m1</sub>/(2πC<sub>c</sub>)，f<sub>p2</sub> ≈ g<sub>m2</sub>C<sub>c</sub>/(2π·(C<sub>o1</sub>C<sub>o2</sub>+C<sub>c</sub>(C<sub>o1</sub>+C<sub>o2</sub>)))；R<sub>z</sub> 取 1/g<sub>m2</sub>。</p>
                 </div>
 
                 <div class="param-block paper-card">

@@ -10,37 +10,187 @@ function switchTab(name) {
     document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.id === 'tab-' + name); });
 }
 
-/* ========== TAB 1 核心参数链 ========== */
-['coN','coVref','coI','coVbe','coT'].forEach(function(id){
+/* ========== TAB 1 核心参数链（正解/反解 + 零温漂判据） ========== */
+var coreLast = null;   /* 最近一次有效计算（供复制参数表 / 导出 PNG 复用） */
+
+var coModeEl = document.getElementById('coMode');
+coModeEl.addEventListener('change', function () {
+    var inv = coModeEl.value === 'inv';
+    document.getElementById('coVrefField').style.display = inv ? 'none' : '';
+    document.getElementById('coRField').style.display = inv ? '' : 'none';
+    calcCore();
+});
+['coN','coVref','coI','coVbe','coT','coR1','coR2'].forEach(function(id){
     document.getElementById(id).addEventListener('input', calcCore);
 });
 function calcCore() {
+    var inv  = coModeEl.value === 'inv';
     var N    = parseFloat(document.getElementById('coN').value);
-    var Vref = parseFloat(document.getElementById('coVref').value);
-    var I    = parseFloat(document.getElementById('coI').value) * 1e-6;  // µA -> A
+    var IuA  = parseFloat(document.getElementById('coI').value);       // µA（反解时仅作记录）
     var Vbe  = parseFloat(document.getElementById('coVbe').value);
     var T    = parseFloat(document.getElementById('coT').value);
 
-    if ([N,Vref,I,Vbe,T].some(isNaN) || N <= 1 || I <= 0 || T <= 0) {
-        ['coResVref','coResDvbe','coResK','coResR1','coResR2','coResKtc'].forEach(function(id){ setText(id,'N/A'); });
+    var bad = isNaN(N) || isNaN(Vbe) || isNaN(T) || N <= 1 || T <= 0;
+    var Vref, K, R1, R2, dVbe;
+    if (!bad) {
+        var Vt = kB * T / qE;                 // 热电压
+        dVbe = Vt * Math.log(N);              // ΔVBE
+        if (inv) {
+            R1 = parseFloat(document.getElementById('coR1').value) * 1e3;  // kΩ -> Ω
+            R2 = parseFloat(document.getElementById('coR2').value) * 1e3;
+            bad = isNaN(R1) || isNaN(R2) || R1 <= 0 || R2 <= 0;
+            if (!bad) { K = R2 / R1; Vref = Vbe + K * dVbe; }
+        } else {
+            Vref = parseFloat(document.getElementById('coVref').value);
+            bad = isNaN(Vref) || isNaN(IuA) || IuA <= 0;
+            if (!bad) {
+                K = (Vref - Vbe) / dVbe;      // 系数 = R2/R1
+                R1 = dVbe / (IuA * 1e-6);     // ΔVBE 落在 R1 上
+                R2 = K * R1;
+            }
+        }
+    }
+    if (bad) {
+        ['coResVref','coResDvbe','coResK','coResR1','coResR2','coResKtc','coResTc'].forEach(function(id){ setText(id,'N/A'); });
+        coreLast = null;
+        document.getElementById('zcBar').className = 'zc-bar';
+        var zt = document.getElementById('zcText');
+        zt.className = 'hint';
+        zt.textContent = '输入无效，无法判定。';
         return;
     }
-    var Vt = kB * T / qE;                 // 热电压
-    var dVbe = Vt * Math.log(N);          // ΔVBE
-    var K = (Vref - Vbe) / dVbe;          // 系数 = R2/R1
-    var R1 = dVbe / I;                    // ΔVBE 落在 R1 上
-    var R2 = K * R1;
-    var actualVref = Vbe + K * dVbe;      // 回代校验
     // 零温漂：K_tc·(k/q)·ln(N) = 2mV/K
     var Ktc = 2e-3 / ((kB / qE) * Math.log(N));
+    // 残余温漂（一阶）：dVref/dT = (K−Ktc)·(k/q)·ln(N)
+    var resTc = (K - Ktc) * (kB / qE) * Math.log(N) * 1e3;   // mV/K
+    var dev = K / Ktc - 1;
 
-    setText('coResVref', actualVref.toPrecision(5) + ' V');
+    setText('coResVref', Vref.toPrecision(5) + ' V');
     setText('coResDvbe', (dVbe * 1e3).toPrecision(4) + ' mV');
     setText('coResK', K.toPrecision(4));
     setText('coResR1', fmtEng(R1, 'Ω'));
     setText('coResR2', fmtEng(R2, 'Ω'));
     setText('coResKtc', Ktc.toPrecision(4));
+    setText('coResTc', (resTc >= 0 ? '+' : '') + resTc.toPrecision(2) + ' mV/K');
+
+    coreLast = { inv: inv, N: N, Vref: Vref, IuA: IuA, Vbe: Vbe, T: T,
+                 dVbe: dVbe, K: K, R1: R1, R2: R2, Ktc: Ktc, resTc: resTc, dev: dev };
+    updateZcBar();
 }
+
+/* ---- 零温漂判据条：K 与 K_TC 双标记 + 偏差着色 ---- */
+function updateZcBar() {
+    var d = coreLast;
+    var maxV = Math.max(d.K, d.Ktc) * 1.25;
+    if (!(maxV > 0)) maxV = 1;
+    document.getElementById('zcK').style.left = (d.K / maxV * 100) + '%';
+    document.getElementById('zcKtc').style.left = (d.Ktc / maxV * 100) + '%';
+    var ad = Math.abs(d.dev);
+    var cls = ad < 0.02 ? 'ok' : ad < 0.05 ? 'warn' : 'bad';
+    document.getElementById('zcBar').className = 'zc-bar ' + cls;
+    var grade = cls === 'ok' ? '接近零温漂' : cls === 'warn' ? '略有偏差，可接受' : '偏差较大，建议调整 Vref 或 N';
+    var txt = document.getElementById('zcText');
+    txt.className = 'hint zc-' + cls;
+    txt.textContent = 'K = ' + d.K.toPrecision(4) + '，K_TC = ' + d.Ktc.toPrecision(4) +
+        '，偏差 ' + (d.dev * 100).toFixed(2) + '% → 残余温漂约 ' +
+        (d.resTc >= 0 ? '+' : '') + d.resTc.toFixed(3) + ' mV/K（' + grade + '）';
+}
+
+/* ---- 参数表：TSV 复制 / PNG 导出（2x 位图 + 零温漂条） ---- */
+function coreParamRows() {
+    var d = coreLast;
+    return [
+        ['求解方向', d.inv ? '反解（R1/R2 → Vref）' : '正解（Vref → R1/R2）'],
+        ['面积比 N', String(d.N)],
+        ['Vref（实际）', d.Vref.toPrecision(5) + ' V'],
+        ['I_PTAT', isNaN(d.IuA) ? '—' : d.IuA + ' µA'],
+        ['Vbe', d.Vbe + ' V'],
+        ['T', d.T + ' K'],
+        ['ΔVbe', (d.dVbe * 1e3).toPrecision(4) + ' mV'],
+        ['K = R2/R1', d.K.toPrecision(4)],
+        ['R1', fmtEng(d.R1, 'Ω')],
+        ['R2', fmtEng(d.R2, 'Ω')],
+        ['K_TC（零温漂）', d.Ktc.toPrecision(4)],
+        ['K 偏差', (d.dev * 100).toFixed(2) + ' %'],
+        ['残余温漂 dVref/dT', (d.resTc >= 0 ? '+' : '') + d.resTc.toPrecision(3) + ' mV/K']
+    ];
+}
+
+document.getElementById('coCopy').addEventListener('click', function () {
+    if (!coreLast) return;
+    var btn = this;
+    var text = coreParamRows().map(function (r) { return r.join('\t'); }).join('\n');
+    copyTextToClipboard(text, function (ok) {
+        btn.textContent = ok ? '已复制 ✓' : '复制失败';
+        setTimeout(function () { btn.textContent = '复制参数表（TSV，可粘 Excel）'; }, 1200);
+    });
+});
+
+document.getElementById('coPng').addEventListener('click', function () {
+    if (!coreLast) return;
+    var d = coreLast, rows = coreParamRows();
+    var S = 2, W = 620, pad = 26, rowH = 30, barH = 100;
+    var H = pad * 2 + 44 + rows.length * rowH + barH;
+    var cv = document.createElement('canvas');
+    cv.width = W * S; cv.height = H * S;
+    var ctx = cv.getContext('2d');
+    ctx.scale(S, S);
+    ctx.fillStyle = '#fffcf7';
+    ctx.fillRect(0, 0, W, H);
+    /* 标题 */
+    ctx.fillStyle = '#2a2a2a';
+    ctx.font = '700 22px "Patrick Hand", "Comic Sans MS", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Bandgap 核心参数表', pad, pad + 20);
+    /* 参数行（斑马纹） */
+    ctx.font = '14px "Fira Code", monospace';
+    rows.forEach(function (r, i) {
+        var y = pad + 44 + i * rowH;
+        if (i % 2 === 0) {
+            ctx.fillStyle = 'rgba(58,90,140,0.06)';
+            ctx.fillRect(pad - 6, y + 4, W - pad * 2 + 12, rowH);
+        }
+        ctx.fillStyle = '#6a6a6a';
+        ctx.textAlign = 'left';
+        ctx.fillText(r[0], pad, y + 22);
+        ctx.fillStyle = '#2a2a2a';
+        ctx.textAlign = 'right';
+        ctx.fillText(r[1], W - pad, y + 22);
+    });
+    /* 零温漂条 */
+    var barY = pad + 44 + rows.length * rowH + 44;
+    var trackW = W - pad * 2;
+    var ad = Math.abs(d.dev);
+    var col = ad < 0.02 ? '#3a7d44' : ad < 0.05 ? '#c8a03a' : '#c0583a';
+    var maxV = Math.max(d.K, d.Ktc) * 1.25 || 1;
+    ctx.fillStyle = '#e8e2d8';
+    ctx.fillRect(pad, barY, trackW, 10);
+    function marker(v, color, label) {
+        var x = pad + v / maxV * trackW;
+        var nearRight = x > pad + trackW - 90;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(x, barY - 14); ctx.lineTo(x, barY + 16); ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.font = '12px "Fira Code", monospace';
+        ctx.textAlign = nearRight ? 'right' : 'left';
+        ctx.fillText(label + ' = ' + v.toPrecision(4), x + (nearRight ? -4 : 4), barY - 18);
+    }
+    marker(d.K, '#c0583a', 'K');
+    marker(d.Ktc, '#3a5a8c', 'K_TC');
+    ctx.fillStyle = col;
+    ctx.font = '13px "Fira Code", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('偏差 ' + (d.dev * 100).toFixed(2) + '% → 残余温漂约 ' +
+        (d.resTc >= 0 ? '+' : '') + d.resTc.toFixed(3) + ' mV/K', pad, barY + 34);
+    /* 下载 */
+    var a = document.createElement('a');
+    a.download = 'bandgap-params.png';
+    a.href = cv.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+});
 
 /* ========== TAB 2 Trim 位设计 ========== */
 ['trSigma','trLsb','trVref'].forEach(function(id){

@@ -53,6 +53,18 @@
 .side-actions { display: flex; flex-direction: column; gap: 6px; }
 .side-actions .btn { width: 100%; font-size: 0.85rem; padding: 6px 4px; }
 
+/* 导出示意图格式下拉 */
+.lm-exp-fmt {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    padding: 4px 6px;
+    border: 1.5px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    background: var(--color-card-bg);
+    color: var(--color-text);
+}
+
 /* 数字卡（组号填充） */
 .num-cards { display: flex; flex-wrap: wrap; gap: 6px; }
 .num-card {

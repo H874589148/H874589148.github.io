@@ -21,10 +21,10 @@
 
     <main class="container-wide">
         <h1>最小二乘拟合</h1>
-        <p class="tool-desc">输入一组 x、y 数据，实时最小二乘拟合直线 y = a·x + b 并绘制散点与拟合线；坐标范围默认按数据上下外扩 10%，可在此基础上手动调整。</p>
+        <p class="tool-desc">输入一组 x、y 数据（或直接粘贴逐行两列 CSV），实时最小二乘拟合（线性 / 二次 / 幂律 / 对数）并绘制散点、拟合曲线与残差图；坐标范围默认按数据上下外扩 10%，可在此基础上手动调整。</p>
 
         <div class="formula-box">
-            a = Σ(x−x̄)(y−ȳ) / Σ(x−x̄)² ｜ b = ȳ − a·x̄ ｜ R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub>
+            线性：a = Σ(x−x̄)(y−ȳ) / Σ(x−x̄)²，b = ȳ − a·x̄ ｜ 二次：3×3 正规方程 ｜ 幂律 / 对数：对数化后 OLS ｜ R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub>
         </div>
 
         <div class="lsq-layout">
@@ -32,7 +32,16 @@
                 <div class="param-block paper-card">
                     <h3>数据输入</h3>
                     <div class="field">
-                        <label for="lsqX">x 数据（逗号 / 空格 / 换行分隔）</label>
+                        <label for="lsqType">拟合类型</label>
+                        <select id="lsqType">
+                            <option value="linear" selected>线性 y = a·x + b</option>
+                            <option value="quad">二次 y = a·x² + b·x + c</option>
+                            <option value="power">幂律 y = a·xᵇ（要求 x&gt;0 且 y&gt;0）</option>
+                            <option value="log">对数 y = a·ln(x) + b（要求 x&gt;0）</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="lsqX">x 数据（逗号 / 空格 / 换行分隔；或逐行「x, y」两列 CSV 粘贴）</label>
                         <textarea id="lsqX" rows="4">1, 2, 3, 4</textarea>
                     </div>
                     <div class="field">
@@ -77,20 +86,21 @@
                 <div class="paper-card result-card">
                     <h3>拟合结果</h3>
                     <table class="lsq-table">
-                        <tbody>
-                            <tr><td>斜率 a</td><td id="lsqA">-</td></tr>
-                            <tr><td>截距 b</td><td id="lsqB">-</td></tr>
-                            <tr><td>决定系数 R²</td><td id="lsqR2">-</td></tr>
-                            <tr><td>数据点数 n</td><td id="lsqN">-</td></tr>
-                        </tbody>
+                        <tbody id="lsqResBody"></tbody>
                     </table>
                 </div>
             </aside>
 
             <div class="lsq-main">
                 <div class="chart-container">
-                    <div class="chart-label">散点与拟合直线（y = a·x + b）</div>
+                    <div class="chart-label" id="lsqChartLabel">散点与拟合直线（y = a·x + b）</div>
                     <canvas id="lsqCanvas" width="700" height="440"></canvas>
+                </div>
+
+                <div class="chart-container" style="margin-top:var(--space-md);">
+                    <div class="chart-label">残差图（y − ŷ；红色 = |残差| &gt; 2σ）</div>
+                    <canvas id="lsqResCanvas" width="700" height="150"></canvas>
+                    <p class="hint" id="lsqOutHint"></p>
                 </div>
 
                 <div class="info-box" style="margin-top:var(--space-md);">
@@ -100,6 +110,9 @@
                         <li>R² 为决定系数（1 − SS<sub>res</sub>/SS<sub>tot</sub>），越接近 1 拟合越好；y 全部相同时 SS<sub>tot</sub> = 0，R² 按 1 处理。</li>
                         <li>修改任一坐标范围输入框即切换为手动范围；点「自动范围」恢复按数据外扩 10%（数据跨度为 0 时兜底 ±1）。</li>
                         <li>勾选「显示数据点坐标」后每个散点旁标注 (x, y)（工程记号），可用鼠标拖动标签调整位置，标签位置按数据点序号保留。</li>
+                        <li>拟合类型：线性 / 二次 / 幂律 y = a·xᵇ / 对数 y = a·ln(x)+b；幂律要求 x、y 均大于 0，对数要求 x &gt; 0。</li>
+                        <li>CSV 粘贴：x 输入框可直接粘贴逐行两列数据（如 Excel 复制的「x⇥y」），每行恰好两个数值时自动按行解析。</li>
+                        <li>残差图：主图下方为残差杆图，|残差| &gt; 2σ 的点在主图与残差图中标红，并列出序号。</li>
                     </ul>
                 </div>
             </div>

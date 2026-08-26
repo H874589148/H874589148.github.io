@@ -17,7 +17,7 @@ var el = {};
  'centerField', 'centerBtn', 'centerInfo',
  'gridTable', 'centerDot', 'gridInfo', 'numCards',
  'statBody', 'centroidInfo', 'mmTable', 'mmHint', 'ratioBox',
- 'inlOrder', 'inlSummary', 'inlBody'
+ 'inlOrder', 'inlSummary', 'inlBody', 'expDiagFmt', 'expDiag'
 ].forEach(function (id) { el[id] = document.getElementById(id); });
 
 /* ---- 参数读取 ---- */
@@ -392,3 +392,112 @@ el.centerBtn.addEventListener('click', function () {
 /* ---- 初始化 ---- */
 initGrid();
 update();
+
+/* ============================================
+   导出示意图：由 state.grid 生成独立 SVG → SVG / PNG / JPG / PDF
+   （PDF 走 common.js 的 downloadPdfFromCanvas，2x 位图白底）
+   ============================================ */
+var LM_DIR_NAMES = {
+    lr: '从左至右', rl: '从右至左', tb: '从上至下', bt: '从下至上',
+    tl2br: '左上→右下', bl2tr: '左下→右上', radial: '径向'
+};
+
+function lmDownload(name, blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+}
+
+/* 生成独立示意图 SVG：格子填色 + 组号文字 + 中心点标记 + 图例 + 参数摘要 */
+function buildDiagramSvg() {
+    var p = getParams();
+    var cs = 34, ox = 12, oy = 12;
+    var gw = p.cols * cs, gh = p.rows * cs;
+    var s = '', counts = {}, dummies = 0;
+    var r, c, g;
+    for (r = 0; r < p.rows; r++) {
+        for (c = 0; c < p.cols; c++) {
+            g = state.grid[r][c];
+            if (g > 0) counts[g] = (counts[g] || 0) + 1; else dummies++;
+        }
+    }
+    /* 单元格：组色 22% 底 + 组号文字；dummy 浅灰 */
+    for (r = 0; r < p.rows; r++) {
+        for (c = 0; c < p.cols; c++) {
+            g = state.grid[r][c];
+            var x = ox + c * cs, y = oy + r * cs;
+            if (g > 0) {
+                var col = GROUP_COLORS[(g - 1) % GROUP_COLORS.length];
+                s += '<rect x="' + x + '" y="' + y + '" width="' + cs + '" height="' + cs + '" fill="' + col + '" fill-opacity="0.22" stroke="' + col + '" stroke-width="1.2"/>' +
+                     '<text x="' + (x + cs / 2) + '" y="' + (y + cs / 2 + 5) + '" font-family="Fira Code, monospace" font-size="14" font-weight="700" fill="' + col + '" text-anchor="middle">' + g + '</text>';
+            } else {
+                s += '<rect x="' + x + '" y="' + y + '" width="' + cs + '" height="' + cs + '" fill="#f2ede2" stroke="#d8d2c4" stroke-width="1"/>';
+            }
+        }
+    }
+    /* 径向中心点标记（十字 + 圆） */
+    if (p.dir === 'radial') {
+        var cxp = ox + state.center.x * cs, cyp = oy + state.center.y * cs;
+        s += '<g stroke="#c0583a" stroke-width="1.5" fill="none">' +
+             '<circle cx="' + cxp + '" cy="' + cyp + '" r="7"/>' +
+             '<path d="M' + (cxp - 11) + ',' + cyp + ' L' + (cxp + 11) + ',' + cyp + ' M' + cxp + ',' + (cyp - 11) + ' L' + cxp + ',' + (cyp + 11) + '"/></g>';
+    }
+    /* 图例：组号色卡 + 单元数（含 dummy 项），按可用宽度折行；
+       最小宽度 520 保证小阵列下图例与摘要不溢出 */
+    var W = Math.max(gw + 2 * ox, 520);
+    var ids = Object.keys(counts).map(Number).sort(function (a, b) { return a - b; });
+    var itemW = 96, perRow = Math.max(1, Math.floor((W - 2 * ox) / itemW));
+    var items = ids.length + (dummies > 0 ? 1 : 0);
+    var legendRows = Math.max(1, Math.ceil(Math.max(items, 1) / perRow));
+    var ly0 = oy + gh + 26;
+    ids.forEach(function (id, i) {
+        var lx = ox + (i % perRow) * itemW, ly = ly0 + Math.floor(i / perRow) * 22;
+        var col2 = GROUP_COLORS[(id - 1) % GROUP_COLORS.length];
+        s += '<rect x="' + lx + '" y="' + (ly - 11) + '" width="14" height="14" fill="' + col2 + '" fill-opacity="0.35" stroke="' + col2 + '"/>' +
+             '<text x="' + (lx + 20) + '" y="' + ly + '" font-family="Fira Code, monospace" font-size="12" fill="#3c3c3c">组 ' + id + ' ×' + counts[id] + '</text>';
+    });
+    if (dummies > 0) {
+        var i2 = ids.length;
+        var lx2 = ox + (i2 % perRow) * itemW, ly2 = ly0 + Math.floor(i2 / perRow) * 22;
+        s += '<rect x="' + lx2 + '" y="' + (ly2 - 11) + '" width="14" height="14" fill="#f2ede2" stroke="#b8b0a0"/>' +
+             '<text x="' + (lx2 + 20) + '" y="' + ly2 + '" font-family="Fira Code, monospace" font-size="12" fill="#8a8a8a">dummy ×' + dummies + '</text>';
+    }
+    /* 参数摘要行 */
+    var sy = ly0 + (items ? legendRows * 22 : 0) + 10;
+    var summary = '阵列 ' + p.rows + '×' + p.cols + ' ｜ 组数 ' + p.K + ' ｜ dummy ' + dummies + ' 格 ｜ 梯度：' +
+        LM_DIR_NAMES[p.dir] + ' / ' + (p.sign > 0 ? '从低到高' : '从高到低') + ' / ' + (p.order === 2 ? '二阶' : '一阶') +
+        '，s = ' + el.gradSlope.value + ' %/格' +
+        (p.dir === 'radial' ? '，中心 (' + state.center.x.toFixed(1) + ', ' + state.center.y.toFixed(1) + ')' : '');
+    s += '<text x="' + ox + '" y="' + sy + '" font-family="Fira Code, monospace" font-size="12" fill="#5a5a5a">' + summary + '</text>';
+    var H = sy + 12;
+    var str = '<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' +
+        '<rect width="' + W + '" height="' + H + '" fill="#ffffff"/>' + s + '</svg>';
+    return { str: str, w: W, h: H };
+}
+
+el.expDiag.addEventListener('click', function () {
+    var fmt = el.expDiagFmt.value;
+    var r = buildDiagramSvg();
+    if (fmt === 'svg') {
+        lmDownload('layout-diagram.svg', new Blob([r.str], { type: 'image/svg+xml' }));
+        return;
+    }
+    var img = new Image();
+    img.onload = function () {
+        var cv = document.createElement('canvas');
+        cv.width = r.w * 2; cv.height = r.h * 2;
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        if (fmt === 'pdf') { downloadPdfFromCanvas(cv, 'layout-diagram.pdf'); return; }
+        cv.toBlob(function (bl) {
+            if (bl) lmDownload(fmt === 'jpg' ? 'layout-diagram.jpg' : 'layout-diagram.png', bl);
+        }, fmt === 'jpg' ? 'image/jpeg' : 'image/png', 0.95);
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+});

@@ -116,6 +116,19 @@
                                     <button class="btn" id="fillClear" type="button">清空</button>
                                 </div>
                             </div>
+                            <div class="side-group">
+                                <h4>导出示意图</h4>
+                                <div class="side-actions">
+                                    <select class="lm-exp-fmt" id="expDiagFmt">
+                                        <option value="svg" selected>SVG</option>
+                                        <option value="png">PNG</option>
+                                        <option value="jpg">JPG</option>
+                                        <option value="pdf">PDF</option>
+                                    </select>
+                                    <button class="btn btn-primary" id="expDiag" type="button">导出</button>
+                                </div>
+                                <p class="hint">含组号色块、中心点标记、图例与参数摘要</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -168,6 +181,7 @@
                         <li>一阶梯度下，各组<strong>质心重合</strong>则失配≈0 —— 这就是共质心（common-centroid）布局的原理。</li>
                         <li>插指（interdigitated）可缩小质心距；径向（热/应力）梯度只能用环形/共质心布局抵消。</li>
                         <li>阵列边缘建议放置 dummy（填 0），dummy 不参与失配统计。</li>
+                        <li>右侧「导出示意图」可将当前阵列导出为 SVG / PNG / JPG / PDF（含组号色块、中心点标记、图例与参数摘要），便于贴入报告。</li>
                         <li>本工具评估<strong>系统性梯度失配</strong>；随机失配（σ ∝ 1/√WL）请用「电流镜失配计算」页。</li>
                     </ul>
                 </div>

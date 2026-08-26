@@ -106,6 +106,7 @@ function update() {
     // 参数无效时清空
     if ([p.gm1,p.ro1,p.gm2,p.ro2,p.cc].some(function(x){ return isNaN(x) || x <= 0; })) {
         ['rAdc','rPm','rGm','rGbw','rFp1','rFp2','rFz','rInvGm'].forEach(function(id){ setText(id,'N/A'); });
+        calcPmSug();
         return;
     }
 
@@ -134,6 +135,7 @@ function update() {
     if (!fr.ok) {
         setText('rPm', '—');
         setText('rGm', '—');
+        calcPmSug();
         return;
     }
 
@@ -146,13 +148,18 @@ function update() {
         freqs.push(f); mags.push(h.mag); phases.push(h.phase);
     }
 
-    drawCanvas('magCanvas', freqs, mags, { color: '#3a5a8c', yUnit: 'dB', gridLines: [-40,-20,0,20,40,60,80,100], phase: false });
+    drawCanvas('magCanvas', freqs, mags, { color: '#3a5a8c', yUnit: 'dB', gridLines: [-40,-20,0,20,40,60,80,100], phase: false,
+        vlines: [
+            { f: fp2, color: '#8a8a8a', label: 'f_p2' },
+            { f: 2.2 * gbw, color: '#d08a3a', label: '2.2×GBW' }
+        ] });
     drawCanvas('phaseCanvas', freqs, phases, { color: '#c0583a', yUnit: '°', gridLines: [-270,-225,-180,-135,-90,-45,0], phase: true });
 
     // 相位/增益裕度
     var margins = calcMargins(freqs, mags, phases);
     setText('rPm', margins.pm !== null ? margins.pm.toFixed(1) + '°' : '> 180° (稳定)');
     setText('rGm', margins.gm !== null ? margins.gm.toFixed(1) + ' dB' : '∞ (稳定)');
+    calcPmSug();
 }
 
 function calcMargins(freqs, mags, phases) {
@@ -271,6 +278,26 @@ function drawCanvas(canvasId, freqs, vals, opts) {
     ctx.lineWidth = 2;
     ctx.strokeRect(PAD.left, PAD.top, cw, ch);
 
+    // 竖直参考线（实际 f_p2 / 2.2×GBW 经验线等）
+    if (opts.vlines) {
+        opts.vlines.forEach(function(vl) {
+            if (!isFinite(vl.f) || vl.f < freqs[0] || vl.f > freqs[freqs.length - 1]) return;
+            var x = xPos(vl.f);
+            ctx.beginPath();
+            ctx.moveTo(x, PAD.top);
+            ctx.lineTo(x, PAD.top + ch);
+            ctx.strokeStyle = vl.color;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = vl.color;
+            ctx.font = '10px Fira Code, monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(vl.label, x + 4, PAD.top + 12);
+        });
+    }
+
     // 曲线
     ctx.beginPath();
     ctx.strokeStyle = opts.color;
@@ -316,6 +343,58 @@ function setText(id, val) {
     var el = document.getElementById(id);
     if (el) el.textContent = val;
 }
+
+/* ========== PM 目标反解 与 Rz 一键预设 ========== */
+var pmTargetEl = document.getElementById('pmTarget');
+var pmSugEl = document.getElementById('pmSug');
+var pmSug = null;   // 当前建议值 {cc, rz}
+
+function calcPmSug() {
+    if (!pmTargetEl) return;
+    var p = getParams();
+    var pmDeg = parseFloat(pmTargetEl.value);
+    if ([p.gm1, p.gm2, p.co1, p.co2].some(function(x){ return isNaN(x) || x <= 0; }) ||
+        !isFinite(pmDeg) || pmDeg < 30 || pmDeg > 80) {
+        pmSug = null;
+        pmSugEl.textContent = '参数无效（PM 目标范围 30° ~ 80°）。';
+        return;
+    }
+    /* PM ≈ 90° − atan(GBW/fp2) → fp2 = GBW·tan(PM)
+       GBW = gm1/(2π·cc)，fp2 = gm2·cc/(2π·(co1·co2+cc(co1+co2)))
+       消去 GBW/fp2：gm2·cc² = gm1·t·(co1·co2 + cc(co1+co2))，解二次方程取正根 */
+    var t = Math.tan(pmDeg * Math.PI / 180);
+    var A = p.gm2, B = -p.gm1 * t * (p.co1 + p.co2), C = -p.gm1 * t * p.co1 * p.co2;
+    var cc = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
+    var rz = 1 / p.gm2;
+    pmSug = { cc: cc, rz: rz };
+    var gbw = p.gm1 / (2 * Math.PI * cc);
+    pmSugEl.innerHTML = '建议 C<sub>c</sub> ≈ <b>' + fmtEng(cc, 'F') + '</b>，' +
+        'R<sub>z</sub> ≈ <b>' + fmtEng(rz, 'Ω') + '</b><br>' +
+        '<span style="color:var(--color-text-muted);font-size:0.8rem;">对应 GBW ≈ ' + fmtEng(gbw, 'Hz') +
+        '，f_p2 ≈ ' + fmtEng(gbw * t, 'Hz') + '（= tan(' + pmDeg + '°)×GBW）</span>';
+}
+pmTargetEl.addEventListener('input', calcPmSug);
+
+document.getElementById('pmApply').addEventListener('click', function () {
+    if (!pmSug) return;
+    var ccPf = pmSug.cc * 1e12;
+    var ccSlider = document.getElementById('cc');
+    if (ccPf > 20 || ccPf < 0.1) {
+        pmSugEl.innerHTML += '<br><span style="color:#c0583a;">注意：建议 Cc 超出滑块范围 0.1~20 pF，已钳位。</span>';
+    }
+    ccSlider.value = Math.max(0.1, Math.min(20, ccPf));
+    var rzU = parseFloat(rzUnitSel.value);
+    rzSlider.value = Math.max(0, Math.min(1000, pmSug.rz / rzU));
+    update();
+});
+
+document.getElementById('rzPreset').addEventListener('click', function () {
+    var p = getParams();
+    if (!isFinite(p.gm2) || p.gm2 <= 0) return;
+    var rzU = parseFloat(rzUnitSel.value);
+    rzSlider.value = Math.max(0, Math.min(1000, (1 / p.gm2) / rzU));
+    update();
+});
 
 /* ========== 初始化 ========== */
 update();

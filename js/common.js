@@ -37,7 +37,8 @@ var Icons = {
   lsq: '<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="6" y2="42"/><line x1="6" y1="42" x2="44" y2="42"/><line x1="10" y1="37" x2="40" y2="13" stroke="#3a5a8c"/><circle cx="14" cy="33" r="2.4" stroke="#c0583a" stroke-width="2"/><circle cx="22" cy="30" r="2.4" stroke="#c0583a" stroke-width="2"/><circle cx="29" cy="24" r="2.4" stroke="#c0583a" stroke-width="2"/><circle cx="37" cy="18" r="2.4" stroke="#c0583a" stroke-width="2"/></svg>',
   dice: '<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="34" height="34" rx="8"/><circle cx="16.5" cy="16.5" r="2.8" fill="#c0583a" stroke="none"/><circle cx="31.5" cy="16.5" r="2.8" fill="#c0583a" stroke="none"/><circle cx="24" cy="24" r="2.8" fill="#3a5a8c" stroke="none"/><circle cx="16.5" cy="31.5" r="2.8" fill="#c0583a" stroke="none"/><circle cx="31.5" cy="31.5" r="2.8" fill="#c0583a" stroke="none"/></svg>',
   schematic: '<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10 L16 38 L36 24 Z"/><line x1="6" y1="17" x2="16" y2="17"/><line x1="6" y1="31" x2="16" y2="31"/><line x1="36" y1="24" x2="44" y2="24"/><line x1="24" y1="16" x2="24" y2="8" stroke="#c0583a"/><line x1="24" y1="33" x2="24" y2="40" stroke="#3a5a8c"/><line x1="18" y1="17" x2="22" y2="17"/><line x1="18" y1="31" x2="22" y2="31"/><line x1="20" y1="29" x2="20" y2="33"/></svg>',
-  waveform: '<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 32 L10 32 L10 16 L20 16 L20 32 L28 32 L28 16 L36 16 L36 32 L44 32" stroke="#3a5a8c"/><rect x="28.5" y="16.5" width="7" height="15" fill="#c0583a" opacity="0.35" stroke="none"/><line x1="4" y1="41" x2="44" y2="41" stroke="#b8b0a0" stroke-width="1" stroke-dasharray="3 3"/></svg>'
+  waveform: '<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 32 L10 32 L10 16 L20 16 L20 32 L28 32 L28 16 L36 16 L36 32 L44 32" stroke="#3a5a8c"/><rect x="28.5" y="16.5" width="7" height="15" fill="#c0583a" opacity="0.35" stroke="none"/><line x1="4" y1="41" x2="44" y2="41" stroke="#b8b0a0" stroke-width="1" stroke-dasharray="3 3"/></svg>',
+  fmea: '<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="7" width="27" height="36" rx="3"/><rect x="12" y="4" width="15" height="6" rx="2"/><path d="M11 16 L13.5 18.5 L17 14.5" stroke="#4a7c59" stroke-width="2"/><path d="M11 24 L13.5 26.5 L17 22.5" stroke="#4a7c59" stroke-width="2"/><path d="M11 32 L13.5 34.5 L17 30.5" stroke="#4a7c59" stroke-width="2"/><line x1="20" y1="16" x2="29" y2="16"/><line x1="20" y1="24" x2="29" y2="24"/><line x1="20" y1="32" x2="29" y2="32"/><line x1="40" y1="16" x2="40" y2="27" stroke="#c0583a" stroke-width="3"/><circle cx="40" cy="33.5" r="2.2" fill="#c0583a" stroke="none"/></svg>'
 };
 
 // 格式化数字显示
@@ -94,4 +95,74 @@ function parseEngineering(str) {
     }
   }
   return NaN;
+}
+
+/* ============================================
+   公共：一键复制文本（clipboard API + execCommand 降级）
+   done(ok) 可选回调
+   ============================================ */
+function copyTextToClipboard(text, done) {
+  function legacy() {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (done) done(true);
+    } catch (e) { if (done) done(false); }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () { if (done) done(true); }, legacy);
+  } else legacy();
+}
+
+/* ============================================
+   公共：最小 PDF 导出（canvas 位图 JPEG 嵌入，白底，零依赖）
+   canvas 视为 2x 位图：PDF 页面尺寸 = canvas 像素 / 2（72dpi 点）
+   ============================================ */
+function downloadPdfFromCanvas(canvas, filename) {
+  var dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+  var bin = atob(dataUrl.split(',')[1]);
+  var imgLen = bin.length;
+  var pw = canvas.width / 2, ph = canvas.height / 2;
+
+  function enc(s) {
+    var a = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i) & 0xff;
+    return a;
+  }
+  var imgBytes = new Uint8Array(imgLen);
+  for (var j = 0; j < imgLen; j++) imgBytes[j] = bin.charCodeAt(j);
+
+  var content = 'q\n' + pw + ' 0 0 ' + ph + ' 0 0 cm\n/Im0 Do\nQ\n';
+  var parts = [], offsets = [], pos = 0;
+  function push(s) { var a = (typeof s === 'string') ? enc(s) : s; parts.push(a); pos += a.length; }
+  function mark() { offsets.push(pos); }
+
+  push('%PDF-1.4\n');
+  mark(); push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  mark(); push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+  mark(); push('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pw + ' ' + ph + '] /Resources << /XObject << /Im0 4 0 R >> /ProcSet [/PDF /ImageC] >> /Contents 5 0 R >>\nendobj\n');
+  mark(); push('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + canvas.width + ' /Height ' + canvas.height + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + imgLen + ' >>\nstream\n');
+  push(imgBytes);
+  push('\nendstream\nendobj\n');
+  mark(); push('5 0 obj\n<< /Length ' + content.length + ' >>\nstream\n' + content + 'endstream\nendobj\n');
+
+  var xrefPos = pos;
+  var xref = 'xref\n0 6\n0000000000 65535 f \n';
+  for (var k = 0; k < 5; k++) xref += ('0000000000' + offsets[k]).slice(-10) + ' 00000 n \n';
+  push(xref);
+  push('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF\n');
+
+  var blob = new Blob(parts, { type: 'application/pdf' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
 }

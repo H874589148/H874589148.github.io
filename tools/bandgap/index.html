@@ -40,12 +40,31 @@
                 <h3>输入参数</h3>
                 <div class="tool-row">
                     <div class="field">
+                        <label for="coMode">求解方向</label>
+                        <select id="coMode">
+                            <option value="fwd" selected>正解：目标 Vref → 求 R1 / R2</option>
+                            <option value="inv">反解：已有 R1 / R2 → 求 Vref 与残余温漂</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="tool-row">
+                    <div class="field">
                         <label>面积比 / 支路比 N</label>
                         <div class="iu-row"><input type="number" id="coN" value="8" step="any" min="1"><span class="unit">×</span></div>
                     </div>
-                    <div class="field">
+                    <div class="field" id="coVrefField">
                         <label>目标 V<sub>REF</sub></label>
                         <div class="iu-row"><input type="number" id="coVref" value="1.25" step="any" min="0"><span class="unit">V</span></div>
+                    </div>
+                </div>
+                <div class="tool-row" id="coRField" style="display:none;">
+                    <div class="field">
+                        <label>R<sub>1</sub>（反解输入）</label>
+                        <div class="iu-row"><input type="number" id="coR1" value="5.35" step="any" min="0"><span class="unit">kΩ</span></div>
+                    </div>
+                    <div class="field">
+                        <label>R<sub>2</sub>（反解输入）</label>
+                        <div class="iu-row"><input type="number" id="coR2" value="60" step="any" min="0"><span class="unit">kΩ</span></div>
                     </div>
                 </div>
                 <div class="tool-row">
@@ -72,6 +91,21 @@
                     <div class="ritem"><span class="rlabel">R<sub>1</sub></span><span class="rval" id="coResR1">-</span></div>
                     <div class="ritem"><span class="rlabel">R<sub>2</sub></span><span class="rval" id="coResR2">-</span></div>
                     <div class="ritem"><span class="rlabel">零温漂所需 K<sub>TC</sub></span><span class="rval" id="coResKtc">-</span></div>
+                    <div class="ritem"><span class="rlabel">残余温漂 dV<sub>REF</sub>/dT（一阶）</span><span class="rval" id="coResTc">-</span></div>
+                </div>
+            </div>
+            <div class="tool-section">
+                <h3>零温漂判据（K vs K<sub>TC</sub>）</h3>
+                <div class="zc-bar" id="zcBar">
+                    <div class="zc-track">
+                        <div class="zc-marker zc-k" id="zcK"><span>K</span><i></i></div>
+                        <div class="zc-marker zc-ktc" id="zcKtc"><span>K_TC</span><i></i></div>
+                    </div>
+                </div>
+                <p class="hint" id="zcText">-</p>
+                <div class="tool-row" style="margin-top:var(--space-sm);">
+                    <button class="btn" id="coCopy" type="button">复制参数表（TSV，可粘 Excel）</button>
+                    <button class="btn" id="coPng" type="button">导出参数表 PNG</button>
                 </div>
             </div>
             <div class="tool-section">

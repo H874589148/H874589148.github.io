@@ -21,10 +21,10 @@
 
     <main class="container-wide">
         <h1>版图寄生阻抗计算</h1>
-        <p class="tool-desc">按走线段累加寄生电阻：每段填写长度、宽度与方块电阻，实时显示方块数、段阻值与占比；填入通过电流可同时得到各段压降与总 IR 压降。</p>
+        <p class="tool-desc">按走线段累加寄生电阻：每段填写长度、宽度与方块电阻（支持金属层预设与温度修正），实时显示方块数、段阻值与占比；填入通过电流可同时得到各段压降、总 IR 压降与最差段瓶颈提示。</p>
 
         <div class="formula-box">
-            方块数 n<sub>□</sub> = L/W ｜ 段阻值 R<sub>i</sub> = R<sub>s</sub>·n<sub>□</sub> ｜ 总阻抗 R<sub>tot</sub> = ΣR<sub>i</sub> ｜ 压降 V = I·R
+            方块数 n<sub>□</sub> = L/W ｜ 段阻值 R<sub>i</sub> = R<sub>s</sub>·n<sub>□</sub> ｜ 总阻抗 R<sub>tot</sub> = ΣR<sub>i</sub> ｜ 压降 V = I·R ｜ 温度修正 R(T) = R·(1+α·(T−27°C)×10⁻⁶)
         </div>
 
         <div class="paper-card wr-card">
@@ -33,26 +33,37 @@
                     <label for="wrCurrent">通过电流 I（可选，填写后显示各段压降）</label>
                     <div class="iu-row"><input type="number" id="wrCurrent" value="" step="any" min="0" placeholder="留空则不算压降"><span class="unit">mA</span></div>
                 </div>
+                <div class="field">
+                    <label for="wrTemp">温度 T（修正基准 27°C）</label>
+                    <div class="iu-row"><input type="number" id="wrTemp" value="27" step="any"><span class="unit">°C</span></div>
+                </div>
+                <div class="field">
+                    <label for="wrAlpha">电阻温度系数 α</label>
+                    <div class="iu-row"><input type="number" id="wrAlpha" value="3000" step="any" min="0"><span class="unit">ppm/°C</span></div>
+                </div>
                 <button class="btn" id="wrAdd" type="button">+ 添加走线段</button>
             </div>
+            <p class="wr-bottleneck" id="wrBottleneck" style="display:none"></p>
             <div class="table-scroll">
                 <table class="wr-table">
                     <thead>
-                        <tr><th>段</th><th>长度 L (µm)</th><th>宽度 W (µm)</th><th>R<sub>s</sub> (mΩ/□)</th><th>方块数 n<sub>□</sub></th><th>段阻值</th><th>占比</th><th>压降</th><th></th></tr>
+                        <tr><th>段</th><th>层</th><th>长度 L (µm)</th><th>宽度 W (µm)</th><th>R<sub>s</sub> (mΩ/□)</th><th>方块数 n<sub>□</sub></th><th>段阻值</th><th>占比</th><th>压降</th><th></th></tr>
                     </thead>
                     <tbody id="wrBody"></tbody>
                 </table>
             </div>
             <p class="ratio-box" id="wrTotal"></p>
+            <p class="wr-layersum" id="wrLayers"></p>
             <p class="hint" id="wrHint"></p>
         </div>
 
         <div class="info-box">
             <p><strong>模型假设：</strong></p>
             <ul>
-                <li>纯直流方块电阻模型：R = R<sub>s</sub>·(L/W)，不含趋肤效应、电感、温度系数与转角修正。</li>
+                <li>纯直流方块电阻模型：R = R<sub>s</sub>·(L/W)，不含趋肤效应、电感与转角修正；温度按 R(T) = R·(1+α·(T−27°C)×10⁻⁶) 线性修正（默认 α = 3000 ppm/°C）。</li>
                 <li>过孔 / 接触电阻可作为一段加入：令 L = W（方块数 = 1），R<sub>s</sub> 直接填单个过孔 / 接触的电阻值（单位 mΩ）。</li>
-                <li>不同金属层 / 多晶硅的方块电阻差异较大，请按工艺手册填写（默认 80 mΩ/□ 约为常见顶层金属量级）。</li>
+                <li>不同金属层方块电阻差异较大：「层」下拉提供 M1 / M2~M5 / MTOP 典型量级预设（80 / 40 / 15 mΩ/□），选择后自动带出 R<sub>s</sub>，仍可按工艺手册手改（手改后层标记为「自定义」）。</li>
+                <li>填入电流后，压降最大的走线段会红色高亮，并在表格上方显示瓶颈提示。</li>
             </ul>
         </div>
     </main>

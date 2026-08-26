@@ -51,6 +51,18 @@
                     </div>
                 </div>
 
+                <!-- 传递函数表达式 -->
+                <div class="param-block paper-card">
+                    <h3>传递函数表达式</h3>
+                    <div class="field">
+                        <label for="tfExpr">H(s) = 分子 / 分母（s 的多项式分式）</label>
+                        <input type="text" id="tfExpr" placeholder="(s+1e4)/(s^2+2e4*s+1e8)" spellcheck="false" style="width:100%;font-family:var(--font-mono);font-size:0.85rem;">
+                        <p class="hint" style="margin-top:4px;">支持 s、s^2 / s²、科学计数法、括号与隐式乘法（如 2e4*s）；不支持延迟项 e^(−sτ)。</p>
+                    </div>
+                    <button class="btn" id="tfApply" type="button" style="width:100%;margin-top:6px;">解析并载入零极点</button>
+                    <p class="hint" id="tfMsg"></p>
+                </div>
+
                 <!-- 极点列表 -->
                 <div class="param-block paper-card">
                     <div class="block-header">
@@ -90,12 +102,12 @@
                 <!-- 幅频特性 -->
                 <div class="chart-container">
                     <div class="chart-label">幅频特性 |H(jω)| (dB)</div>
-                    <canvas id="magCanvas" width="700" height="300"></canvas>
+                    <div class="bode-plot-wrap"><canvas id="magCanvas" width="700" height="300"></canvas></div>
                 </div>
                 <!-- 相频特性 -->
                 <div class="chart-container" style="margin-top:var(--space-md);">
                     <div class="chart-label">相频特性 ∠H(jω) (°)</div>
-                    <canvas id="phaseCanvas" width="700" height="240"></canvas>
+                    <div class="bode-plot-wrap"><canvas id="phaseCanvas" width="700" height="240"></canvas></div>
                 </div>
                 <!-- 相位/增益裕度 -->
                 <div class="margin-display" id="marginDisplay" style="display:none;">

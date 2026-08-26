@@ -142,3 +142,25 @@
 .topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .topo-svg .td { fill: #4a4a4a; }
 .topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }
+
+/* TF 表达式错误提示 */
+#tfMsg.tf-err { color: #c0583a; }
+
+/* 鼠标取点：十字准线覆盖层 + 读数框 */
+.bode-plot-wrap { position: relative; }
+.bode-plot-wrap canvas { display: block; }
+.bode-probe { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.bode-tip {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    background: rgba(255, 252, 247, 0.95);
+    border: 1.5px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-text);
+    white-space: nowrap;
+    box-shadow: 2px 2px 0 rgba(74, 74, 74, 0.15);
+}

@@ -27,6 +27,7 @@
             <div class="calc-display">
                 <div class="calc-expr" id="exprLine"><span class="expr-placeholder">0</span></div>
                 <div class="calc-result" id="resultLine"></div>
+                <button type="button" class="btn calc-copy" id="copyResBtn" title="复制结果到剪贴板">复制结果</button>
             </div>
             <div class="keypad" id="keypad">
                 <button type="button" class="key key-mode" data-k="DEG" id="degBtn">DEG</button>
@@ -34,6 +35,12 @@
                 <button type="button" class="key key-fn" data-k=")">)</button>
                 <button type="button" class="key key-danger" data-k="C">C</button>
                 <button type="button" class="key key-danger" data-k="⌫">⌫</button>
+
+                <button type="button" class="key key-fn" data-k="ε" title="记录符号（不参与计算）">ε</button>
+                <button type="button" class="key key-fn" data-k="δ" title="记录符号（不参与计算）">δ</button>
+                <button type="button" class="key key-fn" data-k="Σ" title="记录符号（不参与计算）">Σ</button>
+                <button type="button" class="key key-fn" data-k="lim" title="记录符号（不参与计算）">lim</button>
+                <button type="button" class="key key-fn" data-k="→" title="记录符号（不参与计算）">→</button>
 
                 <button type="button" class="key key-fn" data-k="sin(">sin</button>
                 <button type="button" class="key key-fn" data-k="cos(">cos</button>
@@ -92,6 +99,7 @@
                 <li>n! 仅支持 0~170 的非负整数（防止溢出）；ln/log 要求真数 &gt; 0；asin/acos 要求 |x| ≤ 1。</li>
                 <li>DEG/RAD 切换影响三角函数输入与反三角函数输出；± 作用于最后输入的数字。</li>
                 <li>键盘：数字、<code>+ - * / ^ ( ) !</code>、<code>Enter</code>= 计算、<code>Backspace</code>= 删除、<code>Esc</code>= 清空、<code>P</code>= π。</li>
+                <li>ε、δ、Σ、lim、→ 为记录符号键：插入表达式供随结果一并复制到文档，<strong>不参与计算</strong>（含符号时按 = 会提示移除）。</li>
             </ul>
         </div>
     </main>

@@ -109,3 +109,15 @@
     .key-num { font-size: 1.1rem; }
     .calc-result { font-size: 1.5rem; }
 }
+
+/* 复制结果按钮：显示区右下角 */
+.calc-display { position: relative; }
+.calc-copy {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    opacity: 0.75;
+}
+.calc-copy:hover { opacity: 1; }

@@ -25,6 +25,12 @@ function rightAssoc(o) { return o === '^' || o === 'u-'; }
 
 function evaluate(rawTokens) {
     if (!rawTokens.length) throw new Error('表达式为空');
+    /* 记录符号（ε/δ/Σ/lim/→）不参与求值 */
+    for (var si = 0; si < rawTokens.length; si++) {
+        if (/^(ε|δ|Σ|lim|→)$/.test(rawTokens[si])) {
+            throw new Error('ε/δ/Σ/lim/→ 为记录符号，请移除后再计算');
+        }
+    }
 
     /* 预处理 1：负数字面量位于"值"之后 → 拆成二元 '-' + 正数 */
     var tokens = [];
@@ -334,6 +340,17 @@ document.addEventListener('keydown', function (e) {
     else if (k === 'Escape' || k === 'Delete') press('C');
     else if (k === 'p' || k === 'P') press('π');
     else return;
+});
+
+/* ---------- 复制结果 ---------- */
+document.getElementById('copyResBtn').addEventListener('click', function () {
+    var t = el.resultLine.textContent.replace(/^=\s*/, '');
+    if (!t) return;
+    var btn = this;
+    copyTextToClipboard(t, function (ok) {
+        btn.textContent = ok ? '已复制 ✓' : '复制失败';
+        setTimeout(function () { btn.textContent = '复制结果'; }, 1200);
+    });
 });
 
 /* ---------- 初始化 ---------- */

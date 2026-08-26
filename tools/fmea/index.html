@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMEA / FMEDA 工作台 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">常用工具 / FMEA 工作台</span>
+    </nav>
+
+    <main class="container">
+        <h1>FMEA / FMEDA 工作台</h1>
+        <p class="tool-desc">ISO 26262 风格：元器件失效模式中英查询 + S/O/D 打分锚点 + 迷你 FMEDA（SPFM / LFM / PMHF 与 ASIL 达标判定）。</p>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="query" onclick="switchTab('query')">失效模式查询</button>
+            <button class="tab-btn" data-tab="sod" onclick="switchTab('sod')">S / O / D 打分参考</button>
+            <button class="tab-btn" data-tab="fmeda" onclick="switchTab('fmeda')">FMEDA 计算</button>
+        </div>
+
+        <!-- ===== TAB 1 失效模式查询 ===== -->
+        <section class="tab-panel active" id="tab-query">
+            <div class="fm-query-grid">
+                <div class="paper-card">
+                    <h3>选择元器件</h3>
+                    <div class="field">
+                        <label for="fmCat">大类</label>
+                        <select id="fmCat"></select>
+                    </div>
+                    <div class="field">
+                        <label for="fmComp">元器件</label>
+                        <select id="fmComp"></select>
+                    </div>
+                    <div class="field">
+                        <label for="fmSub">子元器件</label>
+                        <select id="fmSub"></select>
+                    </div>
+                </div>
+                <div class="paper-card">
+                    <h3>失效模式（中英对照）</h3>
+                    <div class="fm-desc">
+                        <p id="fmDescZh">-</p>
+                        <p class="fm-desc-en" id="fmDescEn">-</p>
+                    </div>
+                    <div class="scroll-table">
+                        <table class="sketch-table fm-table">
+                            <thead><tr><th>失效模式（中文）</th><th>Failure Mode (English)</th><th>典型分布</th></tr></thead>
+                            <tbody id="fmModeBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="fm-hint" id="fmCopyHint">点击表内任意行复制「中文 / English」对照</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== TAB 2 S/O/D 打分参考 ===== -->
+        <section class="tab-panel" id="tab-sod">
+            <div class="sod-grid">
+                <div class="tool-section" style="margin-top:0;">
+                    <h4>严重度 S</h4>
+                    <div class="scroll-table"><table class="sketch-table" id="sodS"></table></div>
+                </div>
+                <div class="tool-section" style="margin-top:0;">
+                    <h4>频度 O</h4>
+                    <div class="scroll-table"><table class="sketch-table" id="sodO"></table></div>
+                </div>
+                <div class="tool-section" style="margin-top:0;">
+                    <h4>探测度 D</h4>
+                    <div class="scroll-table"><table class="sketch-table" id="sodD"></table></div>
+                </div>
+            </div>
+            <div class="info-box">
+                <b>RPN</b> = S × O × D（风险优先数，越大越需优先处理）；ISO 26262 体系更推荐 <b>AP</b>（行动优先级）：
+                由 S/O/D 组合查表得 H / M / L，弱化纯乘积的阈值误判。S 9~10 且涉及安全的条目，无论 RPN 大小都应进入安全分析流程。
+            </div>
+        </section>
+
+        <!-- ===== TAB 3 FMEDA 计算 ===== -->
+        <section class="tab-panel" id="tab-fmeda">
+            <div class="paper-card">
+                <h3>失效率换算（改谁算谁）</h3>
+                <div class="fmeda-conv">
+                    <div class="field">
+                        <label>λ（FIT，10⁻⁹/h）</label>
+                        <div class="iu-row"><input type="number" id="cvFit" value="100" step="any" min="0"><span class="unit">FIT</span></div>
+                    </div>
+                    <div class="field">
+                        <label>MTBF</label>
+                        <div class="iu-row"><input type="number" id="cvMtbf" step="any" min="0"><span class="unit">h</span></div>
+                    </div>
+                    <div class="field">
+                        <label>λ</label>
+                        <div class="iu-row"><input type="number" id="cvLam" step="any" min="0"><span class="unit">/h</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>迷你 FMEDA 表</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table fmeda-table">
+                        <thead><tr>
+                            <th>器件</th><th>λ (FIT)</th><th>SPF+RF %</th><th>MPF 潜伏 %</th><th>DC_L %</th><th></th>
+                        </tr></thead>
+                        <tbody id="fmedaBody"></tbody>
+                    </table>
+                </div>
+                <div class="tool-row" style="margin-top:var(--space-sm);">
+                    <button class="btn" id="fmedaAdd" type="button">+ 添加器件行</button>
+                </div>
+                <div class="fmeda-sum">
+                    <div class="ritem"><span class="rlabel">Σλ 总失效率</span><span class="rval" id="sumLam">-</span></div>
+                    <div class="ritem"><span class="rlabel">Σλ_SPF+RF</span><span class="rval" id="sumSpf">-</span></div>
+                    <div class="ritem"><span class="rlabel">Σλ_MPF,L（潜伏）</span><span class="rval" id="sumMpf">-</span></div>
+                    <div class="ritem big"><span class="rlabel">SPFM 单点故障度量</span><span class="rval" id="vSpfm">-</span></div>
+                    <div class="ritem big"><span class="rlabel">LFM 潜伏故障度量</span><span class="rval" id="vLfm">-</span></div>
+                    <div class="ritem big"><span class="rlabel">PMHF 随机硬件失效概率</span><span class="rval" id="vPmhf">-</span></div>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>ASIL 目标对照</h3>
+                <div class="scroll-table">
+                    <table class="sketch-table asil-table">
+                        <thead><tr><th>指标</th><th>ASIL B</th><th>ASIL C</th><th>ASIL D</th></tr></thead>
+                        <tbody>
+                            <tr><td>SPFM</td><td id="asSpfmB">≥90%</td><td id="asSpfmC">≥97%</td><td id="asSpfmD">≥99%</td></tr>
+                            <tr><td>LFM</td><td id="asLfmB">≥60%</td><td id="asLfmC">≥80%</td><td id="asLfmD">≥90%</td></tr>
+                            <tr><td>PMHF</td><td id="asPmhfB">&lt;100 FIT</td><td id="asPmhfC">&lt;100 FIT</td><td id="asPmhfD">&lt;10 FIT</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="info-box">
+                公式：SPFM = 1 − Σλ_SPF+RF / Σλ ｜ LFM = 1 − Σλ_MPF,L / (Σλ − λ_SPF − λ_RF) ｜
+                PMHF ≈ Σ(λ_SPF + λ_RF) + Σλ_MPF,L × (1 − DC_L)。
+                PMHF 采用潜伏故障工程近似（未计诊断测试周期间歇暴露），适用于快速量级评估；表中
+                SPF+RF% / MPF潜伏% 为该器件总失效率中归入对应类别的占比（其余视为安全故障），DC_L 为潜伏故障安全机制诊断覆盖率。
+            </div>
+        </section>
+
+        <div class="warn-box">
+            数据声明：本页失效模式库与 S/O/D 锚点为参考 ISO 26262-5 附录 D 与 ISO 26262-11 风格整理的<b>工程示例</b>，
+            失效分布百分比取常见文献量级，非标准原文引用。实际项目请以最新标准原文与实测/现场数据为准。
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

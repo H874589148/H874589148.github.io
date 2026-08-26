@@ -158,6 +158,7 @@ var DEFAULT_TEXT = { nmos: 'M1', pmos: 'M2', res: 'R1', cap: 'C1', isrc: 'I1', v
 var doc = { items: [], groups: [] };
 var sel = [];
 var tool = 'select';
+var wireMode = 'orth';  // 连线走线：orth 正交 / diag 斜线（两点直线）
 var drag = null;
 var wireStart = null;
 var hoverPort = null;
@@ -348,7 +349,7 @@ function renderOverlay() {
     }
     /* 连线预览 */
     if (wireStart && wireStart.cur) {
-        s += '<polyline points="' + manhattan(wireStart, wireStart.cur).map(function (p) { return p.x + ',' + p.y; }).join(' ') + '"' +
+        s += '<polyline points="' + wirePath(wireStart, wireStart.cur).map(function (p) { return p.x + ',' + p.y; }).join(' ') + '"' +
             ' fill="none" stroke="#c0583a" stroke-width="1.5" stroke-dasharray="6 4" pointer-events="none"/>';
     }
     /* 框选矩形 */
@@ -366,6 +367,12 @@ function manhattan(a, b) {
     if (a.x !== b.x && a.y !== b.y) pts.push({ x: b.x, y: a.y });
     pts.push({ x: b.x, y: b.y });
     return pts;
+}
+
+/* 按当前走线模式生成路径：斜线 = 两点直 polyline */
+function wirePath(a, b) {
+    if (wireMode === 'diag') return [{ x: a.x, y: a.y }, { x: b.x, y: b.y }];
+    return manhattan(a, b);
 }
 
 /* ============================================
@@ -420,7 +427,7 @@ svg.addEventListener('mousedown', function (e) {
         } else {
             if (pt.x !== wireStart.x || pt.y !== wireStart.y) {
                 pushUndo();
-                doc.items.push({ kind: 'wire', id: uid(), pts: manhattan(wireStart, pt), stroke: '#1a1a1a', sw: 1.5, dash: '' });
+                doc.items.push({ kind: 'wire', id: uid(), pts: wirePath(wireStart, pt), stroke: '#1a1a1a', sw: 1.5, dash: '' });
             }
             wireStart = null;
         }
@@ -605,6 +612,106 @@ function addComp(type, x, y) {
     sel = [c.id];
     render();
 }
+
+/* ============================================
+   模板：差分对 / 电流镜 / 5 管 OTA（插入画布中心并自动成组）
+   坐标均为相对插入中心的偏移；端口位置与 SYMBOLS 对齐
+   ============================================ */
+var CK_TEMPLATES = {
+    diffpair: {
+        name: '差分对',
+        build: function (comp, wire) {
+            comp('nmos', -60, 0, { text: 'M1' });
+            comp('nmos', 60, 0, { fh: true, text: 'M2' });
+            comp('isrc', 0, 140, { text: 'Iss' });
+            comp('gnd', 0, 190);
+            wire([[-90, 0], [-120, 0]]);              // Vin+ stub
+            wire([[90, 0], [120, 0]]);                // Vin− stub
+            wire([[-60, -30], [-60, -60]]);           // M1.D stub
+            wire([[60, -30], [60, -60]]);             // M2.D stub
+            wire([[-60, 30], [-60, 70]]);
+            wire([[60, 30], [60, 70]]);
+            wire([[-60, 70], [60, 70]]);              // 源极汇合
+            wire([[0, 70], [0, 110]]);                // → Iss.+
+            wire([[0, 170], [0, 190]]);               // Iss.− → GND
+        }
+    },
+    curmirror: {
+        name: '电流镜',
+        build: function (comp, wire) {
+            comp('pmos', -60, 0, { fv: true, text: 'M1' });   // fv：S 在上 D 在下
+            comp('pmos', 60, 0, { fv: true, text: 'M2' });
+            comp('vdd', 0, -70);
+            wire([[-60, -30], [-60, -70]]);           // M1.S → 电源轨
+            wire([[60, -30], [60, -70]]);             // M2.S → 电源轨
+            wire([[-60, -70], [60, -70]]);            // VDD 轨
+            wire([[-90, 0], [30, 0]]);                // 栅极轨 M1.G → M2.G
+            wire([[-90, 0], [-90, 30], [-60, 30]]);   // M1 二极管连接（G 接 D）
+            wire([[-60, 30], [-60, 60]]);             // Iin stub
+            wire([[60, 30], [60, 60]]);               // Iout stub
+        }
+    },
+    ota5: {
+        name: '5 管 OTA',
+        build: function (comp, wire) {
+            comp('pmos', -60, -120, { fv: true, text: 'M3' });
+            comp('pmos', 60, -120, { fv: true, text: 'M4' });
+            comp('vdd', 0, -190);
+            comp('nmos', -60, 0, { text: 'M1' });
+            comp('nmos', 60, 0, { fh: true, text: 'M2' });
+            comp('nmos', 0, 140, { text: 'M5' });     // 尾管
+            comp('gnd', 0, 190);
+            wire([[-60, -150], [-60, -190]]);         // M3.S → 电源轨
+            wire([[60, -150], [60, -190]]);           // M4.S → 电源轨
+            wire([[-60, -190], [60, -190]]);          // VDD 轨
+            wire([[-90, -120], [30, -120]]);          // 镜像栅极轨 M3.G → M4.G
+            wire([[-90, -120], [-90, -90], [-60, -90]]);  // M3 二极管连接
+            wire([[-60, -90], [-60, -30]]);           // M3.D → M1.D
+            wire([[60, -90], [60, -30]]);             // M4.D → M2.D
+            wire([[60, -60], [110, -60]]);            // Vout stub
+            wire([[-90, 0], [-120, 0]]);              // Vin+ stub
+            wire([[90, 0], [120, 0]]);                // Vin− stub
+            wire([[-60, 30], [-60, 70]]);
+            wire([[60, 30], [60, 70]]);
+            wire([[-60, 70], [60, 70]]);              // 源极汇合
+            wire([[0, 70], [0, 110]]);                // → M5.D
+            wire([[0, 170], [0, 190]]);               // M5.S → GND
+            wire([[-30, 140], [-70, 140]]);           // Vbias stub
+        }
+    }
+};
+
+function insertTemplate(key) {
+    var tpl = CK_TEMPLATES[key];
+    if (!tpl) return;
+    /* 插入点 = 画布可见区中心（吸附网格） */
+    var cx = snap(wrap.scrollLeft + wrap.clientWidth / 2);
+    var cy = snap(wrap.scrollTop + wrap.clientHeight / 2);
+    pushUndo();
+    var ids = [];
+    function comp(type, dx, dy, extra) {
+        var c = { kind: 'comp', id: uid(), type: type, x: cx + dx, y: cy + dy, rot: 0, fh: false, fv: false,
+            text: DEFAULT_TEXT[type] || '', stroke: '#1a1a1a', sw: 1.5, dash: '' };
+        if (extra) Object.keys(extra).forEach(function (k) { c[k] = extra[k]; });
+        doc.items.push(c);
+        ids.push(c.id);
+    }
+    function wire(pts) {
+        var w = { kind: 'wire', id: uid(), stroke: '#1a1a1a', sw: 1.5, dash: '',
+            pts: pts.map(function (p) { return { x: cx + p[0], y: cy + p[1] }; }) };
+        doc.items.push(w);
+        ids.push(w.id);
+    }
+    tpl.build(comp, wire);
+    /* 自动成组（同 groupSel 的效果，但与插入同属一步撤销，不再压栈） */
+    sel = ids;
+    if (ids.length >= 2) doc.groups.push({ id: uid(), members: ids.slice() });
+    render();
+}
+
+document.querySelectorAll('.ck-tpl-list [data-tpl]').forEach(function (btn) {
+    btn.addEventListener('click', function () { insertTemplate(btn.getAttribute('data-tpl')); });
+});
 
 /* ============================================
    编辑操作：旋转/镜像/对齐/均布/分组/图层/复制/删除
@@ -838,6 +945,12 @@ function setTool(t) {
 
 toolSelect.addEventListener('click', function () { setTool('select'); });
 toolWire.addEventListener('click', function () { setTool('wire'); });
+var wireModeBtn = document.getElementById('wireModeBtn');
+wireModeBtn.addEventListener('click', function () {
+    wireMode = wireMode === 'orth' ? 'diag' : 'orth';
+    wireModeBtn.textContent = '走线：' + (wireMode === 'orth' ? '正交' : '斜线');
+    if (wireStart) renderOverlay();   // 进行中的连线预览同步切换
+});
 document.getElementById('undoBtn').addEventListener('click', undo);
 document.getElementById('redoBtn').addEventListener('click', redo);
 document.getElementById('copyBtn').addEventListener('click', copySel);
@@ -903,12 +1016,12 @@ function contentBBox() {
     return { x0: x0, y0: y0, x1: x1, y1: y1 };
 }
 
-function exportSvgStr() {
+function exportSvgStr(withBg) {
     var b = contentBBox(), m = 20;
     var x = b.x0 - m, y = b.y0 - m, w = b.x1 - b.x0 + 2 * m, h = b.y1 - b.y0 + 2 * m;
     var s = '<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="' +
-        x + ' ' + y + ' ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' +
-        '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#ffffff"/>';
+        x + ' ' + y + ' ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">';
+    if (withBg) s += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#ffffff"/>';
     doc.items.forEach(function (it) { s += it.kind === 'comp' ? compSvg(it) : wireSvg(it); });
     return { str: s + '</svg>', w: w, h: h };
 }
@@ -924,12 +1037,28 @@ function download(name, blob) {
 }
 
 document.getElementById('expSvg').addEventListener('click', function () {
-    var r = exportSvgStr();
+    var r = exportSvgStr(!document.getElementById('expSvgTrans').checked);
     download('circuit.svg', new Blob([r.str], { type: 'image/svg+xml' }));
 });
 
 document.getElementById('expPng').addEventListener('click', function () {
-    var r = exportSvgStr();
+    var trans = document.getElementById('expPngTrans').checked;
+    var r = exportSvgStr(!trans);
+    var img = new Image();
+    img.onload = function () {
+        var cv = document.createElement('canvas');
+        cv.width = r.w * 2; cv.height = r.h * 2;
+        var ctx = cv.getContext('2d');
+        if (!trans) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height); }
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        cv.toBlob(function (bl) { if (bl) download('circuit.png', bl); });
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+});
+
+/* 导出 PDF：白底 2x 位图（JPEG 不支持透明），走 common.js 最小 PDF 生成器 */
+document.getElementById('expPdf').addEventListener('click', function () {
+    var r = exportSvgStr(true);
     var img = new Image();
     img.onload = function () {
         var cv = document.createElement('canvas');
@@ -938,7 +1067,7 @@ document.getElementById('expPng').addEventListener('click', function () {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, cv.width, cv.height);
         ctx.drawImage(img, 0, 0, cv.width, cv.height);
-        cv.toBlob(function (bl) { if (bl) download('circuit.png', bl); });
+        downloadPdfFromCanvas(cv, 'circuit.pdf');
     };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
 });

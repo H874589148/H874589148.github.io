@@ -1,6 +1,6 @@
 /* tools/wavedrom/script.js
    WaveDrom 波形编辑器：JSON 编辑 + 图形化点击编辑，双向同步
-   （库：js/vendor/wavedrom.min.js，加载失败回退 CDN） */
+   库加载回退链：本地 vendor → cdnjs → unpkg → jsdelivr（单源 5s 超时自动切换） */
 
 'use strict';
 
@@ -11,8 +11,12 @@ var panelEl = document.getElementById('wdPanel');
 var menuEl = document.getElementById('wdMenu');
 var panelText = document.getElementById('wdPanelText');
 var panelColor = document.getElementById('wdPanelColor');
+var copyMinBtn = document.getElementById('wdCopyMin');
+var tplSel = document.getElementById('wdTpl');
 
 var source = null;      // WaveJSON 对象
+var lastErr = '';       // 最近一次错误消息（最小复现打包用）
+var wdLoading = false;  // 库加载中（加载期 render 静默返回，不闪现错误）
 var geom = null;        // {ov, laneX, laneYs[], slotW}
 var panelCtx = null;    // 数据槽面板上下文 {lane, ci}
 var menuCtx = null;     // 右键菜单上下文 {lane, ci}
@@ -25,6 +29,13 @@ var DEFAULT_SRC = {
         { name: 'state', wave: '2.2.2.2.', data: ['IDLE', 'RUN', 'CAL', 'DONE'] }
     ]
 };
+
+/* 统一错误出口：红字提示 + 「复制最小复现」按钮显隐联动 */
+function setErr(msg) {
+    lastErr = msg || '';
+    errEl.textContent = lastErr;
+    copyMinBtn.style.display = lastErr ? '' : 'none';
+}
 
 /* ============================================
    wave 字符串工具（'|' 为时间标记，渲染上占半槽宽）
@@ -56,12 +67,15 @@ function render() {
     closePanel();
     closeMenu();
     outEl.innerHTML = '';
-    if (!window.WaveDrom) { errEl.textContent = 'WaveDrom 库未加载。'; return; }
+    if (!window.WaveDrom) {
+        if (!wdLoading) setErr('WaveDrom 库未加载。');
+        return;
+    }
     try {
         /* 传深拷贝，防止库内部写回污染源对象 */
         window.WaveDrom.renderWaveForm(0, JSON.parse(JSON.stringify(source)), outEl);
     } catch (e) {
-        errEl.textContent = '渲染失败：' + e.message;
+        setErr('渲染失败：' + e.message);
         return;
     }
     buildOverlay();
@@ -290,12 +304,76 @@ jsonEl.addEventListener('input', function () {
             var d = JSON.parse(jsonEl.value);
             if (!d || !Array.isArray(d.signal)) throw new Error('顶层需要 "signal" 数组');
             source = d;
-            errEl.textContent = '';
+            setErr('');
             render();
         } catch (e) {
-            errEl.textContent = 'JSON 语法错误：' + e.message;
+            setErr('JSON 语法错误：' + e.message);
         }
     }, 300);
+});
+
+/* ============================================
+   时序模板（载入前 confirm 覆盖）与「复制最小复现」
+   ============================================ */
+var TEMPLATES = {
+    spi: {
+        name: 'SPI（Mode 0）',
+        src: {
+            signal: [
+                { name: 'SCLK', wave: '0p........' },
+                { name: 'CS',   wave: '1.0......1.' },
+                { name: 'MOSI', wave: 'x.3.4.5.6x', data: ['B7', 'B6', 'B5', 'B4'] },
+                { name: 'MISO', wave: 'z.2.2.2.2z', data: ['b7', 'b6', 'b5', 'b4'] }
+            ]
+        }
+    },
+    i2c: {
+        name: 'I2C（起始 + 数据槽 + 应答）',
+        src: {
+            signal: [
+                { name: 'SCL', wave: '1.p........' },
+                { name: 'SDA', wave: '1.0.2.2.2.1', data: ['A6', 'R/W', 'ACK'] }
+            ]
+        }
+    },
+    hs2: {
+        name: '两相握手（电平翻转即事件）',
+        src: {
+            signal: [
+                { name: 'req', wave: '0.1...0...' },
+                { name: 'ack', wave: '0...1...0.' }
+            ]
+        }
+    },
+    hs4: {
+        name: '四相握手（req↑→ack↑→req↓→ack↓）',
+        src: {
+            signal: [
+                { name: 'req',  wave: '0.1.....0..' },
+                { name: 'ack',  wave: '0...1...0..' },
+                { name: 'data', wave: 'x.2.....x..', data: ['D0'] }
+            ]
+        }
+    }
+};
+
+tplSel.addEventListener('change', function () {
+    var key = tplSel.value;
+    tplSel.value = '';
+    if (!key || !TEMPLATES[key]) return;
+    if (!confirm('载入模板「' + TEMPLATES[key].name + '」将覆盖当前 WaveJSON，是否继续？')) return;
+    source = JSON.parse(JSON.stringify(TEMPLATES[key].src));
+    setErr('');
+    commit();
+});
+
+/* 打包当前 JSON + 错误消息到剪贴板，便于一键反馈 */
+copyMinBtn.addEventListener('click', function () {
+    var pkg = '【WaveDrom 最小复现】\n错误：' + lastErr + '\n\nWaveJSON：\n' + jsonEl.value;
+    copyTextToClipboard(pkg, function (ok) {
+        copyMinBtn.textContent = ok ? '已复制 ✓' : '复制失败';
+        setTimeout(function () { copyMinBtn.textContent = '复制最小复现'; }, 1200);
+    });
 });
 
 /* ============================================
@@ -346,20 +424,50 @@ document.getElementById('expPng').addEventListener('click', function () {
 });
 
 /* ============================================
-   启动（WaveDrom 本地加载，失败回退 CDN）
+   启动：库加载回退链（vendor → cdnjs → unpkg → jsdelivr，单源 5s 超时）
    ============================================ */
-function init() {
-    source = JSON.parse(JSON.stringify(DEFAULT_SRC));
-    jsonEl.value = JSON.stringify(source, null, 2);
-    render();
+var WD_SOURCES = [
+    { name: '本地 vendor', src: '../../js/vendor/wavedrom.min.js' },
+    { name: 'cdnjs',     src: 'https://cdnjs.cloudflare.com/ajax/libs/wavedrom/3.5.0/wavedrom.min.js' },
+    { name: 'unpkg',     src: 'https://unpkg.com/wavedrom@3.5.0/wavedrom.min.js' },
+    { name: 'jsdelivr',  src: 'https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/wavedrom.min.js' }
+];
+
+function loadWaveDrom(idx) {
+    if (idx >= WD_SOURCES.length) {
+        wdLoading = false;
+        setErr('WaveDrom 库加载失败：本地 vendor 与全部 CDN（cdnjs / unpkg / jsdelivr）均不可用，请检查网络后刷新页面。');
+        return;
+    }
+    var item = WD_SOURCES[idx];
+    errEl.textContent = '正在加载 WaveDrom 库（' + item.name + '）…';
+    var done = false;
+    var s = document.createElement('script');
+    s.src = item.src;
+    var timer = setTimeout(function () {
+        if (done) return;
+        done = true;                 /* 5s 内未完成 → 判定超时，切换下一源 */
+        s.onload = s.onerror = null;
+        loadWaveDrom(idx + 1);
+    }, 5000);
+    s.onload = function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        if (window.WaveDrom) { wdLoading = false; setErr(''); render(); }
+        else loadWaveDrom(idx + 1);  /* 脚本加载成功但全局对象缺失 → 视为无效源 */
+    };
+    s.onerror = function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        loadWaveDrom(idx + 1);
+    };
+    document.head.appendChild(s);
 }
 
-if (window.WaveDrom) {
-    init();
-} else {
-    var cdn = document.createElement('script');
-    cdn.src = 'https://cdnjs.cloudflare.com/ajax/libs/wavedrom/3.5.0/wavedrom.min.js';
-    cdn.onload = init;
-    cdn.onerror = function () { errEl.textContent = 'WaveDrom 库加载失败：本地 vendor 与 CDN 均不可用。'; };
-    document.head.appendChild(cdn);
-}
+/* 立即填充默认 JSON（库就绪前即可编辑），库加载完成后渲染 */
+source = JSON.parse(JSON.stringify(DEFAULT_SRC));
+jsonEl.value = JSON.stringify(source, null, 2);
+if (window.WaveDrom) render();
+else { wdLoading = true; loadWaveDrom(0); }
