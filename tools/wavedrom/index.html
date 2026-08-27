@@ -20,79 +20,110 @@
     </nav>
 
     <main class="container-wide">
-        <h1>波形编辑器（WaveDrom）</h1>
-        <p class="tool-desc">数字时序波形编辑器：左侧编辑 WaveJSON，右侧实时渲染；也可以直接在波形图上点击改电平、改数据块文字与颜色、双击重命名信号、右键插入/删除时间槽。</p>
+        <h1>波形编辑器</h1>
+        <p class="tool-desc">纯图形化数字时序波形绘制：点击改电平、总线填字填色、理想/非理想沿切换、区域填色，SVG/PNG/PDF 导出。</p>
 
-        <div class="paper-card wd-toolbar">
-            <button class="btn" id="addSig" type="button" title="末尾添加普通信号">+ 信号</button>
-            <button class="btn" id="addClk" type="button" title="末尾添加时钟信号">+ 时钟</button>
-            <button class="btn" id="insSlot" type="button" title="所有信号末尾插入一个时间槽">+ 时间槽</button>
-            <button class="btn" id="delSlot" type="button" title="所有信号末尾删除一个时间槽">− 时间槽</button>
-            <span class="tb-sep"></span>
-            <select class="wd-tpl" id="wdTpl" title="一键载入时序模板（载入前确认覆盖）">
-                <option value="" selected>载入模板…</option>
-                <option value="spi">SPI（SCLK / CS / MOSI / MISO）</option>
-                <option value="i2c">I2C（SCL / SDA）</option>
-                <option value="hs2">两相握手（req / ack）</option>
-                <option value="hs4">四相握手（req / ack / data）</option>
-            </select>
-            <span class="tb-sep"></span>
-            <button class="btn btn-primary" id="expSvg" type="button">导出 SVG</button>
-            <button class="btn" id="expPng" type="button">导出 PNG</button>
+        <!-- ===== 工具栏（分组可折叠） ===== -->
+        <div class="paper-card wv-toolbar">
+            <details class="wv-group" open>
+                <summary>结构</summary>
+                <div class="wv-btns">
+                    <button class="btn" id="addSig" type="button" title="末尾添加电平信号">+ 信号</button>
+                    <button class="btn" id="addBus" type="button" title="末尾添加总线信号">+ 总线</button>
+                    <button class="btn" id="addClk" type="button" title="末尾添加时钟信号">+ 时钟</button>
+                    <span class="tb-sep"></span>
+                    <button class="btn" id="delSig" type="button" title="删除选中信号所在行">− 信号</button>
+                    <button class="btn" id="mvUp" type="button" title="选中信号上移一行">上移</button>
+                    <button class="btn" id="mvDown" type="button" title="选中信号下移一行">下移</button>
+                    <span class="tb-sep"></span>
+                    <button class="btn" id="addPer" type="button" title="所有信号末尾增加一个周期">+ 周期</button>
+                    <button class="btn" id="delPer" type="button" title="所有信号末尾删除一个周期">− 周期</button>
+                </div>
+            </details>
+            <details class="wv-group">
+                <summary>电平与沿</summary>
+                <div class="wv-btns">
+                    <button class="btn" id="set0" type="button" title="选区置低电平">置 0</button>
+                    <button class="btn" id="set1" type="button" title="选区置高电平">置 1</button>
+                    <button class="btn" id="setZ" type="button" title="选区置高阻态">置 Z</button>
+                    <button class="btn" id="setX" type="button" title="选区置不确定态">置 X</button>
+                    <span class="tb-sep"></span>
+                    <button class="btn" id="edgeIdeal" type="button" title="选区跳变沿设为理想（垂直线）">理想沿</button>
+                    <button class="btn" id="edgeSlope" type="button" title="选区跳变沿设为非理想（斜坡）">斜坡沿</button>
+                </div>
+            </details>
+            <details class="wv-group">
+                <summary>数据块</summary>
+                <div class="wv-btns">
+                    <button class="btn" id="mkData" type="button" title="选区转为数据块">设为数据块</button>
+                    <button class="btn" id="editData" type="button" title="编辑选区内数据块文字与颜色">编辑文字</button>
+                    <button class="btn" id="unData" type="button" title="选区内数据块拆回低电平">拆回电平</button>
+                    <span class="tb-sep"></span>
+                    <span class="wv-lbl">块颜色</span>
+                    <span class="wv-swatches" id="blockColors"></span>
+                </div>
+            </details>
+            <details class="wv-group">
+                <summary>区域填色</summary>
+                <div class="wv-btns">
+                    <span class="wv-lbl">填色</span>
+                    <span class="wv-swatches" id="fillColors"></span>
+                    <button class="btn" id="applyFill" type="button" title="对选区时间段填色">对选区填色</button>
+                    <button class="btn" id="clearFill" type="button" title="清除与选区相交的填色带">清除填色</button>
+                </div>
+            </details>
+            <details class="wv-group">
+                <summary>文件</summary>
+                <div class="wv-btns">
+                    <button class="btn btn-primary" id="expSvg" type="button">导出 SVG</button>
+                    <button class="btn" id="expPng" type="button">导出 PNG</button>
+                    <button class="btn" id="expPdf" type="button">导出 PDF</button>
+                    <span class="tb-sep"></span>
+                    <button class="btn" id="undoBtn" type="button" title="Ctrl+Z">撤销</button>
+                    <button class="btn" id="redoBtn" type="button" title="Ctrl+Y">重做</button>
+                    <span class="tb-sep"></span>
+                    <button class="btn" id="resetBtn" type="button" title="恢复默认 5 行示例">重置为示例</button>
+                </div>
+            </details>
         </div>
 
-        <div class="wd-layout">
-            <div class="paper-card wd-editor">
-                <h3>WaveJSON 源码</h3>
-                <textarea id="wdJson" spellcheck="false"></textarea>
-                <p class="wd-err" id="wdErr"></p>
-                <button class="btn wd-copy-min" id="wdCopyMin" type="button" style="display:none">复制最小复现</button>
-            </div>
-            <div class="paper-card wd-view">
-                <div class="chart-label">波形预览（点击槽位切换 0→1→x→z→. ｜ 点击色块改文字/颜色 ｜ 双击名字重命名 ｜ 右键槽位插入/删除）</div>
-                <div class="wd-out" id="wdOut"></div>
-            </div>
-        </div>
+        <p class="wv-status" id="selInfo">未选中槽位</p>
+
+        <!-- ===== 波形画布 ===== -->
+        <div class="paper-card wv-canvas" id="wvOut"></div>
 
         <div class="info-box">
-            <p><strong>说明：</strong></p>
+            <p><strong>使用说明：</strong></p>
             <ul>
-                <li>本工具基于开源库 <a href="https://wavedrom.com" target="_blank" rel="noopener">WaveDrom</a>（MIT），库按 本地 vendor → cdnjs → unpkg → jsdelivr 顺序动态加载，单源 5 秒超时自动切换下一源，全部失败时红字提示。</li>
-                <li>工具栏「载入模板」可一键填入 SPI、I2C、两相 / 四相握手时序预设（载入前会确认覆盖当前内容）。</li>
-                <li>JSON 出错时，编辑器下方出现「复制最小复现」按钮，一键打包当前 JSON 与错误信息，便于反馈排查。</li>
-                <li>wave 字符串常用字符：<code>0/1</code> 电平、<code>.</code> 保持、<code>x</code> 不确定、<code>z</code> 高阻、<code>p/n</code> 时钟、<code>2~9</code> 数据块（配合 data 数组填文字）、<code>|</code> 时间标记分隔。</li>
-                <li>高级语法（edge 箭头、phase、period 等）可直接在左侧 JSON 手写，图形编辑与 JSON 实时双向同步。</li>
+                <li>单击槽位选中；电平/时钟行再次点击循环 0 → 1 → Z → X，总线行循环 0 → 1 → 数据块，点击已有数据块弹出文字/颜色编辑面板。</li>
+                <li>Shift + 点击可从当前选中槽扩展选区；「电平与沿」「数据块」「区域填色」组的操作均作用于选区。</li>
+                <li>「斜坡沿」使选区内的 0↔1 跳变显示为非理想斜线（上升/下降沿），「理想沿」显示为垂直线。</li>
+                <li>「区域填色」在波形下方绘制半透明色带，用于标注传输窗口等时间段；双击左侧信号名可重命名。</li>
+                <li>编辑内容自动保存在浏览器本地（localStorage），支持 Ctrl+Z / Ctrl+Y 撤销重做；顶部数字为周期编号（1 周期 = 2 槽）。</li>
             </ul>
         </div>
     </main>
 
-    <!-- 数据槽编辑面板 -->
-    <div class="wd-pop" id="wdPanel" style="display:none;">
+    <!-- 数据块编辑面板 -->
+    <div class="wv-pop" id="wvPanel" style="display:none;">
         <h4>数据块</h4>
         <div class="field">
-            <label for="wdPanelText">文字</label>
-            <input type="text" id="wdPanelText">
+            <label for="wvPanelText">文字（hex / 注释均可）</label>
+            <input type="text" id="wvPanelText">
         </div>
         <div class="field">
-            <label for="wdPanelColor">颜色</label>
-            <select id="wdPanelColor"></select>
+            <label>颜色</label>
+            <div class="wv-swatches" id="wvPanelColors"></div>
         </div>
-        <div class="wd-pop-btns">
-            <button class="btn btn-primary" id="wdPanelOk" type="button">应用</button>
-            <button class="btn" id="wdPanelDel" type="button">删除此槽</button>
+        <div class="wv-pop-btns">
+            <button class="btn btn-primary" id="wvPanelOk" type="button">应用</button>
+            <button class="btn" id="wvPanelDel" type="button">删除此块</button>
         </div>
-    </div>
-
-    <!-- 右键菜单 -->
-    <div class="wd-pop wd-menu" id="wdMenu" style="display:none;">
-        <button class="wd-menu-item" id="wdMenuIns" type="button">在此槽前插入时间槽</button>
-        <button class="wd-menu-item" id="wdMenuDel" type="button">删除此时间槽</button>
     </div>
 
     <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
     <script async src="https://cn.vercount.one/js"></script>
 
-    <!-- WaveDrom 库由 script.js 动态加载（vendor → cdnjs → unpkg → jsdelivr 回退链） -->
     <script src="../../js/common.js"></script>
     <script src="script.js"></script>
 </body>
