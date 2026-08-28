@@ -20,8 +20,8 @@
   'use strict';
 
   /* ---------- 精灵图与动画规范（来自仓库 README / CODEX_PET_SPEC） ---------- */
-  // 图集 1536 x 1872，单元 192 x 208，8 列 x 9 行，WebP RGBA
-  var FRAME = { cols: 8, rows: 9, cellW: 192, cellH: 208 };
+  // 图集 1536 x 5616，单元 192 x 208，8 列 x 27 行，WebP RGBA
+  var FRAME = { cols: 8, rows: 27, cellW: 192, cellH: 208 };
 
   var ANIMS = [
     { name: 'idle',          frames: 6, fps: 8  }, // row 0
@@ -32,7 +32,25 @@
     { name: 'failed',        frames: 8, fps: 10 }, // row 5
     { name: 'waiting',       frames: 6, fps: 8  }, // row 6
     { name: 'running',       frames: 6, fps: 12 }, // row 7
-    { name: 'review',        frames: 6, fps: 8  }  // row 8
+    { name: 'review',        frames: 6, fps: 8 },  // row 8
+    { name: 'dancing',       frames: 6, fps: 8 },  // row 9
+    { name: 'steal-right',   frames: 8, fps: 12 }, // row 10
+    { name: 'steal-left',    frames: 8, fps: 12 }, // row 11
+    { name: 'toilet',        frames: 4, fps: 10 }, // row 12
+    { name: 'music',         frames: 5, fps: 10 }, // row 13
+    { name: 'ohh',           frames: 8, fps: 10 }, // row 14
+    { name: 'sofa',          frames: 6, fps: 8 },  // row 15
+    { name: 'working',       frames: 6, fps: 12 }, // row 16
+    { name: 'thinking',      frames: 6, fps: 8 },  // row 17
+    { name: 'fat',           frames: 6, fps: 8 },  // row 18
+    { name: 'walking-right', frames: 8, fps: 12 }, // row 19
+    { name: 'walking-left',  frames: 8, fps: 12 }, // row 20
+    { name: 'bye',           frames: 4, fps: 10 }, // row 21
+    { name: 'jump',          frames: 5, fps: 10 }, // row 22
+    { name: 'sad',           frames: 8, fps: 10 }, // row 23
+    { name: 'love',          frames: 6, fps: 8 },  // row 24
+    { name: 'tap',           frames: 6, fps: 12 }, // row 25
+    { name: 'pat',           frames: 6, fps: 8 }   // row 26
   ];
   var ANIM_BY_NAME = {};
   ANIMS.forEach(function (a, i) { a.row = i; ANIM_BY_NAME[a.name] = a; });
@@ -361,7 +379,7 @@
       if (self.cfg.autoIdle) self._scheduleIdle();
       // 没有移动则视为点击 → 随机换一个非 idle 姿势并保持循环，不再回到 idle
       if (!moved) {
-        var fun = ['waving', 'jumping', 'review', 'failed', 'waiting', 'running', 'running-right', 'running-left'];
+          var fun = ['waving', 'jumping', 'review', 'failed', 'waiting', 'running', 'running-right', 'running-left', 'dancing', 'steal-right', 'steal-left', 'toilet', 'music', 'ohh', 'sofa', 'working', 'thinking', 'fat', 'walking-right', 'walking-left', 'bye', 'jump', 'sad', 'love', 'tap', 'pat'];
         self.play(rand(fun), { loop: true });
         self.say(rand(self.cfg.messages), 2800);
       }
