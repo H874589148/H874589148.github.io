@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>版图寄生阻抗计算 - EE工具箱</title>
+    <title>版图寄生计算 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -16,22 +16,32 @@
     <nav class="top-nav">
         <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
-        <span class="breadcrumb">计算工具 / 版图寄生阻抗计算</span>
+        <span class="breadcrumb">计算工具 / 版图寄生计算</span>
     </nav>
 
     <main class="container-wide">
-        <h1>版图寄生阻抗计算</h1>
-        <p class="tool-desc">按走线段累加寄生电阻：每段填写长度、宽度与方块电阻（支持金属层预设与温度修正），实时显示方块数、段阻值与占比；填入通过电流可同时得到各段压降、总 IR 压降与最差段瓶颈提示。</p>
+        <h1>版图寄生计算</h1>
+        <p class="tool-desc">按走线段累加寄生电阻与对衬底电容：M1~M9/M_user 金属层预设（方块电阻与单位衬底电容均可手改）、温度修正，支持所有段同电流或逐段独立电流，实时显示段阻值/电容/压降与最差段瓶颈。</p>
 
         <div class="formula-box">
-            方块数 n<sub>□</sub> = L/W ｜ 段阻值 R<sub>i</sub> = R<sub>s</sub>·n<sub>□</sub> ｜ 总阻抗 R<sub>tot</sub> = ΣR<sub>i</sub> ｜ 压降 V = I·R ｜ 温度修正 R(T) = R·(1+α·(T−27°C)×10⁻⁶)
+            方块数 n<sub>□</sub> = L/W ｜ 段阻值 R<sub>i</sub> = R<sub>s</sub>·n<sub>□</sub> ｜ 总阻抗 R<sub>tot</sub> = ΣR<sub>i</sub> ｜ 对衬底电容 C<sub>i</sub> = L·W·C<sub>sub</sub> ｜ 压降 V = I·R ｜ 总压降 = Σ(I<sub>i</sub>×R<sub>i</sub>) ｜ 温度修正 R(T) = R·(1+α·(T−27°C)×10⁻⁶)
         </div>
 
         <div class="paper-card wr-card">
             <div class="wr-toolbar">
                 <div class="field">
-                    <label for="wrCurrent">通过电流 I（可选，填写后显示各段压降）</label>
-                    <div class="iu-row"><input type="number" id="wrCurrent" value="" step="any" min="0" placeholder="留空则不算压降"><span class="unit">mA</span></div>
+                    <label for="wrIMode">电流设置</label>
+                    <select id="wrIMode">
+                        <option value="same" selected>所有段电流相同</option>
+                        <option value="each">各段电流不同</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="wrCurrent" id="wrCurrentLabel">通过电流 I（可选，填写后显示各段压降）</label>
+                    <div class="iu-row">
+                        <input type="number" id="wrCurrent" value="" step="any" min="0" placeholder="留空则不算压降"><span class="unit">mA</span>
+                        <button class="btn" id="wrIFill" type="button" style="display:none" title="将该值填入所有段，之后可逐段微调">统一填充</button>
+                    </div>
                 </div>
                 <div class="field">
                     <label for="wrTemp">温度 T（修正基准 27°C）</label>
@@ -47,7 +57,7 @@
             <div class="table-scroll">
                 <table class="wr-table">
                     <thead>
-                        <tr><th>段</th><th>层</th><th>长度 L (µm)</th><th>宽度 W (µm)</th><th>R<sub>s</sub> (mΩ/□)</th><th>方块数 n<sub>□</sub></th><th>段阻值</th><th>占比</th><th>压降</th><th></th></tr>
+                        <tr><th>段</th><th>层</th><th>长度 L (µm)</th><th>宽度 W (µm)</th><th>R<sub>s</sub> (mΩ/□)</th><th>C<sub>sub</sub> (fF/µm²)</th><th>方块数 n<sub>□</sub></th><th>段阻值</th><th>对衬底电容</th><th>占比</th><th id="wrThI" style="display:none">电流 (mA)</th><th>压降</th><th></th></tr>
                     </thead>
                     <tbody id="wrBody"></tbody>
                 </table>
@@ -61,8 +71,10 @@
             <p><strong>模型假设：</strong></p>
             <ul>
                 <li>纯直流方块电阻模型：R = R<sub>s</sub>·(L/W)，不含趋肤效应、电感与转角修正；温度按 R(T) = R·(1+α·(T−27°C)×10⁻⁶) 线性修正（默认 α = 3000 ppm/°C）。</li>
-                <li>过孔 / 接触电阻可作为一段加入：令 L = W（方块数 = 1），R<sub>s</sub> 直接填单个过孔 / 接触的电阻值（单位 mΩ）。</li>
-                <li>不同金属层方块电阻差异较大：「层」下拉提供 M1 / M2~M5 / MTOP 典型量级预设（80 / 40 / 15 mΩ/□），选择后自动带出 R<sub>s</sub>，仍可按工艺手册手改（手改后层标记为「自定义」）。</li>
+                <li>对衬底电容按平板电容近似：C<sub>i</sub> = L·W·C<sub>sub</sub>（走线面积 × 单位面积电容），仅含底板电容，不含边缘 / 侧壁电容与层间耦合。</li>
+                <li>「层」下拉提供 M1~M9 典型量级的方块电阻与单位衬底电容预设（越厚的高层 R<sub>s</sub> 与 C<sub>sub</sub> 越低），选择后自动带出默认值，仍可按工艺手册手改（手改后层标记为 M_user）。</li>
+                <li>电流设置两种模式：所有段电流相同（串联模型，总压降 = I×R<sub>tot</sub>）；各段电流不同（如树状供电路径，逐段填写电流，总压降 = Σ(I<sub>i</sub>×R<sub>i</sub>)，可先用「统一填充」赋初值再逐段微调）。</li>
+                <li>过孔 / 接触电阻可作为一段加入：令 L = W（方块数 = 1），R<sub>s</sub> 直接填单个过孔 / 接触的电阻值（单位 mΩ），C<sub>sub</sub> 留空即不计电容。</li>
                 <li>填入电流后，压降最大的走线段会红色高亮，并在表格上方显示瓶颈提示。</li>
             </ul>
         </div>

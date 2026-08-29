@@ -12,9 +12,11 @@
 }
 .wr-toolbar .field { flex: 1; min-width: 220px; }
 .wr-toolbar label { display: block; font-size: 0.9rem; margin-bottom: 4px; color: var(--color-text-secondary); }
+.wr-toolbar .field select { width: 100%; }
 
 .iu-row { display: flex; align-items: center; gap: 6px; }
 .iu-row input { flex: 1; }
+.iu-row .btn { white-space: nowrap; }
 .unit { font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-text-muted); white-space: nowrap; min-width: 40px; }
 
 .table-scroll { overflow-x: auto; }
@@ -26,9 +28,9 @@
     font-family: var(--font-mono);
 }
 .wr-table th { background: var(--color-bg-paper); font-weight: 700; white-space: nowrap; }
-.wr-table input { width: 88px; text-align: center; font-family: var(--font-mono); }
+.wr-table input { width: 76px; text-align: center; font-family: var(--font-mono); }
 .wr-del { padding: 2px 10px; font-size: 0.9rem; }
-.wr-table select.wr-layer { font-family: var(--font-mono); font-size: 0.82rem; max-width: 120px; }
+.wr-table select.wr-layer { font-family: var(--font-mono); font-size: 0.82rem; max-width: 148px; }
 .wr-table tr.wr-worst td { background: rgba(192, 88, 58, 0.15); }
 
 /* 瓶颈提示条（最差 IR 压降段） */
