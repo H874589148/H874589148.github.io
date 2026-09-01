@@ -379,3 +379,45 @@ label {
     padding: var(--space-lg) var(--space-md);
   }
 }
+
+/* ---- 白天/黑夜模式切换按钮 ---- */
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--color-border-sketch);
+  border-radius: var(--radius-sm);
+  background: var(--color-card-bg);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.theme-toggle svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.theme-toggle:hover {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+/* 工具页顶部导航条内注入的按钮靠右 */
+.top-nav .theme-toggle {
+  margin-left: auto;
+}
+
+/* 黑夜模式：首页手绘 SVG 图标主色提亮（presentation attribute 优先级最低，CSS 可安全覆盖；
+   注意主描边色在 svg 根元素上，需同时覆盖根与子元素） */
+[data-theme="dark"] .card-icon svg[stroke="#4a4a4a"],
+[data-theme="dark"] .card-icon svg [stroke="#4a4a4a"] { stroke: #b8b2a6; }
+[data-theme="dark"] .card-icon svg[fill="#4a4a4a"],
+[data-theme="dark"] .card-icon svg [fill="#4a4a4a"] { fill: #b8b2a6; }
+[data-theme="dark"] .card-icon svg [stroke="#3a5a8c"] { stroke: #7a9cc8; }
+[data-theme="dark"] .card-icon svg [fill="#3a5a8c"] { fill: #7a9cc8; }

@@ -2,22 +2,31 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <script>(function () { var t = localStorage.getItem('ee-theme'); if (t) document.documentElement.setAttribute('data-theme', t); })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小游戏合集 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/cursor.css">
     <link rel="stylesheet" href="../css/layout.css">
     <link rel="stylesheet" href="../css/components.css">
     <style>
-        .game-section { margin-bottom: var(--space-xl); }
-        .game-section h2 { margin-bottom: var(--space-lg); }
+        .game-section {
+            margin-bottom: var(--space-xl);
+        }
+
+            .game-section h2 {
+                margin-bottom: var(--space-lg);
+            }
+
         .game-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: var(--space-md);
         }
+
         .game-link {
             display: block;
             padding: var(--space-md);
@@ -33,13 +42,19 @@
             font-size: 1.1rem;
             transition: transform 0.15s, box-shadow 0.15s;
         }
-        .game-link:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 4px 4px 0 var(--color-border-sketch);
-            color: var(--color-primary);
-            border-bottom-color: var(--color-border-sketch);
-        }
-        .game-link .game-icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+
+            .game-link:hover {
+                transform: translate(-2px, -2px);
+                box-shadow: 4px 4px 0 var(--color-border-sketch);
+                color: var(--color-primary);
+                border-bottom-color: var(--color-border-sketch);
+            }
+
+            .game-link .game-icon {
+                font-size: 1.6rem;
+                display: block;
+                margin-bottom: 4px;
+            }
     </style>
 </head>
 <body>
@@ -165,6 +180,12 @@
             speak: true,         // 自动冒泡
             autoIdle: true       // 待机时随机小动作
         });
+    </script>
+
+    <script src="../js/cursor.js"></script>
+    <script>
+        //RainbowCursor.init();   // 即彩虹循环+粒子喷射+粒子爆发
+        OutlineArrowCursor.init();   // 默认即描边箭头+彩虹循环+粒子喷射+粒子爆发
     </script>
 
     <!--

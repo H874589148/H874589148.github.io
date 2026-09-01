@@ -166,3 +166,53 @@ function downloadPdfFromCanvas(canvas, filename) {
   document.body.removeChild(a);
   setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
 }
+
+/* ============================================
+   公共：白天/黑夜模式切换
+   data-theme 挂在 <html>，localStorage 键 ee-theme（'light'|'dark'，无记录=白天）
+   各页面 <head> 内联脚本负责首屏防闪白；本模块负责按钮图标/切换/注入
+   ============================================ */
+var Theme = {
+  KEY: 'ee-theme',
+  SUN: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="5.2" y1="5.2" x2="7" y2="7"/><line x1="17" y1="17" x2="18.8" y2="18.8"/><line x1="5.2" y1="18.8" x2="7" y2="17"/><line x1="17" y1="7" x2="18.8" y2="5.2"/></svg>',
+  MOON: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5A8.5 8.5 0 1 1 10.5 4 6.8 6.8 0 0 0 20 13.5z"/></svg>',
+
+  get: function () {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  },
+  set: function (theme) {
+    if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+    try { localStorage.setItem(Theme.KEY, theme); } catch (e) {}
+    Theme.refreshAll();
+  },
+  toggle: function () {
+    Theme.set(Theme.get() === 'dark' ? 'light' : 'dark');
+  },
+  /* 同步页面内所有切换按钮的图标与提示 */
+  refreshAll: function () {
+    var dark = Theme.get() === 'dark';
+    var btns = document.querySelectorAll('.theme-toggle');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].innerHTML = dark ? Theme.MOON : Theme.SUN;
+      btns[i].setAttribute('title', dark ? '切换到白天模式' : '切换到黑夜模式');
+      btns[i].setAttribute('aria-label', dark ? '切换到白天模式' : '切换到黑夜模式');
+    }
+  },
+  bind: function (btn) {
+    if (!btn) return;
+    btn.addEventListener('click', Theme.toggle);
+    Theme.refreshAll();
+  },
+  /* 工具页：顶部导航条右侧自动注入切换按钮 */
+  injectNav: function () {
+    var nav = document.querySelector('.top-nav');
+    if (!nav || nav.querySelector('.theme-toggle')) return;
+    var btn = document.createElement('button');
+    btn.className = 'theme-toggle';
+    btn.type = 'button';
+    nav.appendChild(btn);
+    Theme.bind(btn);
+  }
+};
+Theme.injectNav();

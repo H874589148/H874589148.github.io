@@ -48,6 +48,29 @@
   --shadow-sketch: 2px 2px 0 var(--color-border-sketch);
 }
 
+/* 黑夜模式：覆写配色变量（方格纸背景、手绘阴影随之自动变暗） */
+[data-theme="dark"] {
+  --color-bg: #23211e;
+  --color-bg-paper: #2c2a26;
+  --color-bg-grid: #3a3833;
+  --color-text: #e8e4dc;
+  --color-text-secondary: #b8b2a6;
+  --color-text-muted: #8a857a;
+  --color-primary: #7a9cc8;
+  --color-primary-light: #9abcdd;
+  --color-accent: #e07858;
+  --color-accent-light: #ec9878;
+  --color-border: #55504a;
+  --color-border-sketch: #a09a8e;
+  --color-shadow: rgba(0, 0, 0, 0.35);
+  --color-card-bg: #2e2b27;
+}
+
+/* 主题切换平滑过渡 */
+body, .paper-card, .nav-card, .btn, .theme-toggle {
+  transition: background-color .3s, color .3s, border-color .3s, box-shadow .3s;
+}
+
 /* 基础重置 */
 *, *::before, *::after {
   margin: 0;

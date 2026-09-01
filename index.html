@@ -2,11 +2,13 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EE工具箱 - 电子工程科研工具集</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/cursor.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
@@ -65,6 +67,7 @@
             right: 0;
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
             .search-box svg {
@@ -137,9 +140,10 @@
             <p class="subtitle">Electronic Engineering Toolkit</p>
             <p class="tagline">电子工程科研计算与可视化工具集 -- 手绘风格，专注效率</p>
             <div class="search-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><line x1="15.5" y1="15.5" x2="21" y2="21" /></svg>
                 <input type="text" id="siteSearch" placeholder="搜索工具，如 bode、噪声、骰子…" autocomplete="off">
                 <button class="search-clear" id="searchClear" type="button" title="清除">&times;</button>
+                <button class="theme-toggle" id="themeToggle" type="button"></button>
             </div>
             <p id="searchEmpty" style="display:none;">没有匹配的工具，换个关键词试试~</p>
         </header>
@@ -312,6 +316,12 @@
     </footer>
     <script async src="https://cn.vercount.one/js"></script>
 
+    <script src="js/cursor.js"></script>
+    <script>
+        //RainbowCursor.init();   // 即彩虹循环+粒子喷射+粒子爆发
+        OutlineArrowCursor.init();   // 默认即描边箭头+彩虹循环+粒子喷射+粒子爆发
+    </script>
+
     <script src="js/common.js"></script>
     <script>
         // 动态渲染 SVG 图标
@@ -331,13 +341,16 @@
         document.getElementById('icon-calculator').innerHTML = Icons.calculator;
         document.getElementById('icon-wire').innerHTML = Icons.wire;
         document.getElementById('icon-lsq').innerHTML = Icons.lsq;
-                document.getElementById('icon-schematic').innerHTML = Icons.schematic;
-                document.getElementById('icon-waveform').innerHTML = Icons.waveform;
+        document.getElementById('icon-schematic').innerHTML = Icons.schematic;
+        document.getElementById('icon-waveform').innerHTML = Icons.waveform;
         document.getElementById('icon-fmea').innerHTML = Icons.fmea;
         document.getElementById('icon-dice').innerHTML = Icons.dice;
         document.getElementById('icon-book').innerHTML = Icons.book;
         document.getElementById('icon-links').innerHTML = Icons.links;
         document.getElementById('icon-game').innerHTML = Icons.game;
+
+        // 白天/黑夜模式切换按钮
+        Theme.bind(document.getElementById('themeToggle'));
     </script>
     <script>
         /* ========== 站内功能搜索：标题/描述/补充关键词实时过滤 ==========

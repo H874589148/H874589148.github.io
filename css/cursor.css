@@ -1,0 +1,23 @@
+/* ================================================================
+ * OutlineArrowCursor · 极简描边箭头 + 彩虹粒子鼠标指针（可复用组件样式）
+ * ----------------------------------------------------------------
+ * 只负责两件事：
+ *   1. 全屏覆盖画布的定位（fixed + 不拦截交互）
+ *   2. 隐藏系统鼠标指针（OutlineArrowCursor.init 时按需挂上）
+ * ================================================================ */
+
+/* 组件自建的覆盖画布 */
+.outline-arrow-cursor-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none; /* 不拦截任何点击 / 悬停 */
+}
+
+/* 隐藏系统鼠标指针（init({ hideNativeCursor: true }) 时生效） */
+.outline-arrow-cursor-hide-native,
+.outline-arrow-cursor-hide-native * {
+  cursor: none !important;
+}
