@@ -18,9 +18,9 @@
 
 **hawkeye**
 
-- GitHub: [https://github.com/H874589148/](Hawkeye)
-- 知乎: [https://www.zhihu.com/people/h874589148/](猫与向日葵)
-- B站: [https://space.bilibili.com/520240681](醉醉萌不萌)
+- GitHub: [Hawkeye](https://github.com/H874589148/)
+- 知乎: [猫与向日葵](https://www.zhihu.com/people/h874589148/)
+- B站: [醉醉萌不萌](https://space.bilibili.com/520240681)
 - 微信公众号: [#]()
 - 邮箱: [#]()
 
