@@ -2,13 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-        <script>(function(){var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function () { var t = localStorage.getItem('ee-theme'); if (t) document.documentElement.setAttribute('data-theme', t); })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>论文分享 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/cursor.css">
     <link rel="stylesheet" href="../css/layout.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="style.css">
@@ -100,6 +101,12 @@
         </div>
     </main>
 
+    <script src="../js/cursor.js"></script>
+    <script>
+        //RainbowCursor.init();   // 即彩虹循环+粒子喷射+粒子爆发
+        OutlineArrowCursor.init();   // 默认即描边箭头+彩虹循环+粒子喷射+粒子爆发
+    </script>
+
     <footer class="site-footer">
         <p>EE工具箱 &copy; 2026</p>
         <div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div>
@@ -113,7 +120,7 @@
 
         function filterByTag(tag) {
             activeTag = tag;
-            document.querySelectorAll('.tag-btn').forEach(function(btn){
+            document.querySelectorAll('.tag-btn').forEach(function (btn) {
                 btn.classList.toggle('active', btn.dataset.tag === tag);
             });
             applyFilter();
@@ -127,7 +134,7 @@
         function applyFilter() {
             var cards = document.querySelectorAll('.paper-card-item');
             var visible = 0;
-            cards.forEach(function(card) {
+            cards.forEach(function (card) {
                 var tags = card.dataset.tags || '';
                 var tagMatch = activeTag === 'all' || tags.indexOf(activeTag) >= 0;
                 var text = card.textContent.toLowerCase();

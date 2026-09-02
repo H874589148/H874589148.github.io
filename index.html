@@ -70,16 +70,23 @@
             gap: 8px;
         }
 
-            .search-box svg {
+        /* 输入框+图标+清除按钮的定位基准（主题按钮在其外，避免清除按钮相对整个容器右偏） */
+        .search-field {
+            position: relative;
+        }
+
+            .search-field > svg {
                 position: absolute;
                 left: 10px;
+                top: 50%;
+                transform: translateY(-50%);
                 width: 16px;
                 height: 16px;
                 stroke: var(--color-text-muted);
                 pointer-events: none;
             }
 
-            .search-box input {
+            .search-field input {
                 width: 240px;
                 padding: 8px 30px 8px 34px;
                 font-family: var(--font-body);
@@ -93,13 +100,15 @@
                 transition: border-color 0.2s;
             }
 
-                .search-box input:focus {
+                .search-field input:focus {
                     border-color: var(--color-primary);
                 }
 
-            .search-box .search-clear {
+            .search-field .search-clear {
                 position: absolute;
                 right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
                 border: none;
                 background: none;
                 color: var(--color-text-muted);
@@ -110,7 +119,7 @@
                 padding: 0 4px;
             }
 
-                .search-box .search-clear:hover {
+                .search-field .search-clear:hover {
                     color: var(--color-accent);
                 }
 
@@ -126,7 +135,11 @@
                 margin-top: var(--space-md);
             }
 
-                .search-box input {
+            .search-field {
+                flex: 1;
+            }
+
+                .search-field input {
                     width: 100%;
                 }
         }
@@ -140,9 +153,11 @@
             <p class="subtitle">Electronic Engineering Toolkit</p>
             <p class="tagline">电子工程科研计算与可视化工具集 -- 手绘风格，专注效率</p>
             <div class="search-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><line x1="15.5" y1="15.5" x2="21" y2="21" /></svg>
-                <input type="text" id="siteSearch" placeholder="搜索工具，如 bode、噪声、骰子…" autocomplete="off">
-                <button class="search-clear" id="searchClear" type="button" title="清除">&times;</button>
+                <div class="search-field">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><line x1="15.5" y1="15.5" x2="21" y2="21" /></svg>
+                    <input type="text" id="siteSearch" placeholder="搜索工具，如 bode、噪声、骰子…" autocomplete="off">
+                    <button class="search-clear" id="searchClear" type="button" title="清除">&times;</button>
+                </div>
                 <button class="theme-toggle" id="themeToggle" type="button"></button>
             </div>
             <p id="searchEmpty" style="display:none;">没有匹配的工具，换个关键词试试~</p>
@@ -396,7 +411,7 @@
             });
             function doSearch() {
                 var q = input.value.trim().toLowerCase();
-                clearBtn.style.display = q ? '' : 'none';
+                clearBtn.style.display = q ? 'block' : 'none';
                 var anyVisible = false;
                 document.querySelectorAll('.card-grid').forEach(function (grid) {
                     var gridVisible = false;

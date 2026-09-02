@@ -77,6 +77,64 @@
 .asil-table td.asil-pass { background: rgba(74, 124, 89, 0.15); color: #2a7a3b; font-weight: 700; }
 .asil-table td.asil-fail { background: rgba(192, 88, 58, 0.15); color: #c0583a; font-weight: 700; }
 
+/* ---- Tab1/2 FM 表查看器（ISO 26262-11 表30/36） ---- */
+.fms-bar {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-md);
+}
+
+/* 分段开关 */
+.seg {
+    display: inline-flex;
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-bg-paper);
+    box-shadow: var(--shadow-sm);
+}
+.seg-btn {
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 6px 16px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    transition: background 0.15s, color 0.15s;
+}
+.seg-btn + .seg-btn { border-left: 2px solid var(--color-border-sketch); }
+.seg-btn:hover { color: var(--color-primary); }
+.seg-btn.active { background: var(--color-primary); color: #fff; font-weight: 700; }
+
+.fms-caption { margin-bottom: var(--space-sm); }
+.fms-picker .field { max-width: 460px; }
+.fms-picker select { width: 100%; }
+.fms-desc { margin: var(--space-sm) 0 var(--space-md); }
+
+.fms-table { min-width: 640px; }
+.fms-body tr[data-i] { cursor: pointer; transition: background 0.15s; }
+.fms-body tr[data-i]:hover td { background: rgba(58, 90, 140, 0.08); }
+.fms-body tr.copied td { background: rgba(74, 124, 89, 0.18); }
+.fms-body tr.fms-empty td { color: var(--color-text-muted); text-align: center; }
+
+/* 大类分组行 */
+.fms-cat td {
+    background: rgba(58, 90, 140, 0.10);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+/* 脚注与资料来源 */
+.fms-meta {
+    margin-top: var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+.fms-meta p { margin: 2px 0; }
+
 @media (max-width: 900px) {
     .fm-query-grid { grid-template-columns: 1fr; }
     .sod-grid { grid-template-columns: 1fr; }

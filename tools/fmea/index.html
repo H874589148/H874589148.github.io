@@ -22,16 +22,82 @@
 
     <main class="container">
         <h1>FMEA / FMEDA 工作台</h1>
-        <p class="tool-desc">ISO 26262 风格：元器件失效模式中英查询 + S/O/D 打分锚点 + 迷你 FMEDA（SPFM / LFM / PMHF 与 ASIL 达标判定）。</p>
+        <p class="tool-desc">ISO 26262-11 失效模式表（表30 数字 / 表36 模拟·混合信号，中英对照，支持全局与选择查看）+ 元器件失效模式查询 + S/O/D 打分锚点 + 迷你 FMEDA（SPFM / LFM / PMHF 与 ASIL 达标判定）。</p>
 
         <div class="tab-nav">
-            <button class="tab-btn active" data-tab="query" onclick="switchTab('query')">失效模式查询</button>
+            <button class="tab-btn active" data-tab="fmdigital" onclick="switchTab('fmdigital')">数字组件失效模式</button>
+            <button class="tab-btn" data-tab="fmanalog" onclick="switchTab('fmanalog')">模拟混合信号失效模式</button>
+            <button class="tab-btn" data-tab="query" onclick="switchTab('query')">失效模式查询</button>
             <button class="tab-btn" data-tab="sod" onclick="switchTab('sod')">S / O / D 打分参考</button>
             <button class="tab-btn" data-tab="fmeda" onclick="switchTab('fmeda')">FMEDA 计算</button>
         </div>
 
-        <!-- ===== TAB 1 失效模式查询 ===== -->
-        <section class="tab-panel active" id="tab-query">
+        <!-- ===== TAB 1 数字组件失效模式（ISO 26262-11 表30） ===== -->
+        <section class="tab-panel active" id="tab-fmdigital">
+            <div class="paper-card">
+                <div class="fms-bar">
+                    <div class="seg seg-mode" role="group">
+                        <button type="button" class="seg-btn active" data-mode="global">全局查看</button>
+                        <button type="button" class="seg-btn" data-mode="select">选择查看</button>
+                    </div>
+                    <div class="seg seg-lang" role="group">
+                        <button type="button" class="seg-btn active" data-lang="zh">中文</button>
+                        <button type="button" class="seg-btn" data-lang="en">EN</button>
+                    </div>
+                </div>
+                <h3 class="fms-caption"></h3>
+                <div class="fms-picker" hidden>
+                    <div class="field">
+                        <label class="fms-part-label">元器件名称</label>
+                        <select class="fms-part"></select>
+                    </div>
+                    <div class="fm-desc fms-desc"></div>
+                </div>
+                <div class="scroll-table">
+                    <table class="sketch-table fms-table">
+                        <thead><tr class="fms-head"></tr></thead>
+                        <tbody class="fms-body"></tbody>
+                    </table>
+                </div>
+                <p class="fm-hint fms-hint"></p>
+                <div class="fms-meta"></div>
+            </div>
+        </section>
+
+        <!-- ===== TAB 2 模拟混合信号失效模式（ISO 26262-11 表36） ===== -->
+        <section class="tab-panel" id="tab-fmanalog">
+            <div class="paper-card">
+                <div class="fms-bar">
+                    <div class="seg seg-mode" role="group">
+                        <button type="button" class="seg-btn active" data-mode="global">全局查看</button>
+                        <button type="button" class="seg-btn" data-mode="select">选择查看</button>
+                    </div>
+                    <div class="seg seg-lang" role="group">
+                        <button type="button" class="seg-btn active" data-lang="zh">中文</button>
+                        <button type="button" class="seg-btn" data-lang="en">EN</button>
+                    </div>
+                </div>
+                <h3 class="fms-caption"></h3>
+                <div class="fms-picker" hidden>
+                    <div class="field">
+                        <label class="fms-part-label">元器件名称</label>
+                        <select class="fms-part"></select>
+                    </div>
+                    <div class="fm-desc fms-desc"></div>
+                </div>
+                <div class="scroll-table">
+                    <table class="sketch-table fms-table">
+                        <thead><tr class="fms-head"></tr></thead>
+                        <tbody class="fms-body"></tbody>
+                    </table>
+                </div>
+                <p class="fm-hint fms-hint"></p>
+                <div class="fms-meta"></div>
+            </div>
+        </section>
+
+        <!-- ===== TAB 3 失效模式查询 ===== -->
+        <section class="tab-panel" id="tab-query">
             <div class="fm-query-grid">
                 <div class="paper-card">
                     <h3>选择元器件</h3>
@@ -65,7 +131,7 @@
             </div>
         </section>
 
-        <!-- ===== TAB 2 S/O/D 打分参考 ===== -->
+        <!-- ===== TAB 4 S/O/D 打分参考 ===== -->
         <section class="tab-panel" id="tab-sod">
             <div class="sod-grid">
                 <div class="tool-section" style="margin-top:0;">
@@ -87,7 +153,7 @@
             </div>
         </section>
 
-        <!-- ===== TAB 3 FMEDA 计算 ===== -->
+        <!-- ===== TAB 5 FMEDA 计算 ===== -->
         <section class="tab-panel" id="tab-fmeda">
             <div class="paper-card">
                 <h3>失效率换算（改谁算谁）</h3>
@@ -163,6 +229,7 @@
 
     <script src="../../js/common.js"></script>
     <script src="data.js"></script>
+    <script src="fm-data.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

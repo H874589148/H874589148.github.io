@@ -217,3 +217,221 @@ function updateFmeda() {
 addFmedaRow('电阻 R1', 10, 10, 5, 90);
 addFmedaRow('MCU 内核', 500, 2, 1, 95);
 updateFmeda();
+
+/* ============================================
+   TAB 1/2 ISO 26262-11 失效模式表（fm-data.js：表30 数字 / 表36 模拟·混合信号）
+   开关1：全局查看 / 选择查看；开关2：中文 / English；任意组合下行点击复制中英对照
+   ============================================ */
+(function () {
+    if (typeof FM_SHEETS === 'undefined') return;
+
+    /* 双语 UI 文案：[zh, en] */
+    var UI = {
+        modeGlobal: ['全局查看', 'Global'],
+        modeSelect: ['选择查看', 'By part'],
+        partLabel: ['元器件名称', 'Part / subpart'],
+        placeholder: ['— 请选择元器件 —', '— Select a part —'],
+        hint: ['点击表内任意行复制「中文 / English」对照', 'Click any row to copy the "中文 / English" pair'],
+        copied: ['已复制：', 'Copied: '],
+        copyFail: ['复制失败，请手动选择文本', 'Copy failed, please select the text manually']
+    };
+
+    function esc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function br(s) { return esc(s).replace(/\n/g, '<br>'); }
+    /* 脚注 / 来源行是 "中文　/　English" 单串，按全角分隔符拆分 */
+    function splitBi(s) {
+        var m = String(s).split(/\u3000[\/|]\u3000/);
+        return m.length === 2 ? [m[0].trim(), m[1].trim()] : [s, s];
+    }
+
+    function createSheetViewer(rootId, sheet) {
+        var root = document.getElementById(rootId);
+        if (!root) return;
+        var els = {
+            segMode: root.querySelector('.seg-mode'),
+            segLang: root.querySelector('.seg-lang'),
+            caption: root.querySelector('.fms-caption'),
+            picker: root.querySelector('.fms-picker'),
+            partLabel: root.querySelector('.fms-part-label'),
+            select: root.querySelector('.fms-part'),
+            desc: root.querySelector('.fms-desc'),
+            head: root.querySelector('.fms-head'),
+            body: root.querySelector('.fms-body'),
+            hint: root.querySelector('.fms-hint'),
+            meta: root.querySelector('.fms-meta')
+        };
+        var state = { mode: 'global', lang: 'zh' };
+        var langIdx = function () { return state.lang === 'en' ? 1 : 0; };
+        var T = function (pair) { return pair[langIdx()]; };
+
+        /* 元器件清单：按出现顺序去重；cat 供模拟表 optgroup 分组 */
+        var parts = [], partMap = {}, curCat = null;
+        sheet.rows.forEach(function (r) {
+            if (r.t === 'cat') { curCat = { zh: r.zh, en: r.en }; return; }
+            var key = r.p[0];
+            if (!partMap[key]) {
+                partMap[key] = { zh: r.p[0], en: r.p[1], cat: curCat, rows: [] };
+                parts.push(partMap[key]);
+            }
+            partMap[key].rows.push(r);
+        });
+
+        function renderSegLabels() {
+            var mb = els.segMode.querySelectorAll('.seg-btn');
+            mb[0].textContent = T(UI.modeGlobal);
+            mb[1].textContent = T(UI.modeSelect);
+            els.partLabel.textContent = T(UI.partLabel);
+        }
+
+        /* 下拉选项（模拟表按大类 optgroup 分组），语言切换时重建并保持选中 */
+        function renderOptions() {
+            var prev = els.select.value;
+            els.select.innerHTML = '';
+            var ph = document.createElement('option');
+            ph.value = '';
+            ph.textContent = T(UI.placeholder);
+            els.select.appendChild(ph);
+            var hasCat = parts.some(function (p) { return p.cat; });
+            var groupMap = {};
+            parts.forEach(function (p, i) {
+                var o = document.createElement('option');
+                o.value = String(i);
+                o.textContent = state.lang === 'en' ? p.en : p.zh;
+                if (hasCat && p.cat) {
+                    var gk = p.cat.zh;
+                    if (!groupMap[gk]) {
+                        groupMap[gk] = document.createElement('optgroup');
+                        groupMap[gk].label = state.lang === 'en' ? p.cat.en : p.cat.zh;
+                        els.select.appendChild(groupMap[gk]);
+                    }
+                    groupMap[gk].appendChild(o);
+                } else {
+                    els.select.appendChild(o);
+                }
+            });
+            els.select.value = prev;
+        }
+
+        function renderHead() {
+            els.head.innerHTML = sheet.head[state.lang].map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('');
+        }
+
+        /* 数据行 → html；copyList 与渲染行一一对应，供点击复制 */
+        function rowHtml(r, copyList) {
+            var li = langIdx();
+            copyList.push(r.p[0] + '：' + r.m[0] + ' / ' + r.p[1] + ': ' + r.m[1]);
+            return '<tr data-i="' + (copyList.length - 1) + '">' +
+                '<td>' + br(r.p[li]) + '</td><td>' + br(r.f[li]) + '</td><td>' + br(r.m[li]) + '</td></tr>';
+        }
+
+        function renderBody() {
+            var li = langIdx();
+            var copyList = [];
+            var html = '';
+            if (state.mode === 'global') {
+                sheet.rows.forEach(function (r) {
+                    if (r.t === 'cat') {
+                        html += '<tr class="fms-cat"><td colspan="3">' + br(li === 1 ? r.en : r.zh) + '</td></tr>';
+                    } else {
+                        html += rowHtml(r, copyList);
+                    }
+                });
+            } else {
+                var p = els.select.value === '' ? null : parts[+els.select.value];
+                if (p) {
+                    p.rows.forEach(function (r) { html += rowHtml(r, copyList); });
+                } else {
+                    html = '<tr class="fms-empty"><td colspan="3">' + T(UI.placeholder) + '</td></tr>';
+                }
+            }
+            els.body._copy = copyList;
+            els.body.innerHTML = html;
+        }
+
+        /* 选择查看：显示该元器件的功能/简要描述（去重） */
+        function renderDesc() {
+            var p = els.select.value === '' ? null : parts[+els.select.value];
+            if (state.mode !== 'select' || !p) { els.desc.innerHTML = ''; return; }
+            var li = langIdx();
+            var seen = {}, html = '';
+            p.rows.forEach(function (r) {
+                var t = r.f[li];
+                if (t && !seen[t]) {
+                    seen[t] = true;
+                    html += '<p>' + br(t) + '</p>';
+                }
+            });
+            els.desc.innerHTML = html;
+        }
+
+        function renderMeta() {
+            var li = langIdx();
+            var html = '';
+            sheet.foots.forEach(function (f) {
+                html += '<p>' + br(splitBi(f)[li]) + '</p>';
+            });
+            if (sheet.src) {
+                var sp = sheet.src.split(/ \/ Source:\s*/);
+                html += '<p>' + br(li === 1 && sp[1] ? 'Source: ' + sp[1] : sp[0]) + '</p>';
+            }
+            els.meta.innerHTML = html;
+        }
+
+        function renderAll() {
+            renderSegLabels();
+            els.caption.textContent = sheet.caption[state.lang];
+            renderHead();
+            renderOptions();
+            els.picker.hidden = state.mode !== 'select';
+            renderDesc();
+            renderBody();
+            els.hint.textContent = T(UI.hint);
+            renderMeta();
+        }
+
+        els.segMode.addEventListener('click', function (e) {
+            var btn = e.target.closest('.seg-btn');
+            if (!btn || btn.dataset.mode === state.mode) return;
+            state.mode = btn.dataset.mode;
+            els.segMode.querySelectorAll('.seg-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+            els.picker.hidden = state.mode !== 'select';
+            renderDesc();
+            renderBody();
+        });
+        els.segLang.addEventListener('click', function (e) {
+            var btn = e.target.closest('.seg-btn');
+            if (!btn || btn.dataset.lang === state.lang) return;
+            state.lang = btn.dataset.lang;
+            els.segLang.querySelectorAll('.seg-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+            renderAll();
+        });
+        els.select.addEventListener('change', function () {
+            renderDesc();
+            renderBody();
+        });
+
+        /* 点击行复制「元器件：失效模式 中文 / English」（四种开关组合均有效） */
+        els.body.addEventListener('click', function (e) {
+            var tr = e.target.closest('tr');
+            if (!tr || tr.getAttribute('data-i') === null) return;
+            var text = els.body._copy[+tr.getAttribute('data-i')];
+            copyTextToClipboard(text, function (ok) {
+                if (ok) {
+                    tr.classList.add('copied');
+                    setTimeout(function () { tr.classList.remove('copied'); }, 600);
+                    els.hint.textContent = T(UI.copied) + text;
+                    setTimeout(function () { els.hint.textContent = T(UI.hint); }, 1500);
+                } else {
+                    els.hint.textContent = T(UI.copyFail);
+                }
+            });
+        });
+
+        renderAll();
+    }
+
+    createSheetViewer('tab-fmdigital', FM_SHEETS[0]);
+    createSheetViewer('tab-fmanalog', FM_SHEETS[1]);
+})();
