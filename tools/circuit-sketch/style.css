@@ -18,29 +18,49 @@
 /* ---- 三栏布局 ---- */
 .ck-layout {
     display: grid;
-    grid-template-columns: 168px minmax(0, 1fr) 210px;
+    grid-template-columns: 196px minmax(0, 1fr) 210px;
     gap: var(--space-md);
     align-items: start;
 }
 .ck-palette h3, .ck-props h3 { margin-bottom: var(--space-xs); color: var(--color-primary); }
 .hint { font-size: 0.82rem; color: var(--color-text-muted); margin-top: var(--space-xs); }
 
-/* 器件面板 */
-#palList { display: flex; flex-direction: column; gap: 6px; margin-top: var(--space-sm); }
-.pal-item {
+/* 器件面板（可折叠分组 + 器件网格） */
+#palList { display: flex; flex-direction: column; gap: 4px; margin-top: var(--space-sm); }
+.pal-group-hd {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 6px;
+    gap: 4px;
+    padding: 3px 2px;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+.pal-group-hd:hover { color: var(--color-primary); }
+.pal-arrow { display: inline-block; font-size: 0.72rem; transition: transform 0.15s ease; }
+.pal-group.collapsed .pal-arrow { transform: rotate(-90deg); }
+.pal-count { margin-left: auto; font-size: 0.72rem; color: var(--color-text-muted); }
+.pal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 4px 0 8px; }
+.pal-group.collapsed .pal-grid { display: none; }
+/* 绘图辅助组与 razavi 分类的分隔线 */
+.pal-aux .pal-group-hd { border-top: 1.5px dashed var(--color-border-sketch); padding-top: 9px; margin-top: 5px; }
+.pal-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 2px 3px;
     border: 1.5px solid var(--color-border-sketch);
     border-radius: var(--radius-sm);
     background: var(--color-card-bg);
     cursor: grab;
     user-select: none;
+    text-align: center;
 }
 .pal-item:hover { border-color: var(--color-primary); background: rgba(58,90,140,0.05); }
 .pal-item svg { flex-shrink: 0; }
-.pal-item span { font-size: 0.85rem; color: var(--color-text); }
+.pal-item span { font-size: 0.72rem; line-height: 1.2; color: var(--color-text); }
 
 /* 模板分组（器件面板下方） */
 .ck-tpl-title { margin-top: var(--space-md); }
@@ -110,6 +130,6 @@
     .ck-palette { order: 1; }
     .ck-canvas-col { order: 2; }
     .ck-props { order: 3; }
-    #palList { flex-direction: row; flex-wrap: wrap; }
+    .pal-grid { grid-template-columns: repeat(4, 1fr); }
     .ck-tpl-list { flex-direction: row; flex-wrap: wrap; }
 }

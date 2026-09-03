@@ -22,13 +22,14 @@
 
     <main class="container-wide">
         <h1>电路示意图编辑器</h1>
-        <p class="tool-desc">面向论文绘图的轻量原理图编辑器：标准直线符号、10px 网格吸附、端口吸附连线（正交 / 斜线可切换），内置差分对 / 电流镜 / 5 管 OTA 模板，一键导出论文级 SVG / PNG / PDF。所有编辑自动保存在本地浏览器。</p>
+        <p class="tool-desc">面向论文绘图的轻量原理图编辑器：Razavi 教材风格器件库（62 种器件，10 个分类）、10px 网格吸附、端口吸附连线（正交 / 斜线可切换），内置差分对 / 电流镜 / 五管 OTA / 套筒 / 折叠共源共栅模板，一键导出论文级 SVG / PNG / PDF。所有编辑自动保存在本地浏览器。</p>
 
         <!-- 工具栏 -->
         <div class="paper-card ck-toolbar">
             <button class="btn btn-primary" id="toolSelect" type="button" title="选择/移动（Esc）">选择</button>
             <button class="btn" id="toolWire" type="button" title="连线：点起点 → 点终点（W）">连线</button>
             <button class="btn" id="wireModeBtn" type="button" title="切换连线走线方式：正交（曼哈顿）/ 斜线（两点直线）">走线：正交</button>
+            <button class="btn" id="toolLabel" type="button" title="自由文字标注：点击画布放置（T）">标注</button>
             <span class="tb-sep"></span>
             <button class="btn" id="undoBtn" type="button" title="撤销 (Ctrl+Z)">↩ 撤销</button>
             <button class="btn" id="redoBtn" type="button" title="重做 (Ctrl+Y)">↪ 重做</button>
@@ -80,7 +81,9 @@
                 <div class="ck-tpl-list">
                     <button class="btn" type="button" data-tpl="diffpair">差分对</button>
                     <button class="btn" type="button" data-tpl="curmirror">电流镜</button>
-                    <button class="btn" type="button" data-tpl="ota5">5 管 OTA</button>
+                    <button class="btn" type="button" data-tpl="ota5">五管 OTA</button>
+                    <button class="btn" type="button" data-tpl="telescopic">套筒共源共栅</button>
+                    <button class="btn" type="button" data-tpl="folded">折叠共源共栅</button>
                 </div>
             </aside>
 
@@ -109,11 +112,12 @@
                 <div class="info-box">
                     <p><strong>快捷键与操作：</strong></p>
                     <ul>
-                        <li><strong>W</strong> 连线模式 / <strong>Esc</strong> 回选择模式或取消连线；连线时端点自动吸附 20px 内的器件端口（红圈提示），拐点自动走正交路径；工具栏「走线」按钮可切换为两点斜线。</li>
+                        <li><strong>W</strong> 连线模式 / <strong>T</strong> 自由文字标注 / <strong>Esc</strong> 回选择模式或取消连线；连线时端点自动吸附 20px 内的器件端口（红圈提示），拐点自动走正交路径；工具栏「走线」按钮可切换为两点斜线。</li>
                         <li><strong>R</strong> 旋转 90°，<strong>H</strong>/<strong>V</strong> 水平/垂直镜像；<strong>Ctrl+C/V</strong> 复制粘贴，<strong>Del</strong> 删除，<strong>Ctrl+Z/Y</strong> 撤销重做。</li>
                         <li><strong>Ctrl+G</strong> 成组 / <strong>Ctrl+Shift+G</strong> 解组；空白处拖拽 = 框选；Ctrl+单击 = 多选。</li>
-                        <li>器件库下方的「模板」可一键插入差分对 / 电流镜 / 5 管 OTA，插入即自动成组，可整体拖动摆放；导出支持 SVG / PNG（均可选透明背景）与 PDF（白底）。</li>
-                        <li>选中连线后可直接<strong>拖动某一水平/垂直段</strong>平移（相邻段自动伸缩）；<strong>双击</strong>器件/功能块编辑文字标签。</li>
+                        <li>器件库按 Razavi 符号分类分组（可折叠），底部「绘图辅助」含连接点 / 箭头 / 功能块 / MUX；NMOS/PMOS 可在右侧属性栏切换三端教材版 / 四端完整版变体。</li>
+                        <li>「模板」可一键插入差分对 / 电流镜 / 五管 OTA / 套筒 / 折叠共源共栅，插入即自动成组，可整体拖动摆放；导出支持 SVG / PNG（均可选透明背景）与 PDF（白底）。</li>
+                        <li>选中连线后可直接<strong>拖动某一水平/垂直段</strong>平移（相邻段自动伸缩）；<strong>双击</strong>器件/功能块/标注编辑文字。</li>
                         <li>器件移动吸附 10px 网格；「对齐/均布」需选中 ≥2 / ≥3 项。</li>
                     </ul>
                 </div>
@@ -151,6 +155,10 @@
                     <label for="propText">文字标签</label>
                     <input type="text" id="propText" placeholder="双击器件也可编辑">
                 </div>
+                <div class="field" id="propVariantRow" style="display:none;">
+                    <label for="propVariant">符号变体</label>
+                    <select id="propVariant"></select>
+                </div>
                 <p class="hint">修改即时作用于全部选中对象。</p>
             </aside>
         </div>
@@ -160,6 +168,9 @@
     <script async src="https://cn.vercount.one/js"></script>
 
     <script src="../../js/common.js"></script>
+    <script src="../../razavi/razavi-symbols.js"></script>
+    <script src="../../razavi/render.js"></script>
+    <script src="../../razavi/figures.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

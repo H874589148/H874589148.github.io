@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "id": "transformer-6t-ct",
+  "name": "Transformer, 6-Turn, Tapped Secondary",
+  "viewBox": {
+    "x": -30,
+    "y": -40,
+    "width": 60,
+    "height": 80
+  },
+  "pins": [
+    {
+      "name": "P1",
+      "role": "passive",
+      "at": {
+        "x": -20,
+        "y": -30
+      },
+      "direction": "west",
+      "presentation": {
+        "visibility": "visible",
+        "leadLength": 10
+      }
+    },
+    {
+      "name": "P2",
+      "role": "passive",
+      "at": {
+        "x": -20,
+        "y": 30
+      },
+      "direction": "west",
+      "presentation": {
+        "visibility": "visible",
+        "leadLength": 10
+      }
+    },
+    {
+      "name": "S1",
+      "role": "passive",
+      "at": {
+        "x": 20,
+        "y": -30
+      },
+      "direction": "east",
+      "presentation": {
+        "visibility": "visible",
+        "leadLength": 10
+      }
+    },
+    {
+      "name": "ST",
+      "role": "passive",
+      "at": {
+        "x": 20,
+        "y": 0
+      },
+      "direction": "east",
+      "presentation": {
+        "visibility": "visible",
+        "leadLength": 10
+      }
+    },
+    {
+      "name": "S2",
+      "role": "passive",
+      "at": {
+        "x": 20,
+        "y": 30
+      },
+      "direction": "east",
+      "presentation": {
+        "visibility": "visible",
+        "leadLength": 10
+      }
+    }
+  ],
+  "primitives": [
+    {
+      "kind": "polyline",
+      "points": [
+        {
+          "x": -20,
+          "y": -30
+        },
+        {
+          "x": -6,
+          "y": -30
+        },
+        {
+          "x": -6,
+          "y": -18
+        }
+      ],
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    },
+    {
+      "kind": "path",
+      "data": "M -6 -18 A 3 3 0 0 1 -6 -12 A 3 3 0 0 1 -6 -6 A 3 3 0 0 1 -6 0 A 3 3 0 0 1 -6 6 A 3 3 0 0 1 -6 12 A 3 3 0 0 1 -6 18",
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    },
+    {
+      "kind": "polyline",
+      "points": [
+        {
+          "x": -20,
+          "y": 30
+        },
+        {
+          "x": -6,
+          "y": 30
+        },
+        {
+          "x": -6,
+          "y": 18
+        }
+      ],
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    },
+    {
+      "kind": "polyline",
+      "points": [
+        {
+          "x": 20,
+          "y": -30
+        },
+        {
+          "x": 6,
+          "y": -30
+        },
+        {
+          "x": 6,
+          "y": -18
+        }
+      ],
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    },
+    {
+      "kind": "path",
+      "data": "M 6 -18 A 3 3 0 0 0 6 -12 A 3 3 0 0 0 6 -6 A 3 3 0 0 0 6 0",
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    },
+    {
+      "kind": "path",
+      "data": "M 6 0 A 3 3 0 0 0 6 6 A 3 3 0 0 0 6 12 A 3 3 0 0 0 6 18",
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    },
+    {
+      "kind": "polyline",
+      "points": [
+        {
+          "x": 20,
+          "y": 0
+        },
+        {
+          "x": 6,
+          "y": 0
+        }
+      ],
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    },
+    {
+      "kind": "polyline",
+      "points": [
+        {
+          "x": 20,
+          "y": 30
+        },
+        {
+          "x": 6,
+          "y": 30
+        },
+        {
+          "x": 6,
+          "y": 18
+        }
+      ],
+      "style": {
+        "strokeRole": "normal",
+        "lineCap": "round",
+        "lineJoin": "round"
+      }
+    }
+  ],
+  "variants": []
+}

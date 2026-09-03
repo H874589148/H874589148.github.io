@@ -1,0 +1,1463 @@
+{
+  "schemaVersion": 2,
+  "id": "razavi-symbols",
+  "version": 1,
+  "entries": [
+    {
+      "symbolId": "and-gate",
+      "name": "AND Gate",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic gate; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "and-gate.symbol.json",
+      "assetHash": "107444fe03340a98e5d2f4211cbf46163953f1102a2bd25f9faa93cbcce3b620",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/logic-and-gate-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-and-gate-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/logic-gate-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/logic-and-gate-vector-source.json",
+        "converterPath": "scripts/generate-razavi-logic-gate-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "buffer",
+      "name": "Buffer",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic symbol; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "buffer.symbol.json",
+      "assetHash": "37f391cf9fddc01b8005db0df0906f68d84e5df1aa3d5bacf6b4b1c58d92c988",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/buffer-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/buffer-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/buffer-dff-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/buffer-vector-source.json",
+        "converterPath": "scripts/generate-razavi-buffer-dff-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "capacitor",
+      "name": "Capacitor",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["1", "2"],
+      "palette": true,
+      "automaticMappings": ["spice:C"],
+      "assetPath": "capacitor.symbol.json",
+      "assetHash": "6ccdd4cdcbbd95bd10c0a59f83edd58c1b7ace5fca39a7a485b45e7dca3fe6b2",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/capacitor-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/capacitor-geometry.json"
+      }
+    },
+    {
+      "symbolId": "closed-switch",
+      "name": "Closed Switch",
+      "category": "switch",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["1", "2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Two-terminal Razavi switch; SPICE S has a four-terminal control contract.",
+      "assetPath": "closed-switch.symbol.json",
+      "assetHash": "96208e1fc730ce7ce199df0001be3efcb20f7bb9c08e86de5af5115d8ad6dccf",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/closed-switch-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/closed-switch-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/common-symbol-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/closed-switch-vector-source.json",
+        "converterPath": "scripts/generate-razavi-common-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "comparator",
+      "name": "Comparator",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Textbook comparator block; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "comparator.symbol.json",
+      "assetHash": "075dd7ad2013a208999ea11adcea164c5bf25796e899ee634333ea81a7223039",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/opamp-geometry.json"
+      }
+    },
+    {
+      "symbolId": "comparator-inputs-swapped",
+      "name": "Comparator (swapped inputs)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT"],
+      "palette": false,
+      "automaticMappings": [],
+      "manualOnlyReason": "Textbook comparator block; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "comparator-inputs-swapped.symbol.json",
+      "assetHash": "20625bbd6ee271d697840e965a3a731131e8518129e7df3e67f97c1f48765fbf",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-input-swap",
+        "sourceSymbolId": "comparator",
+        "converterPath": "scripts/generate-input-swapped-amplifiers.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "comparator-unmarked",
+      "name": "Comparator (unmarked)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Unmarked comparator block; SPICE subcircuit pin polarity and supply contracts require an explicit PDK mapping.",
+      "assetPath": "comparator-unmarked.symbol.json",
+      "assetHash": "201c9f0739ac58b637e93364bf1f1235432dbed0b3eb864f279634d7e099f80c",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/opamp-geometry.json"
+      }
+    },
+    {
+      "symbolId": "current-source",
+      "name": "Independent Current Source",
+      "category": "source",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["+", "-"],
+      "palette": true,
+      "automaticMappings": ["spice:I"],
+      "assetPath": "current-source.symbol.json",
+      "assetHash": "fa00a8c4aac387e2d5531d560dabf0897df079fdbcb3cef9823f67d6a564e796",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/current-port-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/current-port-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-raster-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png",
+        "converterPath": "scripts/generate-razavi-peripheral-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "d-flip-flop",
+      "name": "D Flip-Flop",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["D", "CK", "Q", "QBAR"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic symbol; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "d-flip-flop.symbol.json",
+      "assetHash": "e39f752861f8f344b462b432a7ce0bbc58fa4174e5977377249390c5a015b629",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/d-flip-flop-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/d-flip-flop-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/buffer-dff-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/d-flip-flop-vector-source.json",
+        "converterPath": "scripts/generate-razavi-buffer-dff-assets.mjs",
+        "converterVersion": 3
+      }
+    },
+    {
+      "symbolId": "d-flip-flop-q",
+      "name": "D Flip-Flop (Q)",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["D", "CK", "Q"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic symbol; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "d-flip-flop-q.symbol.json",
+      "assetHash": "ca7d19af2d62a52d470c0cf0102b66c283bdaae28b4be129852b112ecd00fd8c",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/d-flip-flop-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/d-flip-flop-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/buffer-dff-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-output-drop",
+        "sourceSymbolId": "d-flip-flop",
+        "converterPath": "scripts/generate-razavi-buffer-dff-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "delay-cell",
+      "name": "Delay Cell",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Visual delay-stage block; timing and structural netlist semantics require an explicit implementation mapping.",
+      "assetPath": "delay-cell.symbol.json",
+      "assetHash": "384d3be7c07eef3a8237cc2d21928b9c9df329b05b6101a1fe4184378a8a42fc",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delay-cell-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/delay-cell-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delay-cell-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/delay-cell-vector-source.json",
+        "converterPath": "scripts/generate-razavi-delay-cell-asset.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "adder",
+      "name": "Adder",
+      "category": "signal-flow",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral summing node; structural netlists need an explicit implementation mapping.",
+      "assetPath": "adder.symbol.json",
+      "assetHash": "e21a88de008caef10f5740d9370dd3ed68bbaedc934fc73549f0d5657784ae48",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+      }
+    },
+    {
+      "symbolId": "multiplier",
+      "name": "Multiplier",
+      "category": "signal-flow",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral mixing node; structural netlists need an explicit implementation mapping.",
+      "assetPath": "multiplier.symbol.json",
+      "assetHash": "34f12c4ea41feb7e9b62804199435b493bfcb2f6e9c60fe47cc8e47ed33b1c9f",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+      }
+    },
+    {
+      "symbolId": "transconductance",
+      "name": "Transconductance (+gₘ)",
+      "category": "signal-flow",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral transconductance block; structural netlists need an explicit implementation mapping.",
+      "assetPath": "transconductance.symbol.json",
+      "assetHash": "9540d3afb56d9a9f93f25d5cb252bf6b6457114e45ad4d24992a066ca6432725",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+      }
+    },
+    {
+      "symbolId": "integrator",
+      "name": "Integrator (1/s)",
+      "category": "signal-flow",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral s-domain block; structural netlists need an explicit implementation mapping.",
+      "assetPath": "integrator.symbol.json",
+      "assetHash": "55a62393c2a69e557c0d7fe7234c7a7a9e41828ec12a5392b36079035c936c07",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+      }
+    },
+    {
+      "symbolId": "unit-delay",
+      "name": "Unit Delay (z⁻¹)",
+      "category": "signal-flow",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral z-domain block; structural netlists need an explicit implementation mapping.",
+      "assetPath": "unit-delay.symbol.json",
+      "assetHash": "ecdb570fed6e24ea7bd77902dfba626174cf4845062b49f82576d00a064b27a6",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+      }
+    },
+    {
+      "symbolId": "discrete-time-integrator",
+      "name": "Discrete-Time Integrator (z⁻¹/(1−z⁻¹))",
+      "category": "signal-flow",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral z-domain block; structural netlists need an explicit implementation mapping.",
+      "assetPath": "discrete-time-integrator.symbol.json",
+      "assetHash": "30bd218131b4245c74a778188224d65ebd8422f2ff0462487378b4b0d838400d",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+      }
+    },
+    {
+      "symbolId": "quantizer",
+      "name": "Quantizer",
+      "category": "signal-flow",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral quantization block; structural netlists need an explicit implementation mapping.",
+      "assetPath": "quantizer.symbol.json",
+      "assetHash": "c0a2302385f7059d3016f34d849da63bf6db652383953107f5362305b2de83dc",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/delta-sigma-geometry.json"
+      }
+    },
+    {
+      "symbolId": "diode",
+      "name": "Diode",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "K"],
+      "palette": true,
+      "automaticMappings": ["spice:D"],
+      "assetPath": "diode.symbol.json",
+      "assetHash": "9f7b396145d285f43d3a88ff74ab75ebf9177b0bb32223dd3c9f03e353167899",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/diode-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/diode-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/common-symbol-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/diode-vector-source.json",
+        "converterPath": "scripts/generate-razavi-common-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "ground",
+      "name": "Ground",
+      "category": "power",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["0"],
+      "palette": true,
+      "automaticMappings": [],
+      "assetPath": "ground.symbol.json",
+      "assetHash": "b2ca65ec6b08eb1395070f3442dac5374d62472ae02789121466767bd09d6a1a",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/peripheral-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-raster-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png",
+        "converterPath": "scripts/generate-razavi-peripheral-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "ideal-switch",
+      "name": "Ideal Switch",
+      "category": "switch",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["1", "2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Two-terminal Razavi switch; SPICE S has a four-terminal control contract.",
+      "assetPath": "ideal-switch.symbol.json",
+      "assetHash": "913c542255bf8a82b5b3d7cd0a30bfdd527b0c863c38780435d3edfcb293c6cd",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/ideal-switch-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/ideal-switch-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/common-symbol-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/ideal-switch-vector-source.json",
+        "converterPath": "scripts/generate-razavi-common-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "inductor",
+      "name": "Large Inductor",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["1", "2"],
+      "palette": true,
+      "automaticMappings": [],
+      "assetPath": "inductor.symbol.json",
+      "assetHash": "11c01f2890b89fbe505252f2622e62838cd047885ad544fd862c3ae2d5821369",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/inductor-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/inductor-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/inductor-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/inductor-vector-source.json",
+        "converterPath": "scripts/generate-razavi-inductor-asset.mjs",
+        "converterVersion": 2
+      },
+      "manualOnlyReason": "Evidence-exact textbook proportions; imported L elements take the scale-reconciled inductor-compact symbol."
+    },
+    {
+      "symbolId": "inductor-compact",
+      "name": "Inductor",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["1", "2"],
+      "palette": true,
+      "automaticMappings": ["spice:L"],
+      "assetPath": "inductor-compact.symbol.json",
+      "assetHash": "ea49a969428ddb0bdce0a567467e11295a1e39f15ba71d0eafd5d316a0cbc6ea",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/inductor-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/inductor-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/inductor-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/inductor-vector-source.json",
+        "converterPath": "scripts/generate-razavi-inductor-asset.mjs",
+        "converterVersion": 2,
+        "pinSpanScale": 0.666667
+      }
+    },
+    {
+      "symbolId": "inverter",
+      "name": "Inverter",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic gate; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "inverter.symbol.json",
+      "assetHash": "105b863af972fc9ef27ee8d8f2db748c57e9d707d57ccd48059063ef1bb8db05",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/logic-inverter-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-inverter-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/logic-gate-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/logic-inverter-vector-source.json",
+        "converterPath": "scripts/generate-razavi-logic-gate-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "nand-gate",
+      "name": "NAND Gate",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic gate; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "nand-gate.symbol.json",
+      "assetHash": "ad69ca3fc15f902028bcc5f49d9f3c8100d8df324d8f01de2e72aa02a0b4dd56",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/logic-nand-gate-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-nand-gate-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/logic-gate-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/logic-nand-gate-vector-source.json",
+        "converterPath": "scripts/generate-razavi-logic-gate-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "nmos",
+      "name": "NMOS",
+      "category": "transistor",
+      "reviewStatus": "reviewed",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/mos-geometry.json"
+      },
+      "pinOrder": ["D", "G", "S", "B"],
+      "palette": true,
+      "automaticMappings": ["spice:M:nmos", "pdk:model-type:nmos"],
+      "assetPath": "nmos.symbol.json",
+      "assetHash": "7bfa080f6bc6166a4ae7e0e91f8f6c058e6f6a4cc22a208818c6283fe8650953"
+    },
+    {
+      "symbolId": "nor-gate",
+      "name": "NOR Gate",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic gate; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "nor-gate.symbol.json",
+      "assetHash": "bfebcab16caeccf87b08791cb57402072609b3784b599c3b88bef6fd3b54e38d",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/logic-gate-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-vector-source.json",
+        "converterPath": "scripts/generate-razavi-logic-gate-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "npn",
+      "name": "NPN Bipolar Transistor",
+      "category": "transistor",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["C", "B", "E"],
+      "palette": true,
+      "automaticMappings": ["spice:Q:npn", "pdk:model-type:npn"],
+      "assetPath": "npn.symbol.json",
+      "assetHash": "2f16db20b1a6766f55d5f66e493e2e9c6230dd99052a34b65ebf254b9be57978",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/npn-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/npn-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/common-symbol-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/npn-vector-source.json",
+        "converterPath": "scripts/generate-razavi-common-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "opamp",
+      "name": "Operational Amplifier",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Three-terminal textbook op-amp; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp.symbol.json",
+      "assetHash": "2e248f3880f7d03ccc2e15649f7053751cc5312cf915a251fcd0e07da35de16a",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+        "converterPath": "scripts/generate-razavi-opamp-asset.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "opamp-lettered",
+      "name": "Operational Amplifier (lettered)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Three-terminal textbook op-amp; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp-lettered.symbol.json",
+      "assetHash": "34cd7cee859a88ae014b847e64fdf13ed99f3627bd63200967169ab362f3c361",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-lettered-body",
+        "sourceSymbolId": "opamp",
+        "converterPath": "scripts/generate-lettered-amplifiers.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "opamp-lettered-inputs-swapped",
+      "name": "Operational Amplifier (lettered) (swapped inputs)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT"],
+      "palette": false,
+      "automaticMappings": [],
+      "manualOnlyReason": "Three-terminal textbook op-amp; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp-lettered-inputs-swapped.symbol.json",
+      "assetHash": "8a838affc0df69edbefa36c4e4e37ed63ab3dd772942f79a801719f3a6de8ae8",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-input-swap",
+        "sourceSymbolId": "opamp-lettered",
+        "converterPath": "scripts/generate-input-swapped-amplifiers.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "opamp-inputs-swapped",
+      "name": "Operational Amplifier (swapped inputs)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT"],
+      "palette": false,
+      "automaticMappings": [],
+      "manualOnlyReason": "Three-terminal textbook op-amp; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp-inputs-swapped.symbol.json",
+      "assetHash": "7bfb9eea39ed6469f7927043577b262b2e177684b02c284d8f0e8ba9ddebbad3",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-input-swap",
+        "sourceSymbolId": "opamp",
+        "converterPath": "scripts/generate-input-swapped-amplifiers.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "opamp-differential",
+      "name": "Differential Op Amp",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT+", "OUT-"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Fully differential textbook body; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp-differential.symbol.json",
+      "assetHash": "ae8bdbf7a0ec4c73b60199dac9cf8bbf7746b790b20a4a557d562db507a89b17",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/differential-opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/differential-opamp-vector-source.json",
+        "converterPath": "scripts/generate-razavi-opamp-asset.mjs",
+        "converterVersion": 4
+      }
+    },
+    {
+      "symbolId": "opamp-differential-inputs-swapped",
+      "name": "Differential Op Amp (swapped inputs)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT+", "OUT-"],
+      "palette": false,
+      "automaticMappings": [],
+      "manualOnlyReason": "Fully differential textbook body; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp-differential-inputs-swapped.symbol.json",
+      "assetHash": "415b962fc6492a94a9d5e703a54b1e714b0a56b0446e7171108b24cd689b7ce5",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/differential-opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-input-swap",
+        "sourceSymbolId": "opamp-differential",
+        "converterPath": "scripts/generate-input-swapped-amplifiers.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "opamp-differential-crossed",
+      "name": "Differential Op Amp (crossed outputs)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT+", "OUT-"],
+      "palette": false,
+      "automaticMappings": [],
+      "manualOnlyReason": "Output-polarity sibling of opamp-differential; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp-differential-crossed.symbol.json",
+      "assetHash": "f9877f9cdf6461b3727f9b8ce2ee5f71a1abed6cfa71d0061a5cec88c056f758",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/differential-opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/differential-opamp-vector-source.json",
+        "converterPath": "scripts/generate-razavi-opamp-asset.mjs",
+        "converterVersion": 4
+      }
+    },
+    {
+      "symbolId": "opamp-differential-crossed-inputs-swapped",
+      "name": "Differential Op Amp (crossed outputs) (swapped inputs)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN+", "IN-", "OUT+", "OUT-"],
+      "palette": false,
+      "automaticMappings": [],
+      "manualOnlyReason": "Output-polarity sibling of opamp-differential; SPICE subcircuit pin and supply contracts require an explicit PDK mapping.",
+      "assetPath": "opamp-differential-crossed-inputs-swapped.symbol.json",
+      "assetHash": "fa2104c9b1b148963d49262f8f9e259ee61e75784cf0edaf4743c17416f7cc51",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/differential-opamp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/differential-opamp-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-input-swap",
+        "sourceSymbolId": "opamp-differential-crossed",
+        "converterPath": "scripts/generate-input-swapped-amplifiers.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "or-gate",
+      "name": "OR Gate",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic gate; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "or-gate.symbol.json",
+      "assetHash": "ed9f5c0ee5d14fff907c8033d3813fee8bd4e21f69f44b31fa6571d740dfdf70",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/logic-gate-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-vector-source.json",
+        "converterPath": "scripts/generate-razavi-logic-gate-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "pmos",
+      "name": "PMOS",
+      "category": "transistor",
+      "reviewStatus": "reviewed",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/mos-geometry.json"
+      },
+      "pinOrder": ["D", "G", "S", "B"],
+      "palette": true,
+      "automaticMappings": ["spice:M:pmos", "pdk:model-type:pmos"],
+      "assetPath": "pmos.symbol.json",
+      "assetHash": "daaa6cbb9dcd9de154a9b3e4796b2e8e5b24b39161661935c91f2e078fe1af74"
+    },
+    {
+      "symbolId": "pnp",
+      "name": "PNP Bipolar Transistor",
+      "category": "transistor",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["C", "B", "E"],
+      "palette": true,
+      "automaticMappings": ["spice:Q:pnp", "pdk:model-type:pnp"],
+      "assetPath": "pnp.symbol.json",
+      "assetHash": "831c12896ded98badf9e75be73d1965e760044c46dcfb03dd7a0cfb598abf4fc",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/pnp-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/pnp-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/common-symbol-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/pnp-vector-source.json",
+        "converterPath": "scripts/generate-razavi-common-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "port",
+      "name": "Port",
+      "category": "interface",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["P"],
+      "palette": true,
+      "automaticMappings": [],
+      "assetPath": "port.symbol.json",
+      "assetHash": "4d17eea1df130c008fa194c65012a9d6893c7245b7d4bb78b4f37e0187c569ea",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/current-port-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/current-port-geometry.json"
+      }
+    },
+    {
+      "symbolId": "port-filled",
+      "name": "Filled Port",
+      "category": "interface",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["P"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Explicit solid endpoint style; no automatic SPICE mapping.",
+      "assetPath": "port-filled.symbol.json",
+      "assetHash": "fa0159b800b6df515bfd876704b1cd448de280b63fc48df14221dcc5bb89bbcb",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/current-port-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/current-port-geometry.json"
+      }
+    },
+    {
+      "symbolId": "resistor",
+      "name": "Resistor",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["1", "2"],
+      "palette": true,
+      "automaticMappings": ["spice:R"],
+      "assetPath": "resistor.symbol.json",
+      "assetHash": "28c1b0fcbd541685dec951e05b1a1f1fe71a6aabf572c5b706143b377b7677c1",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/passive-geometry.json"
+      }
+    },
+    {
+      "symbolId": "simple-spdt-switch",
+      "name": "Simple SPDT Switch",
+      "category": "switch",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The contact-circle drawing of a selector and its plain drawing are one component in two states. Drawn here as the SPDT's sibling so the state is reached by an action rather than by a second Library tile.",
+      "pinOrder": ["COM", "A", "B"],
+      "palette": false,
+      "automaticMappings": [],
+      "manualOnlyReason": "Three-terminal selector; SPICE has no single-pole double-throw primitive.",
+      "assetPath": "simple-spdt-switch.symbol.json",
+      "assetHash": "c586e487e5a4f2dd6fb48f096fa9183162ea9cb02b6ad1edc7706a706f1122cf"
+    },
+    {
+      "symbolId": "simple-switch",
+      "name": "Simple Switch",
+      "category": "switch",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The reviewed page draws its switch with contact circles. Analog schematics far more often draw the same element as one broken line with a blade, so it is drawn here rather than by removing evidence from the traced symbol.",
+      "pinOrder": ["1", "2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Two-terminal switch; SPICE S has a four-terminal control contract.",
+      "assetPath": "simple-switch.symbol.json",
+      "assetHash": "d379bb5a1986dca82cf603c7b7721b7fe8680ccabc33b72bc0ab4bf3e5460cbe"
+    },
+    {
+      "symbolId": "spdt-switch",
+      "name": "SPDT Switch",
+      "category": "switch",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "A single-pole double-throw switch does not appear on the reviewed page; it is drawn here in the family's idiom, with the traced switch's contact circles and blade angle.",
+      "pinOrder": ["COM", "A", "B"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Three-terminal selector; SPICE has no single-pole double-throw primitive.",
+      "assetPath": "spdt-switch.symbol.json",
+      "assetHash": "619b00cf2fdb0a6b81830a245018425fcabb38641eec39fe2bb21fd4a285e92d"
+    },
+    {
+      "symbolId": "transformer-4t",
+      "name": "Transformer, 4-Turn Windings",
+      "category": "transformer",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The reviewed pages contain no transformer artwork; this two-winding transformer is drawn here in the family's idiom as facing coils of semicircular arcs supplied by the deployment request.",
+      "pinOrder": ["P1", "P2", "S1", "S2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Exports as coupled inductors (L pair plus K statement); no single SPICE primitive.",
+      "assetPath": "transformer-4t.symbol.json",
+      "assetHash": "e0e48ac10ac56e42cef563831b99fbf14df6dae1974f3969cf5464b297ec91be"
+    },
+    {
+      "symbolId": "transformer-6t",
+      "name": "Transformer, 6-Turn Windings",
+      "category": "transformer",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The reviewed pages contain no transformer artwork; this taller six-arc two-winding transformer is drawn here in the family's idiom supplied by the deployment request.",
+      "pinOrder": ["P1", "P2", "S1", "S2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Exports as coupled inductors (L pair plus K statement); no single SPICE primitive.",
+      "assetPath": "transformer-6t.symbol.json",
+      "assetHash": "91d616aebdbc5b2cbf32823e9772582e665974e30381d30aeb497fd93bb67b67"
+    },
+    {
+      "symbolId": "transformer-6t-ct",
+      "name": "Transformer, 6-Turn, Tapped Secondary",
+      "category": "transformer",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The reviewed pages contain no transformer artwork; this center-tapped transformer is drawn here in the family's idiom, with the tap lead leaving the junction between the two secondary coil groups supplied by the deployment request.",
+      "pinOrder": ["P1", "P2", "S1", "ST", "S2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Exports as three coupled inductors (primary, upper and lower secondary halves, plus K statements); no single SPICE primitive.",
+      "assetPath": "transformer-6t-ct.symbol.json",
+      "assetHash": "52035cfe5c1c44fb4c1a65c103b98bf83d63b7207ab242fc66b0d88954b90ff4"
+    },
+    {
+      "symbolId": "variable-capacitor",
+      "name": "Variable Capacitor",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["P1", "P2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Manually selected adjustable presentation; structural SPICE C does not preserve a distinct variable-capacitor symbol.",
+      "assetPath": "variable-capacitor.symbol.json",
+      "assetHash": "feffb09d98cfeb5c5e6a29502112bb7bcfc3796f6654b7dcbb920036295f5a28",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/passive-geometry.json"
+      }
+    },
+    {
+      "symbolId": "variable-inductor",
+      "name": "Variable Inductor",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["P1", "P2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Manually selected adjustable presentation; structural SPICE L does not preserve a distinct variable-inductor symbol.",
+      "assetPath": "variable-inductor.symbol.json",
+      "assetHash": "ac2a1e9e7c26bb77d9bb6f698d241b751e554583aba4e55478b1b5280fe7a018",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/passive-geometry.json"
+      }
+    },
+    {
+      "symbolId": "variable-resistor",
+      "name": "Variable Resistor",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["P1", "P2"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Manually selected adjustable presentation; structural SPICE R does not preserve a distinct variable-resistor symbol.",
+      "assetPath": "variable-resistor.symbol.json",
+      "assetHash": "b281a5d5b954430073cd2bb4374390fdc90e34d046206d86ae7bce40d1532b01",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/passive-geometry.json"
+      }
+    },
+    {
+      "symbolId": "vdd-port",
+      "name": "VDD Power Port",
+      "category": "power",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["P"],
+      "palette": true,
+      "automaticMappings": [],
+      "assetPath": "vdd-port.symbol.json",
+      "assetHash": "4df004c2c020a7d969eca39479393980fc83fec2ecc5901d4ba1667996493320",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/vdd-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/vdd-geometry.json"
+      }
+    },
+    {
+      "symbolId": "voltage-amplifier",
+      "name": "Voltage Amplifier",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Textbook gain block has implicit reference nodes and no exact primitive SPICE terminal contract.",
+      "assetPath": "voltage-amplifier.symbol.json",
+      "assetHash": "538411b2fc3df120f910c47c92502b1b4bdefef52f1296170167180c61109816",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/voltage-amplifier-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/voltage-amplifier-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/common-symbol-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/voltage-amplifier-vector-source.json",
+        "converterPath": "scripts/generate-razavi-common-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "voltage-amplifier-lettered",
+      "name": "Voltage Amplifier (lettered)",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["IN", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Textbook gain block has implicit reference nodes and no exact primitive SPICE terminal contract.",
+      "assetPath": "voltage-amplifier-lettered.symbol.json",
+      "assetHash": "b243d887263879131fc7c6eefefc8d5f1ecadeb3f11b51541ec7aa133b0e0db9",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/voltage-amplifier-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/voltage-amplifier-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/common-symbol-geometry.json"
+      },
+      "generation": {
+        "kind": "derived-lettered-body",
+        "sourceSymbolId": "voltage-amplifier",
+        "converterPath": "scripts/generate-lettered-amplifiers.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "pulse-voltage-source",
+      "name": "Pulse Voltage Source",
+      "category": "source",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["+", "-"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Pulse semantics require authored timing parameters and must not replace imported DC voltage sources automatically.",
+      "assetPath": "pulse-voltage-source.symbol.json",
+      "assetHash": "ed85c05f409cd66ff2d969bc84c4803a8352b5d022dcd26c7fc998715924717f",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png",
+          "fixtures/visual-reference/razavi-reference-v1/data-converters-clock-pulse-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/data-converters-clock-pulse-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/peripheral-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/data-converters-clock-pulse-vector-source.json",
+        "converterPath": "scripts/generate-razavi-peripheral-assets.mjs",
+        "converterVersion": 4
+      }
+    },
+    {
+      "symbolId": "voltage-controlled-switch",
+      "name": "Voltage-Controlled Switch",
+      "category": "switch",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The reference draws a two-terminal switch and no control terminals, while a SPICE switch is S<ref> n+ n- nc+ nc- MODEL. Drawn here rather than by widening the two-terminal evidence with geometry the source does not contain.",
+      "pinOrder": ["P", "N", "CP", "CN"],
+      "palette": true,
+      "automaticMappings": ["spice:S"],
+      "assetPath": "voltage-controlled-switch.symbol.json",
+      "assetHash": "c7a243285745643126ab4e90220d55b82408bd63219cc2fabe6d8a53e93dd85b"
+    },
+    {
+      "symbolId": "voltage-source",
+      "name": "Independent Voltage Source",
+      "category": "source",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["+", "-"],
+      "palette": true,
+      "automaticMappings": ["spice:V"],
+      "assetPath": "voltage-source.symbol.json",
+      "assetHash": "9f295fd28893155c8e3e73f26fd5f858f99a54b77b1917720ee2fbb02fb2942c",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/peripheral-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-raster-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/razavi-six-panel.png",
+        "converterPath": "scripts/generate-razavi-peripheral-assets.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "xnor-gate",
+      "name": "XNOR Gate",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic gate; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "xnor-gate.symbol.json",
+      "assetHash": "43e606d026e0907ad50be8a39d86e879158671f0ee6c124eef3a0b66f31d491a",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/logic-xor-gate-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-xor-gate-reference.png",
+          "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-nor-gate-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/logic-gate-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/logic-xor-gate-vector-source.json",
+        "converterPath": "scripts/generate-razavi-logic-gate-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "xor-gate",
+      "name": "XOR Gate",
+      "category": "logic",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "B", "Y"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Behavioral logic gate; structural SPICE realization requires an explicit subcircuit or PDK mapping.",
+      "assetPath": "xor-gate.symbol.json",
+      "assetHash": "5f4b6db11eddfe87715df1177cee9ee59b8050a4084e43a4034ca40e690b4e83",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/logic-xor-gate-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/logic-xor-gate-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/logic-gate-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/logic-xor-gate-vector-source.json",
+        "converterPath": "scripts/generate-razavi-logic-gate-assets.mjs",
+        "converterVersion": 2
+      }
+    },
+    {
+      "symbolId": "zener-diode",
+      "name": "Zener Diode",
+      "category": "passive",
+      "reviewStatus": "reviewed",
+      "pinOrder": ["A", "K"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "SPICE D syntax does not distinguish a Zener presentation from an ordinary diode; select this reviewed symbol manually or through an explicit PDK mapping.",
+      "assetPath": "zener-diode.symbol.json",
+      "assetHash": "01261cd11d9a03e7e457d5b0d7ab261b69ff4c28c022a087883ab6614f295772",
+      "visualAuthority": {
+        "kind": "razavi-reference-v1",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePaths": [
+          "fixtures/visual-reference/razavi-reference-v1/zener-diode-vector-source.json",
+          "fixtures/visual-reference/razavi-reference-v1/zener-diode-reference.png"
+        ],
+        "calibrationPath": "fixtures/visual-reference/razavi-reference-v1/zener-diode-geometry.json"
+      },
+      "generation": {
+        "kind": "razavi-pdf-vector-reference",
+        "referenceManifestPath": "fixtures/visual-reference/razavi-reference-v1/manifest.json",
+        "referencePath": "fixtures/visual-reference/razavi-reference-v1/zener-diode-vector-source.json",
+        "converterPath": "scripts/generate-razavi-zener-asset.mjs",
+        "converterVersion": 1
+      }
+    },
+    {
+      "symbolId": "adc",
+      "name": "Analog-to-Digital Converter",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The reference draws converter internals, never a block standing for one on a sheet. Drawn here as the arrow a data path is read through.",
+      "pinOrder": ["IN", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "A converter block stands for a subsystem; SPICE has no primitive for one.",
+      "assetPath": "adc.symbol.json",
+      "assetHash": "27855e5142d4ae54d83562ac76952e98ba1d4234c188801a73efc8358a4ae09c"
+    },
+    {
+      "symbolId": "dac",
+      "name": "Digital-to-Analog Converter",
+      "category": "analog-block",
+      "reviewStatus": "reviewed",
+      "provenance": "house",
+      "houseReason": "The reference draws converter internals, never a block standing for one on a sheet. Drawn here as the ADC's mirror so a signal chain reads in both directions.",
+      "pinOrder": ["IN", "OUT"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "A converter block stands for a subsystem; SPICE has no primitive for one.",
+      "assetPath": "dac.symbol.json",
+      "assetHash": "4be7f9a855d6055575402bd783a27e10152097b1a85c31e487479ed4612b8d16"
+    }
+  ],
+  "semanticPrimitives": [
+    {
+      "id": "junction-dot",
+      "disposition": "semantic-primitive",
+      "geometry": {
+        "kind": "circle",
+        "sourceDiameterIU": 0.0787401574803157,
+        "fill": "foreground",
+        "stroke": "none"
+      },
+      "runtimeOwner": "presentation.nodes.junction"
+    }
+  ]
+}

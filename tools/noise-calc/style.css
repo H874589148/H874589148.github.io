@@ -78,11 +78,8 @@
 }
 canvas { width: 100%; height: auto; display: block; }
 
-/* 结构示意图 */
+/* 结构示意图（razavi 渲染器输出，颜色走内联 CSS 变量以适配暗色主题） */
 .topo-fig { margin-top: var(--space-sm); text-align: center; }
 .topo-svg { width: 100%; max-width: 400px; height: auto; }
-.topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.topo-svg .thick { stroke-width: 3.5; }
-.topo-svg .tc { fill: #fffcf7; }
-.topo-svg .td { fill: #4a4a4a; }
-.topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }
+.amp-fig-bar { margin-top: var(--space-sm); text-align: right; }
+.amp-fig-bar .btn { font-size: 0.82rem; padding: 4px 10px; }
