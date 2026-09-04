@@ -860,6 +860,37 @@ propVariant.addEventListener('change', function () {
     document.getElementById('ckSwatches').appendChild(d);
 });
 
+/* ---- 悬浮属性面板拖动（拖标题栏，钳制在画布卡片内；窄屏 static 定位下天然失效） ---- */
+(function initPropsDrag() {
+    var panel = document.getElementById('ckProps');
+    var hd = document.getElementById('ckPropsHd');
+    if (!panel || !hd) return;
+    hd.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        var card = panel.offsetParent;
+        if (!card) return;
+        e.preventDefault();
+        /* 首次拖动：从 right 定位切换为显式 left/top */
+        panel.style.left = panel.offsetLeft + 'px';
+        panel.style.top = panel.offsetTop + 'px';
+        panel.style.right = 'auto';
+        var sx = e.clientX, sy = e.clientY;
+        var ox = panel.offsetLeft, oy = panel.offsetTop;
+        function mv(ev) {
+            var maxL = Math.max(0, card.clientWidth - panel.offsetWidth);
+            var maxT = Math.max(0, card.clientHeight - panel.offsetHeight);
+            panel.style.left = Math.max(0, Math.min(maxL, ox + ev.clientX - sx)) + 'px';
+            panel.style.top = Math.max(0, Math.min(maxT, oy + ev.clientY - sy)) + 'px';
+        }
+        function up() {
+            document.removeEventListener('mousemove', mv);
+            document.removeEventListener('mouseup', up);
+        }
+        document.addEventListener('mousemove', mv);
+        document.addEventListener('mouseup', up);
+    });
+})();
+
 /* ============================================
    工具栏与键盘
    ============================================ */

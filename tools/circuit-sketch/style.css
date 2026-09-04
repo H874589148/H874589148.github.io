@@ -15,10 +15,10 @@
 .btn-danger { border-color: #c0583a; color: #c0583a; }
 .btn-danger:hover { background: #c0583a; color: #fff; }
 
-/* ---- 三栏布局 ---- */
+/* ---- 两栏布局（属性面板悬浮于画布卡片内） ---- */
 .ck-layout {
     display: grid;
-    grid-template-columns: 196px minmax(0, 1fr) 210px;
+    grid-template-columns: 196px minmax(0, 1fr);
     gap: var(--space-md);
     align-items: start;
 }
@@ -97,7 +97,20 @@
 }
 #ckCanvas { display: block; user-select: none; }
 
-/* 属性栏 */
+/* ---- 属性栏（默认悬浮于画布卡片右上角，拖标题栏移动） ---- */
+.ck-canvas-card { position: relative; }
+.ck-props {
+    position: absolute;
+    top: 44px; /* 避开 chart-label 标题行 */
+    right: 10px;
+    width: 210px;
+    z-index: 20;
+    margin: 0;
+    max-height: calc(100% - 56px);
+    overflow-y: auto;
+    box-shadow: 2.5px 2.5px 0 rgba(44, 44, 44, 0.25);
+}
+#ckPropsHd { cursor: move; user-select: none; }
 .ck-props .field { margin-bottom: var(--space-sm); }
 .ck-props label { font-size: 0.9rem; color: var(--color-text-secondary); display: block; margin-bottom: 2px; }
 .iu-row { display: flex; align-items: center; gap: 6px; }
@@ -129,7 +142,8 @@
     .ck-layout { grid-template-columns: 1fr; }
     .ck-palette { order: 1; }
     .ck-canvas-col { order: 2; }
-    .ck-props { order: 3; }
+    /* 窄屏：属性面板回退为画布卡片内的静态面板，不再悬浮拖动 */
+    .ck-props { position: static; width: auto; max-height: none; box-shadow: none; margin: var(--space-md) 0 0; }
     .pal-grid { grid-template-columns: repeat(4, 1fr); }
     .ck-tpl-list { flex-direction: row; flex-wrap: wrap; }
 }

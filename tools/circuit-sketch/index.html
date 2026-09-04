@@ -108,6 +108,44 @@
                             <g id="layerOverlay"></g>
                         </svg>
                     </div>
+                    <!-- 悬浮属性面板：拖标题栏移动位置；窄屏自动回退为静态面板 -->
+                    <aside class="paper-card ck-props" id="ckProps">
+                        <h3 id="ckPropsHd" title="按住拖动">属性</h3>
+                        <p class="hint" id="selInfo">未选中任何对象</p>
+                        <div class="field">
+                            <label for="propWidth">线宽</label>
+                            <select id="propWidth">
+                                <option value="1">1 px</option>
+                                <option value="1.5" selected>1.5 px</option>
+                                <option value="2">2 px</option>
+                                <option value="3">3 px</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="propColor">颜色</label>
+                            <div class="iu-row">
+                                <input type="color" id="propColor" value="#1a1a1a">
+                                <div class="ck-swatches" id="ckSwatches"></div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="propDash">线型</label>
+                            <select id="propDash">
+                                <option value="" selected>实线</option>
+                                <option value="7 4">虚线</option>
+                                <option value="2 3">点线</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="propText">文字标签</label>
+                            <input type="text" id="propText" placeholder="双击器件也可编辑">
+                        </div>
+                        <div class="field" id="propVariantRow" style="display:none;">
+                            <label for="propVariant">符号变体</label>
+                            <select id="propVariant"></select>
+                        </div>
+                        <p class="hint">修改即时作用于全部选中对象。</p>
+                    </aside>
                 </div>
                 <div class="info-box">
                     <p><strong>快捷键与操作：</strong></p>
@@ -123,44 +161,6 @@
                 </div>
             </div>
 
-            <!-- 右：属性栏 -->
-            <aside class="paper-card ck-props">
-                <h3>属性</h3>
-                <p class="hint" id="selInfo">未选中任何对象</p>
-                <div class="field">
-                    <label for="propWidth">线宽</label>
-                    <select id="propWidth">
-                        <option value="1">1 px</option>
-                        <option value="1.5" selected>1.5 px</option>
-                        <option value="2">2 px</option>
-                        <option value="3">3 px</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="propColor">颜色</label>
-                    <div class="iu-row">
-                        <input type="color" id="propColor" value="#1a1a1a">
-                        <div class="ck-swatches" id="ckSwatches"></div>
-                    </div>
-                </div>
-                <div class="field">
-                    <label for="propDash">线型</label>
-                    <select id="propDash">
-                        <option value="" selected>实线</option>
-                        <option value="7 4">虚线</option>
-                        <option value="2 3">点线</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="propText">文字标签</label>
-                    <input type="text" id="propText" placeholder="双击器件也可编辑">
-                </div>
-                <div class="field" id="propVariantRow" style="display:none;">
-                    <label for="propVariant">符号变体</label>
-                    <select id="propVariant"></select>
-                </div>
-                <p class="hint">修改即时作用于全部选中对象。</p>
-            </aside>
         </div>
     </main>
 
