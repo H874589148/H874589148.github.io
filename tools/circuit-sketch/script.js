@@ -12,6 +12,80 @@ var layerMain = document.getElementById('layerMain');
 var layerOverlay = document.getElementById('layerOverlay');
 var wrap = document.getElementById('ckWrap');
 var statusEl = document.getElementById('ckStatus');
+var world = document.getElementById('world');
+var gridMinor = document.getElementById('gridMinor');
+var gridMajor = document.getElementById('gridMajor');
+
+/* ============================================
+   无限画布：视图变换（平移 + 缩放）
+   ============================================ */
+var viewTransform = { x: 0, y: 0, scale: 1 };
+var isPanning = false;
+var panStart = { x: 0, y: 0 };
+var spaceDown = false;
+var gridEnabled = true;
+
+/* 屏幕坐标 → 画布坐标 */
+function screenToCanvas(sx, sy) {
+    return {
+        x: (sx - viewTransform.x) / viewTransform.scale,
+        y: (sy - viewTransform.y) / viewTransform.scale
+    };
+}
+
+/* 画布坐标 → 屏幕坐标 */
+function canvasToScreen(cx, cy) {
+    return {
+        x: cx * viewTransform.scale + viewTransform.x,
+        y: cy * viewTransform.scale + viewTransform.y
+    };
+}
+
+/* 应用视图变换到世界组 */
+function applyViewTransform() {
+    world.setAttribute('transform',
+        'translate(' + viewTransform.x + ',' + viewTransform.y + ') ' +
+        'scale(' + viewTransform.scale + ')');
+    updateGridVisibility();
+    syncMenuStatus();
+}
+
+/* 根据缩放级别更新网格可见性 */
+function updateGridVisibility() {
+    var s = viewTransform.scale;
+    gridMinor.style.display = gridEnabled && s >= 0.5 ? '' : 'none';
+    gridMajor.style.display = gridEnabled && s >= 0.2 ? '' : 'none';
+}
+
+/* 视图菜单与滚轮共用缩放，菜单操作以视口中心为锚点 */
+function zoomView(factor, mx, my) {
+    var r = svg.getBoundingClientRect();
+    if (mx == null) mx = r.width / 2;
+    if (my == null) my = r.height / 2;
+    var oldScale = viewTransform.scale;
+    var newScale = Math.max(0.1, Math.min(10, oldScale * factor));
+    viewTransform.x = mx - (mx - viewTransform.x) * (newScale / oldScale);
+    viewTransform.y = my - (my - viewTransform.y) * (newScale / oldScale);
+    viewTransform.scale = newScale;
+    applyViewTransform();
+}
+
+/* 适应全部内容仅改变视图，不写入文档或撤销栈 */
+function fitContent() {
+    var r = svg.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    if (!doc.items.length) {
+        viewTransform = { x: 0, y: 0, scale: 1 };
+    } else {
+        var b = Razavi.docBBox(doc);
+        var s = Math.min(Math.max(1, r.width - 80) / Math.max(1, b.x1 - b.x0),
+            Math.max(1, r.height - 80) / Math.max(1, b.y1 - b.y0));
+        s = Math.max(0.1, Math.min(10, s));
+        viewTransform = { x: r.width / 2 - (b.x0 + b.x1) * s / 2,
+            y: r.height / 2 - (b.y0 + b.y1) * s / 2, scale: s };
+    }
+    applyViewTransform();
+}
 
 function snap(v) { return Math.round(v / GRID) * GRID; }
 var _uid = 1;
@@ -198,6 +272,7 @@ function render() {
     renderOverlay();
     renderProps();
     saveLocal();
+    syncMenuState();
 }
 
 function renderOverlay() {
@@ -279,7 +354,9 @@ function redo() {
    ============================================ */
 function evPos(e) {
     var r = svg.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    var sx = e.clientX - r.left;
+    var sy = e.clientY - r.top;
+    return screenToCanvas(sx, sy);
 }
 
 function snapPort(x, y) {
@@ -295,8 +372,9 @@ function setStatus(extra) {
    画布鼠标交互
    ============================================ */
 svg.addEventListener('mousedown', function (e) {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || spaceDown) return;  // 空格键按下时跳过画布交互，留给平移处理器
     e.preventDefault();
+    svg.focus({ preventScroll: true });
     var pos = evPos(e);
 
     /* ---- 连线模式 ---- */
@@ -376,6 +454,7 @@ svg.addEventListener('mousedown', function (e) {
 });
 
 window.addEventListener('mousemove', function (e) {
+    if (!drag && e.target.closest && e.target.closest('#ckMenubar')) return;
     var pos = evPos(e);
 
     /* 连线模式：端口吸附提示 + 预览 */
@@ -456,6 +535,65 @@ svg.addEventListener('dblclick', function (e) {
 });
 
 /* ============================================
+   无限画布：缩放 / 平移 / 键盘
+   ============================================ */
+/* 鼠标滚轮缩放（以光标为中心） */
+svg.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var r = svg.getBoundingClientRect();
+    var mx = e.clientX - r.left;
+    var my = e.clientY - r.top;
+    if (!e.deltaY) return;
+    var factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    /* 以光标为中心缩放：调整平移使光标下画布点不变 */
+    zoomView(factor, mx, my);
+}, { passive: false });
+
+/* 中键或空格+左键平移 */
+svg.addEventListener('mousedown', function (e) {
+    if (e.button === 1 || (e.button === 0 && spaceDown)) {
+        e.preventDefault();
+        isPanning = true;
+        panStart.x = e.clientX - viewTransform.x;
+        panStart.y = e.clientY - viewTransform.y;
+        wrap.classList.add('panning');
+    }
+});
+
+window.addEventListener('mousemove', function (e) {
+    if (isPanning) {
+        viewTransform.x = e.clientX - panStart.x;
+        viewTransform.y = e.clientY - panStart.y;
+        applyViewTransform();
+    }
+});
+
+window.addEventListener('mouseup', function (e) {
+    if (isPanning) {
+        isPanning = false;
+        wrap.classList.remove('panning');
+    }
+});
+
+/* 空格键追踪 */
+window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space' && !e.repeat) {
+        spaceDown = true;
+        if (!isPanning) wrap.classList.add('panning');
+    }
+});
+
+window.addEventListener('keyup', function (e) {
+    if (e.code === 'Space') {
+        spaceDown = false;
+        if (!isPanning) wrap.classList.remove('panning');
+    }
+});
+
+/* 初始化视图变换 */
+applyViewTransform();
+
+/* ============================================
    器件面板：11 个可折叠分组（10 个 razavi 分类 + 绘图辅助）
    拖放或点击放置
    ============================================ */
@@ -528,11 +666,15 @@ function bindPalItem(div, type) {
             var x, y;
             if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 4) {
                 /* 单击：放到画布可见区中心 */
-                x = snap(wrap.scrollLeft + wrap.clientWidth / 2);
-                y = snap(wrap.scrollTop + wrap.clientHeight / 2);
+                var centerScreen = { x: r.width / 2, y: r.height / 2 };
+                var centerCanvas = screenToCanvas(centerScreen.x, centerScreen.y);
+                x = snap(centerCanvas.x);
+                y = snap(centerCanvas.y);
             } else if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) {
-                x = snap(ev.clientX - r.left);
-                y = snap(ev.clientY - r.top);
+                var screenPos = { x: ev.clientX - r.left, y: ev.clientY - r.top };
+                var canvasPos = screenToCanvas(screenPos.x, screenPos.y);
+                x = snap(canvasPos.x);
+                y = snap(canvasPos.y);
             } else return;
             addComp(type, x, y);
         }
@@ -605,8 +747,11 @@ function migrateDoc(d) {
 function insertFigure(key) {
     var fig = window.RAZAVI_FIGURES && RAZAVI_FIGURES[key];
     if (!fig) return;
-    var cx = snap(wrap.scrollLeft + wrap.clientWidth / 2);
-    var cy = snap(wrap.scrollTop + wrap.clientHeight / 2);
+    var r = svg.getBoundingClientRect();
+    var centerScreen = { x: r.width / 2, y: r.height / 2 };
+    var centerCanvas = screenToCanvas(centerScreen.x, centerScreen.y);
+    var cx = snap(centerCanvas.x);
+    var cy = snap(centerCanvas.y);
     var b = Razavi.docBBox(fig.doc);
     var dx = cx - snap((b.x0 + b.x1) / 2);
     var dy = cy - snap((b.y0 + b.y1) / 2);
@@ -892,61 +1037,397 @@ propVariant.addEventListener('change', function () {
 })();
 
 /* ============================================
-   工具栏与键盘
+   菜单系统与键盘
    ============================================ */
-var toolSelect = document.getElementById('toolSelect');
-var toolWire = document.getElementById('toolWire');
-var toolLabelBtn = document.getElementById('toolLabel');
+var menubar = document.getElementById('ckMenubar');
+var menuStatus = document.getElementById('ckMenuStatus');
+var exportOptions = { svgTransparent: false, pngTransparent: false };
 
 function setTool(t) {
     tool = t;
     wireStart = null;
     hoverPort = null;
-    toolSelect.classList.toggle('btn-primary', t === 'select');
-    toolWire.classList.toggle('btn-primary', t === 'wire');
-    toolLabelBtn.classList.toggle('btn-primary', t === 'label');
     wrap.style.cursor = t === 'select' ? 'default' : 'crosshair';
     render();
+    syncMenuState();
 }
 
-toolSelect.addEventListener('click', function () { setTool('select'); });
-toolWire.addEventListener('click', function () { setTool('wire'); });
-toolLabelBtn.addEventListener('click', function () { setTool('label'); });
-var wireModeBtn = document.getElementById('wireModeBtn');
-wireModeBtn.addEventListener('click', function () {
-    wireMode = wireMode === 'orth' ? 'diag' : 'orth';
-    wireModeBtn.textContent = '走线：' + (wireMode === 'orth' ? '正交' : '斜线');
-    if (wireStart) renderOverlay();   // 进行中的连线预览同步切换
+function syncMenuStatus() {
+    if (!menuStatus) return;
+    menuStatus.textContent = ({ select: '选择', wire: '连线', label: '文字标注' }[tool] || '选择') +
+        ' · ' + Math.round(viewTransform.scale * 100) + '%';
+}
+
+function syncMenuState() {
+    if (!menubar) return;
+    var count = selItems().length;
+    var disabled = {
+        undo: !undoStack.length, redo: !redoStack.length, paste: !clipboard.length,
+        'select-all': !doc.items.length,
+        ungroup: !sel.some(function (id) { return !!groupOf(id); }),
+        'zoom-in': viewTransform.scale >= 10, 'zoom-out': viewTransform.scale <= 0.1
+    };
+    var checked = {
+        'tool-select': tool === 'select', 'tool-wire': tool === 'wire', 'tool-label': tool === 'label',
+        'toggle-grid': gridEnabled, 'toggle-theme': Theme.get() === 'dark',
+        'svg-transparent': exportOptions.svgTransparent, 'png-transparent': exportOptions.pngTransparent
+    };
+    menubar.querySelectorAll('[data-action]').forEach(function (btn) {
+        var action = btn.getAttribute('data-action');
+        btn.disabled = !!disabled[action] || count < Number(btn.getAttribute('data-min-selection') || 0);
+        if (Object.prototype.hasOwnProperty.call(checked, action)) btn.setAttribute('aria-checked', String(checked[action]));
+    });
+    document.getElementById('wireModeBtn').textContent = '走线：' + (wireMode === 'orth' ? '正交' : '斜线') + '（点击切换）';
+    syncMenuStatus();
+}
+
+/* 菜单操作统一分发，导入导出与原编辑操作共用实现 */
+var menuActions = {
+    'new': newDoc,
+    'save-local': function () {
+        try {
+            localStorage.setItem(LS_KEY, JSON.stringify(doc));
+            suppressSave = false;
+            hintMsg = '已保存到本地浏览器；备份请使用 File → Export → JSON';
+            setStatus('');
+        } catch (err) { alert('保存失败，请导出 JSON 备份：' + err.message); }
+    },
+    'import-json': function () { impFile.click(); },
+    'export-svg': exportSVG, 'export-png': exportPNG, 'export-pdf': exportPDF, 'export-json': exportJSON,
+    'svg-transparent': function () { exportOptions.svgTransparent = !exportOptions.svgTransparent; },
+    'png-transparent': function () { exportOptions.pngTransparent = !exportOptions.pngTransparent; },
+    'close-editor': function () {
+        var message = suppressSave ? '当前载入的标准图尚未保存，仍要返回主页？' : '返回主页？当前工程已自动保存在此浏览器，建议先导出 JSON 备份。';
+        if (confirm(message)) location.href = '../../index.html';
+    },
+    undo: undo, redo: redo, copy: copySel, paste: pasteClip, 'delete': delSel,
+    cut: function () { if (selItems().length) { copySel(); delSel(); } },
+    'select-all': function () { setTool('select'); sel = doc.items.map(function (it) { return it.id; }); render(); },
+    'open-insert': function () { openMenu(menubar.querySelector('[aria-controls="menuInsert"]'), true); },
+    'zoom-in': function () { zoomView(1.1); },
+    'zoom-out': function () { zoomView(1 / 1.1); },
+    'fit-content': fitContent,
+    'reset-zoom': function () { zoomView(1 / viewTransform.scale); },
+    'toggle-grid': function () { gridEnabled = !gridEnabled; updateGridVisibility(); },
+    'toggle-theme': function () { Theme.toggle(); },
+    'tool-select': function () { setTool('select'); },
+    'tool-wire': function () { setTool('wire'); },
+    'tool-label': function () { setTool('label'); },
+    'wire-mode': function () {
+        wireMode = wireMode === 'orth' ? 'diag' : 'orth';
+        if (wireStart) renderOverlay();   // 进行中的连线预览同步切换
+    },
+    rotate: function () { transformSel('rot'); },
+    'flip-h': function () { transformSel('fh'); }, 'flip-v': function () { transformSel('fv'); },
+    group: groupSel, ungroup: ungroupSel
+};
+['l', 'cx', 'r', 't', 'cy', 'b'].forEach(function (kind) {
+    menuActions['align-' + kind] = function () { alignSel(kind); };
 });
-document.getElementById('undoBtn').addEventListener('click', undo);
-document.getElementById('redoBtn').addEventListener('click', redo);
-document.getElementById('copyBtn').addEventListener('click', copySel);
-document.getElementById('pasteBtn').addEventListener('click', pasteClip);
-document.getElementById('delBtn').addEventListener('click', delSel);
-document.getElementById('rotBtn').addEventListener('click', function () { transformSel('rot'); });
-document.getElementById('fhBtn').addEventListener('click', function () { transformSel('fh'); });
-document.getElementById('fvBtn').addEventListener('click', function () { transformSel('fv'); });
-document.getElementById('alL').addEventListener('click', function () { alignSel('l'); });
-document.getElementById('alCX').addEventListener('click', function () { alignSel('cx'); });
-document.getElementById('alR').addEventListener('click', function () { alignSel('r'); });
-document.getElementById('alT').addEventListener('click', function () { alignSel('t'); });
-document.getElementById('alCY').addEventListener('click', function () { alignSel('cy'); });
-document.getElementById('alB').addEventListener('click', function () { alignSel('b'); });
-document.getElementById('dsH').addEventListener('click', function () { distributeSel('h'); });
-document.getElementById('dsV').addEventListener('click', function () { distributeSel('v'); });
-document.getElementById('grpBtn').addEventListener('click', groupSel);
-document.getElementById('ungrpBtn').addEventListener('click', ungroupSel);
-document.getElementById('zTop').addEventListener('click', function () { zOrder('top'); });
-document.getElementById('zUp').addEventListener('click', function () { zOrder('up'); });
-document.getElementById('zDown').addEventListener('click', function () { zOrder('down'); });
-document.getElementById('zBottom').addEventListener('click', function () { zOrder('bottom'); });
+['h', 'v'].forEach(function (axis) {
+    menuActions['distribute-' + axis] = function () { distributeSel(axis); };
+});
+['top', 'up', 'down', 'bottom'].forEach(function (kind) {
+    menuActions['layer-' + kind] = function () { zOrder(kind); };
+});
+
+/* 插入分类与左侧面板使用相同的 catalog，不维护第二套器件清单 */
+function buildInsertMenu() {
+    var html = '<p class="ck-menu-note">选择器件后插入视口中心</p>';
+    function category(name, ids, index) {
+        if (!ids.length) return;
+        var menuId = 'menuDevice' + index;
+        html += '<button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="' + menuId + '">' +
+            Razavi.esc(name) + '<span class="ck-menu-arrow">›</span></button>' +
+            '<div class="ck-menu-popup" id="' + menuId + '" role="menu" aria-label="' + Razavi.esc(name) + '" hidden>';
+        ids.forEach(function (id) {
+            var m = Razavi.meta(id);
+            html += '<button type="button" role="menuitem" class="ck-menu-device" data-device="' + Razavi.esc(id) +
+                '" title="' + Razavi.esc(m.nameZh + ' / ' + m.name) + '">' + palPreview(id) + '<span>' + Razavi.esc(m.nameZh) + '</span></button>';
+        });
+        html += '</div>';
+    }
+    Razavi.CATS.forEach(function (cat, index) {
+        var ids = Razavi.CATALOG.filter(function (e) { return e.palette && e.category === cat.id; })
+            .map(function (e) { return e.id; });
+        category(cat.name, ids, index);
+    });
+    category('绘图辅助', Razavi.AUX_ORDER, 'Aux');
+    document.getElementById('menuInsert').innerHTML = html;
+}
+
+function menuOwner(popup) {
+    return menubar.querySelector('[aria-controls="' + popup.id + '"]');
+}
+
+function closeMenu(popup) {
+    popup.querySelectorAll('.ck-menu-popup').forEach(function (child) {
+        child.hidden = true;
+        menuOwner(child).setAttribute('aria-expanded', 'false');
+    });
+    popup.hidden = true;
+    menuOwner(popup).setAttribute('aria-expanded', 'false');
+}
+
+function closeMenus(restoreFocus) {
+    var trigger = menubar.querySelector('.ck-menu-trigger[aria-expanded="true"]');
+    menubar.querySelectorAll('.ck-menu > .ck-menu-popup').forEach(closeMenu);
+    if (restoreFocus && trigger) trigger.focus({ preventScroll: true });
+}
+
+function menuItems(popup) {
+    return Array.prototype.filter.call(popup.children, function (el) { return el.tagName === 'BUTTON' && !el.disabled; });
+}
+
+function openMenu(button, focusFirst) {
+    var popup = document.getElementById(button.getAttribute('aria-controls'));
+    if (!popup) return;
+    var parent = button.closest('.ck-menu-popup');
+    if (!parent) closeMenus(false);
+    else Array.prototype.forEach.call(parent.children, function (el) {
+        if (el.classList.contains('ck-menu-popup') && el !== popup) closeMenu(el);
+    });
+    syncMenuState();
+    popup.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+    popup.style.left = '0px';
+    popup.style.top = '0px';
+    var r = button.getBoundingClientRect(), p = parent && parent.getBoundingClientRect();
+    var w = popup.offsetWidth, h = popup.offsetHeight;
+    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    var x = parent ? p.right - 1 : r.left;
+    var y = parent ? r.top : r.bottom + 2;
+    if (x + w > vw - 8) x = parent ? p.left - w + 1 : vw - w - 8;
+    if (y + h > vh - 8) y = parent ? vh - h - 8 : Math.max(8, r.top - h - 2);
+    popup.style.left = Math.max(8, Math.min(x, vw - w - 8)) + 'px';
+    popup.style.top = Math.max(8, Math.min(y, vh - h - 8)) + 'px';
+    if (focusFirst) {
+        var items = menuItems(popup);
+        if (items.length) items[0].focus({ preventScroll: true });
+    }
+}
+
+function insertMenuDevice(type) {
+    if (!SYMBOLS[type]) return;
+    var r = svg.getBoundingClientRect();
+    var p = screenToCanvas(r.width / 2, r.height / 2);
+    setTool('select');
+    addComp(type, snap(p.x), snap(p.y));
+}
+
+function initMenus() {
+    buildInsertMenu();
+    menubar.addEventListener('click', function (e) {
+        var btn = e.target.closest('button');
+        if (!btn || btn.disabled) return;
+        if (btn.hasAttribute('aria-controls')) {
+            var popup = document.getElementById(btn.getAttribute('aria-controls'));
+            if (!popup.hidden && btn.classList.contains('ck-menu-trigger')) closeMenu(popup);
+            else openMenu(btn, e.detail === 0);
+            return;
+        }
+        var action = btn.getAttribute('data-action');
+        var device = btn.getAttribute('data-device');
+        var keepOpen = btn.getAttribute('role') === 'menuitemcheckbox';
+        if (!keepOpen) {
+            closeMenus(false);
+            svg.focus({ preventScroll: true });
+        }
+        if (device) insertMenuDevice(device);
+        else if (Object.prototype.hasOwnProperty.call(menuActions, action)) menuActions[action]();
+        syncMenuState();
+    });
+    menubar.addEventListener('pointerover', function (e) {
+        if (e.pointerType === 'touch') return;
+        var btn = e.target.closest('button');
+        if (!btn || btn.contains(e.relatedTarget)) return;
+        if (btn.classList.contains('ck-menu-trigger')) {
+            if (menubar.querySelector('.ck-menu-trigger[aria-expanded="true"]') && btn.getAttribute('aria-expanded') !== 'true') openMenu(btn, false);
+            return;
+        }
+        var parent = btn.closest('.ck-menu-popup');
+        if (!parent || parent.hidden) return;
+        Array.prototype.forEach.call(parent.children, function (el) {
+            if (el.classList.contains('ck-menu-popup') && el.id !== btn.getAttribute('aria-controls')) closeMenu(el);
+        });
+        if (!btn.disabled && btn.hasAttribute('aria-controls')) openMenu(btn, false);
+    });
+    menubar.addEventListener('keydown', function (e) {
+        /* 菜单焦点内不触发画布快捷键或空格平移 */
+        e.stopPropagation();
+        var btn = e.target.closest('button');
+        if (!btn) return;
+        var popup = btn.closest('.ck-menu-popup');
+        var owner = popup && menuOwner(popup);
+        var isSubmenu = owner && !owner.classList.contains('ck-menu-trigger');
+        if (e.key === 'Tab') { closeMenus(true); return; }
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            if (isSubmenu) { closeMenu(popup); owner.focus({ preventScroll: true }); }
+            else closeMenus(true);
+        } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
+            e.preventDefault();
+            if (!popup) { openMenu(btn, true); return; }
+            var items = menuItems(popup), index = items.indexOf(btn);
+            if (!items.length) return;
+            if (e.key === 'Home') index = 0;
+            else if (e.key === 'End') index = items.length - 1;
+            else index = (index + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+            items[index].focus({ preventScroll: true });
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            if (e.key === 'ArrowRight' && popup && btn.hasAttribute('aria-controls')) { openMenu(btn, true); return; }
+            if (e.key === 'ArrowLeft' && isSubmenu) { closeMenu(popup); owner.focus({ preventScroll: true }); return; }
+            var triggers = Array.prototype.slice.call(menubar.querySelectorAll('.ck-menu-trigger'));
+            var root = btn.closest('.ck-menu').querySelector('.ck-menu-trigger');
+            var next = (triggers.indexOf(root) + (e.key === 'ArrowRight' ? 1 : -1) + triggers.length) % triggers.length;
+            openMenu(triggers[next], true);
+        }
+    });
+    document.addEventListener('pointerdown', function (e) { if (!menubar.contains(e.target)) closeMenus(false); });
+    menubar.addEventListener('focusout', function () {
+        setTimeout(function () { if (!menubar.contains(document.activeElement)) closeMenus(false); }, 0);
+    });
+    window.addEventListener('resize', function () { closeMenus(true); });
+    window.addEventListener('blur', function () { closeMenus(false); });
+    window.addEventListener('scroll', function (e) {
+        /* 页面移动时收起菜单；菜单自身滚动时仅关闭其子菜单 */
+        if (e.target.classList && e.target.classList.contains('ck-menu-popup')) {
+            Array.prototype.forEach.call(e.target.children, function (el) {
+                if (el.classList.contains('ck-menu-popup')) closeMenu(el);
+            });
+        } else closeMenus(false);
+    }, true);
+    syncMenuState();
+}
+
+/* ============================================
+   I 键器件选择器（浮动搜索面板）
+   ============================================ */
+var pickerEl = null;
+
+function openDevicePicker() {
+    if (pickerEl) closeDevicePicker();
+    var mask = document.createElement('div');
+    mask.className = 'ck-picker-mask';
+    var panel = document.createElement('div');
+    panel.className = 'ck-picker';
+    /* 居中于视口 */
+    panel.style.left = '50%'; panel.style.top = '40%';
+    panel.style.transform = 'translate(-50%, -40%)';
+    panel.innerHTML = '<div class="ck-picker-hd">插入器件（Esc 关闭）</div>' +
+        '<input class="ck-picker-input" type="text" placeholder="搜索器件名称…" autocomplete="off">' +
+        '<div class="ck-picker-body"></div>';
+    mask.appendChild(panel);
+    document.body.appendChild(mask);
+    pickerEl = mask;
+    var input = panel.querySelector('.ck-picker-input');
+    var body = panel.querySelector('.ck-picker-body');
+    input.focus();
+    renderPickerList(body, '');
+    input.addEventListener('input', function () {
+        renderPickerList(body, input.value.trim().toLowerCase());
+    });
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeDevicePicker(); svg.focus(); }
+        else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var items = Array.prototype.slice.call(body.querySelectorAll('.ck-picker-item'));
+            if (!items.length) return;
+            var cur = body.querySelector('.ck-picker-item.active');
+            var idx = cur ? items.indexOf(cur) : -1;
+            if (e.key === 'ArrowDown') idx = (idx + 1) % items.length;
+            else idx = (idx - 1 + items.length) % items.length;
+            if (cur) cur.classList.remove('active');
+            items[idx].classList.add('active');
+            items[idx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            var active = body.querySelector('.ck-picker-item.active');
+            if (active) { pickFromPicker(active.getAttribute('data-type')); }
+        }
+    });
+    mask.addEventListener('click', function (e) {
+        if (e.target === mask) { closeDevicePicker(); svg.focus(); }
+    });
+}
+
+function renderPickerList(body, query) {
+    var html = '';
+    var firstType = null;
+    Razavi.CATS.forEach(function (cat) {
+        var ids = [];
+        Razavi.CATALOG.forEach(function (e) {
+            if (!e.palette || e.category !== cat.id) return;
+            if (query && (e.name + ' ' + e.nameZh + ' ' + e.id).toLowerCase().indexOf(query) < 0) return;
+            ids.push(e.id);
+        });
+        if (!ids.length) return;
+        html += '<div class="ck-picker-cat">' + Razavi.esc(cat.name) + '</div>';
+        ids.forEach(function (id) {
+            var m = Razavi.meta(id);
+            if (!firstType) firstType = id;
+            html += '<button type="button" class="ck-picker-item" data-type="' + Razavi.esc(id) + '">' +
+                palPreview(id) + '<span>' + Razavi.esc(m.nameZh) + ' <small style="color:var(--color-text-muted)">' + Razavi.esc(m.name) + '</small></span></button>';
+        });
+    });
+    /* 绘图辅助 */
+    var auxIds = [];
+    Razavi.AUX_ORDER.forEach(function (id) {
+        if (query && (id + ' ' + (Razavi.AUX[id].nameZh || '') + ' ' + (Razavi.AUX[id].name || '')).toLowerCase().indexOf(query) < 0) return;
+        auxIds.push(id);
+    });
+    if (auxIds.length) {
+        html += '<div class="ck-picker-cat">绘图辅助</div>';
+        auxIds.forEach(function (id) {
+            var a = Razavi.AUX[id];
+            if (!firstType) firstType = id;
+            html += '<button type="button" class="ck-picker-item" data-type="' + Razavi.esc(id) + '">' +
+                palPreview(id) + '<span>' + Razavi.esc(a.nameZh || id) + '</span></button>';
+        });
+    }
+    if (!html) html = '<div class="ck-picker-empty">无匹配器件</div>';
+    body.innerHTML = html;
+    /* 绑定点击 */
+    Array.prototype.forEach.call(body.querySelectorAll('.ck-picker-item'), function (btn) {
+        btn.addEventListener('click', function () { pickFromPicker(btn.getAttribute('data-type')); });
+        btn.addEventListener('mouseenter', function () {
+            var cur = body.querySelector('.ck-picker-item.active');
+            if (cur) cur.classList.remove('active');
+            btn.classList.add('active');
+        });
+    });
+}
+
+function pickFromPicker(type) {
+    closeDevicePicker();
+    svg.focus();
+    insertMenuDevice(type);
+}
+
+function closeDevicePicker() {
+    if (pickerEl && pickerEl.parentNode) {
+        pickerEl.parentNode.removeChild(pickerEl);
+    }
+    pickerEl = null;
+}
 
 document.addEventListener('keydown', function (e) {
+    if (menubar.querySelector('.ck-menu-trigger[aria-expanded="true"]')) {
+        if (e.key === 'Escape') { e.preventDefault(); closeMenus(true); }
+        return;
+    }
+    /* 器件选择器打开时，键盘事件由选择器自身处理 */
+    if (pickerEl) return;
     var tag = (e.target.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     var k = e.key.toLowerCase();
     var ctrl = e.ctrlKey || e.metaKey;
-    if (ctrl && k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    if (ctrl && k === 'a') { e.preventDefault(); setTool('select'); sel = doc.items.map(function (it) { return it.id; }); render(); }
+    else if (ctrl && k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
     else if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
     else if (ctrl && k === 'c') { copySel(); }
     else if (ctrl && k === 'v') { pasteClip(); }
@@ -960,6 +1441,9 @@ document.addEventListener('keydown', function (e) {
     }
     else if (k === 'w') setTool('wire');
     else if (k === 't') setTool('label');
+    else if (k === 'i') openDevicePicker();
+    else if (k === 'f') { e.preventDefault(); fitContent(); }
+    else if (k === 'u') { undo(); }
     else if (k === 'r') transformSel('rot');
     else if (k === 'h') transformSel('fh');
     else if (k === 'v') transformSel('fv');
@@ -985,13 +1469,13 @@ function download(name, blob) {
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
 }
 
-document.getElementById('expSvg').addEventListener('click', function () {
-    var r = exportSvgStr(!document.getElementById('expSvgTrans').checked);
+function exportSVG() {
+    var r = exportSvgStr(!exportOptions.svgTransparent);
     download('circuit.svg', new Blob([r.str], { type: 'image/svg+xml' }));
-});
+}
 
-document.getElementById('expPng').addEventListener('click', function () {
-    var trans = document.getElementById('expPngTrans').checked;
+function exportPNG() {
+    var trans = exportOptions.pngTransparent;
     var r = exportSvgStr(!trans);
     var img = new Image();
     img.onload = function () {
@@ -1003,10 +1487,10 @@ document.getElementById('expPng').addEventListener('click', function () {
         cv.toBlob(function (bl) { if (bl) download('circuit.png', bl); });
     };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
-});
+}
 
 /* 导出 PDF：白底 2x 位图（JPEG 不支持透明），走 common.js 最小 PDF 生成器 */
-document.getElementById('expPdf').addEventListener('click', function () {
+function exportPDF() {
     var r = exportSvgStr(true);
     var img = new Image();
     img.onload = function () {
@@ -1019,14 +1503,13 @@ document.getElementById('expPdf').addEventListener('click', function () {
         downloadPdfFromCanvas(cv, 'circuit.pdf');
     };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
-});
+}
 
-document.getElementById('expJson').addEventListener('click', function () {
+function exportJSON() {
     download('circuit.json', new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }));
-});
+}
 
 var impFile = document.getElementById('impFile');
-document.getElementById('impJson').addEventListener('click', function () { impFile.click(); });
 impFile.addEventListener('change', function () {
     var f = impFile.files[0];
     if (!f) return;
@@ -1036,11 +1519,16 @@ impFile.addEventListener('change', function () {
             var d = JSON.parse(rd.result);
             if (!d || !Array.isArray(d.items)) throw new Error('bad json');
             var migrated = migrateDoc(d);
+            d = normalizeDoc(d);
+            if (doc.items.length && !confirm('导入将替换当前画布，是否继续？（可用 Ctrl+Z 恢复）')) { impFile.value = ''; return; }
             pushUndo();
-            doc = normalizeDoc(d);
+            doc = d;
             sel = [];
-            if (migrated) hintMsg = '导入的旧版工程已自动迁移为 Razavi 器件库';
-            render();
+            drag = null;
+            hintMsg = migrated ? '导入的旧版工程已自动迁移为 Razavi 器件库' : '已导入 JSON 工程，Ctrl+Z 可恢复原画布';
+            setTool('select');
+            fitContent();
+            setStatus('');
         } catch (err) {
             alert('JSON 文件无效：' + err.message);
         }
@@ -1049,14 +1537,17 @@ impFile.addEventListener('change', function () {
     rd.readAsText(f);
 });
 
-document.getElementById('clearBtn').addEventListener('click', function () {
-    if (!doc.items.length) return;
-    if (!confirm('确定清空整个画布？（可用 Ctrl+Z 撤销）')) return;
+function newDoc() {
+    if (doc.items.length && !confirm('确定清空整个画布并新建工程？（可用 Ctrl+Z 撤销）')) return;
     pushUndo();
     doc = { items: [], groups: [] };
     sel = [];
-    render();
-});
+    drag = null;
+    hintMsg = '';
+    setTool('select');
+    fitContent();
+    setStatus('');
+}
 
 function saveLocal() {
     if (suppressSave) return;
@@ -1123,6 +1614,7 @@ function sampleDoc() {
 
 (function boot() {
     buildPalette();
+    initMenus();
     var loaded = loadLocal();
     if (!loaded) sampleDoc();
     else if (loaded === 'v1') hintMsg = '已从旧版存档自动迁移为 Razavi 器件库';

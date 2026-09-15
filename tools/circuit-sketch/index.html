@@ -24,51 +24,106 @@
         <h1>电路示意图编辑器</h1>
         <p class="tool-desc">面向论文绘图的轻量原理图编辑器：Razavi 教材风格器件库（62 种器件，10 个分类）、10px 网格吸附、端口吸附连线（正交 / 斜线可切换），内置差分对 / 电流镜 / 五管 OTA / 套筒 / 折叠共源共栅模板，一键导出论文级 SVG / PNG / PDF。所有编辑自动保存在本地浏览器。</p>
 
-        <!-- 工具栏 -->
-        <div class="paper-card ck-toolbar">
-            <button class="btn btn-primary" id="toolSelect" type="button" title="选择/移动（Esc）">选择</button>
-            <button class="btn" id="toolWire" type="button" title="连线：点起点 → 点终点（W）">连线</button>
-            <button class="btn" id="wireModeBtn" type="button" title="切换连线走线方式：正交（曼哈顿）/ 斜线（两点直线）">走线：正交</button>
-            <button class="btn" id="toolLabel" type="button" title="自由文字标注：点击画布放置（T）">标注</button>
-            <span class="tb-sep"></span>
-            <button class="btn" id="undoBtn" type="button" title="撤销 (Ctrl+Z)">↩ 撤销</button>
-            <button class="btn" id="redoBtn" type="button" title="重做 (Ctrl+Y)">↪ 重做</button>
-            <span class="tb-sep"></span>
-            <button class="btn" id="copyBtn" type="button" title="复制 (Ctrl+C)">复制</button>
-            <button class="btn" id="pasteBtn" type="button" title="粘贴 (Ctrl+V)">粘贴</button>
-            <button class="btn" id="delBtn" type="button" title="删除 (Del)">删除</button>
-            <span class="tb-sep"></span>
-            <button class="btn" id="rotBtn" type="button" title="旋转 90° (R)">旋转</button>
-            <button class="btn" id="fhBtn" type="button" title="水平镜像 (H)">镜像↔</button>
-            <button class="btn" id="fvBtn" type="button" title="垂直镜像 (V)">镜像↕</button>
-            <span class="tb-sep"></span>
-            <button class="btn" id="alL" type="button" title="左对齐">左</button>
-            <button class="btn" id="alCX" type="button" title="水平居中对齐">中↔</button>
-            <button class="btn" id="alR" type="button" title="右对齐">右</button>
-            <button class="btn" id="alT" type="button" title="顶对齐">顶</button>
-            <button class="btn" id="alCY" type="button" title="垂直居中对齐">中↕</button>
-            <button class="btn" id="alB" type="button" title="底对齐">底</button>
-            <button class="btn" id="dsH" type="button" title="水平等间距（≥3 项）">均布↔</button>
-            <button class="btn" id="dsV" type="button" title="垂直等间距（≥3 项）">均布↕</button>
-            <span class="tb-sep"></span>
-            <button class="btn" id="grpBtn" type="button" title="成组 (Ctrl+G)">成组</button>
-            <button class="btn" id="ungrpBtn" type="button" title="解组 (Ctrl+Shift+G)">解组</button>
-            <span class="tb-sep"></span>
-            <button class="btn" id="zTop" type="button" title="置顶">置顶</button>
-            <button class="btn" id="zUp" type="button" title="上移一层">上移</button>
-            <button class="btn" id="zDown" type="button" title="下移一层">下移</button>
-            <button class="btn" id="zBottom" type="button" title="置底">置底</button>
-            <span class="tb-sep"></span>
-            <button class="btn btn-primary" id="expSvg" type="button" title="导出裁剪后的矢量 SVG">导出 SVG</button>
-            <button class="btn" id="expPng" type="button" title="导出 2x PNG">导出 PNG</button>
-            <button class="btn" id="expPdf" type="button" title="导出 2x 位图 PDF（白底）">导出 PDF</button>
-            <label class="ck-exp-opt" title="SVG 不画白底矩形"><input type="checkbox" id="expSvgTrans"> SVG 透明</label>
-            <label class="ck-exp-opt" title="PNG 不填白底"><input type="checkbox" id="expPngTrans"> PNG 透明</label>
-            <button class="btn" id="expJson" type="button" title="导出 JSON 工程文件">存 JSON</button>
-            <button class="btn" id="impJson" type="button" title="导入 JSON 工程文件">读 JSON</button>
-            <input type="file" id="impFile" accept=".json,application/json" style="display:none;">
-            <button class="btn btn-danger" id="clearBtn" type="button" title="清空画布（需确认）">清空</button>
-        </div>
+        <!-- 菜单 -->
+        <nav class="paper-card ck-menubar" id="ckMenubar" aria-label="电路编辑器菜单">
+            <div class="ck-menu">
+                <button type="button" class="ck-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="menuFile">File <span>文件</span></button>
+                <div class="ck-menu-popup" id="menuFile" role="menu" aria-label="文件" hidden>
+                    <button type="button" role="menuitem" id="clearBtn" data-action="new">New 新建画布</button>
+                    <button type="button" role="menuitem" data-action="save-local" title="保存到当前浏览器；备份文件请使用 Export → JSON">Save 保存到本地浏览器</button>
+                    <hr role="separator">
+                    <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuImport">Import 导入 <span class="ck-menu-arrow">›</span></button>
+                    <div class="ck-menu-popup" id="menuImport" role="menu" aria-label="导入" hidden>
+                        <button type="button" role="menuitem" id="impJson" data-action="import-json">JSON 工程文件…</button>
+                    </div>
+                    <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuExport">Export 导出 <span class="ck-menu-arrow">›</span></button>
+                    <div class="ck-menu-popup" id="menuExport" role="menu" aria-label="导出" hidden>
+                        <button type="button" role="menuitem" id="expSvg" data-action="export-svg">SVG 矢量图</button>
+                        <button type="button" role="menuitem" id="expPng" data-action="export-png">PNG 图片（2×）</button>
+                        <button type="button" role="menuitem" id="expPdf" data-action="export-pdf">PDF 文档（白底）</button>
+                        <button type="button" role="menuitem" id="expJson" data-action="export-json">JSON 工程文件</button>
+                        <hr role="separator">
+                        <button type="button" role="menuitemcheckbox" id="expSvgTrans" data-action="svg-transparent" aria-checked="false">SVG 透明背景</button>
+                        <button type="button" role="menuitemcheckbox" id="expPngTrans" data-action="png-transparent" aria-checked="false">PNG 透明背景</button>
+                    </div>
+                    <hr role="separator">
+                    <button type="button" role="menuitem" data-action="close-editor">Close 返回主页…</button>
+                </div>
+            </div>
+            <div class="ck-menu">
+                <button type="button" class="ck-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="menuEdit">Edit <span>编辑</span></button>
+                <div class="ck-menu-popup" id="menuEdit" role="menu" aria-label="编辑" hidden>
+                    <button type="button" role="menuitem" id="undoBtn" data-action="undo">Undo 撤销 <kbd>Ctrl+Z</kbd></button>
+                    <button type="button" role="menuitem" id="redoBtn" data-action="redo">Redo 重做 <kbd>Ctrl+Y</kbd></button>
+                    <hr role="separator">
+                    <button type="button" role="menuitem" data-action="cut" data-min-selection="1">Cut 剪切</button>
+                    <button type="button" role="menuitem" id="copyBtn" data-action="copy" data-min-selection="1">Copy 复制 <kbd>Ctrl+C</kbd></button>
+                    <button type="button" role="menuitem" id="pasteBtn" data-action="paste">Paste 粘贴 <kbd>Ctrl+V</kbd></button>
+                    <button type="button" role="menuitem" id="delBtn" data-action="delete" data-min-selection="1">Delete 删除 <kbd>Del</kbd></button>
+                    <hr role="separator">
+                    <button type="button" role="menuitem" data-action="select-all">Select All 全选</button>
+                    <button type="button" role="menuitem" data-action="open-insert">Insert 插入器件…</button>
+                </div>
+            </div>
+            <div class="ck-menu">
+                <button type="button" class="ck-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="menuView">View <span>视图</span></button>
+                <div class="ck-menu-popup" id="menuView" role="menu" aria-label="视图" hidden>
+                    <button type="button" role="menuitem" data-action="zoom-in">Zoom In 放大</button>
+                    <button type="button" role="menuitem" data-action="zoom-out">Zoom Out 缩小</button>
+                    <button type="button" role="menuitem" data-action="fit-content">Fit Content 适应全部内容</button>
+                    <button type="button" role="menuitem" data-action="reset-zoom">Reset Zoom 恢复 100%</button>
+                    <hr role="separator">
+                    <button type="button" role="menuitemcheckbox" data-action="toggle-grid" aria-checked="true">显示点阵网格</button>
+                    <button type="button" role="menuitemcheckbox" data-action="toggle-theme" aria-checked="false">深色主题</button>
+                </div>
+            </div>
+            <div class="ck-menu">
+                <button type="button" class="ck-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="menuInsert">Insert <span>插入</span></button>
+                <div class="ck-menu-popup" id="menuInsert" role="menu" aria-label="按分类插入器件" hidden></div>
+            </div>
+            <div class="ck-menu">
+                <button type="button" class="ck-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="menuTools">Tools <span>工具</span></button>
+                <div class="ck-menu-popup" id="menuTools" role="menu" aria-label="工具" hidden>
+                    <button type="button" role="menuitemradio" id="toolSelect" data-action="tool-select" aria-checked="true">选择 / 移动 <kbd>Esc</kbd></button>
+                    <button type="button" role="menuitemradio" id="toolWire" data-action="tool-wire" aria-checked="false">连线 <kbd>W</kbd></button>
+                    <button type="button" role="menuitemradio" id="toolLabel" data-action="tool-label" aria-checked="false">文字标注 <kbd>T</kbd></button>
+                    <button type="button" role="menuitem" id="wireModeBtn" data-action="wire-mode">走线：正交（点击切换）</button>
+                    <hr role="separator">
+                    <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuTransform">旋转 / 镜像 <span class="ck-menu-arrow">›</span></button>
+                    <div class="ck-menu-popup" id="menuTransform" role="menu" aria-label="旋转与镜像" hidden>
+                        <button type="button" role="menuitem" id="rotBtn" data-action="rotate" data-min-selection="1">旋转 90° <kbd>R</kbd></button>
+                        <button type="button" role="menuitem" id="fhBtn" data-action="flip-h" data-min-selection="1">水平镜像 <kbd>H</kbd></button>
+                        <button type="button" role="menuitem" id="fvBtn" data-action="flip-v" data-min-selection="1">垂直镜像 <kbd>V</kbd></button>
+                    </div>
+                    <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuAlign">Align 对齐 <span class="ck-menu-arrow">›</span></button>
+                    <div class="ck-menu-popup" id="menuAlign" role="menu" aria-label="对齐" hidden>
+                        <button type="button" role="menuitem" id="alL" data-action="align-l" data-min-selection="2">左对齐</button>
+                        <button type="button" role="menuitem" id="alCX" data-action="align-cx" data-min-selection="2">水平居中</button>
+                        <button type="button" role="menuitem" id="alR" data-action="align-r" data-min-selection="2">右对齐</button>
+                        <button type="button" role="menuitem" id="alT" data-action="align-t" data-min-selection="2">顶对齐</button>
+                        <button type="button" role="menuitem" id="alCY" data-action="align-cy" data-min-selection="2">垂直居中</button>
+                        <button type="button" role="menuitem" id="alB" data-action="align-b" data-min-selection="2">底对齐</button>
+                    </div>
+                    <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuDistribute">Distribute 均布 <span class="ck-menu-arrow">›</span></button>
+                    <div class="ck-menu-popup" id="menuDistribute" role="menu" aria-label="均布" hidden>
+                        <button type="button" role="menuitem" id="dsH" data-action="distribute-h" data-min-selection="3">水平等间距（至少 3 项）</button>
+                        <button type="button" role="menuitem" id="dsV" data-action="distribute-v" data-min-selection="3">垂直等间距（至少 3 项）</button>
+                    </div>
+                    <button type="button" role="menuitem" id="grpBtn" data-action="group" data-min-selection="2">Group 成组 <kbd>Ctrl+G</kbd></button>
+                    <button type="button" role="menuitem" id="ungrpBtn" data-action="ungroup">Ungroup 解组 <kbd>Ctrl+Shift+G</kbd></button>
+                    <hr role="separator">
+                    <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuLayers">图层顺序 <span class="ck-menu-arrow">›</span></button>
+                    <div class="ck-menu-popup" id="menuLayers" role="menu" aria-label="图层顺序" hidden>
+                        <button type="button" role="menuitem" id="zTop" data-action="layer-top" data-min-selection="1">置顶</button>
+                        <button type="button" role="menuitem" id="zUp" data-action="layer-up" data-min-selection="1">上移一层</button>
+                        <button type="button" role="menuitem" id="zDown" data-action="layer-down" data-min-selection="1">下移一层</button>
+                        <button type="button" role="menuitem" id="zBottom" data-action="layer-bottom" data-min-selection="1">置底</button>
+                    </div>
+                </div>
+            </div>
+            <span class="ck-menu-status" id="ckMenuStatus" aria-live="polite">选择 · 100%</span>
+        </nav>
+        <input type="file" id="impFile" accept=".json,application/json" hidden>
 
         <div class="ck-layout">
             <!-- 左：器件面板 -->
@@ -90,22 +145,24 @@
             <!-- 中：画布 -->
             <div class="ck-canvas-col">
                 <div class="paper-card ck-canvas-card">
-                    <div class="chart-label">画布（1600×1100，网格 10px）<span id="ckStatus"></span></div>
+                    <div class="chart-label">无限画布（滚轮缩放，中键/空格平移）<span id="ckStatus"></span></div>
                     <div class="ck-canvas-wrap" id="ckWrap">
-                        <svg id="ckCanvas" width="1600" height="1100" xmlns="http://www.w3.org/2000/svg">
+                        <svg id="ckCanvas" tabindex="0" aria-label="电路画布，滚轮缩放，中键或空格加拖动平移" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                                <pattern id="ckGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-                                    <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#efe9dc" stroke-width="1"/>
+                                <pattern id="ckGridDots" width="10" height="10" patternUnits="userSpaceOnUse">
+                                    <circle cx="5" cy="5" r="0.8" fill="#d4cfc0"/>
                                 </pattern>
-                                <pattern id="ckGrid5" width="50" height="50" patternUnits="userSpaceOnUse">
-                                    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#e3dcc8" stroke-width="1"/>
+                                <pattern id="ckGridDotsMajor" width="50" height="50" patternUnits="userSpaceOnUse">
+                                    <circle cx="25" cy="25" r="1.5" fill="#b8b3a3"/>
                                 </pattern>
                             </defs>
-                            <rect width="1600" height="1100" fill="#fffdf8"/>
-                            <rect width="1600" height="1100" fill="url(#ckGrid)"/>
-                            <rect width="1600" height="1100" fill="url(#ckGrid5)"/>
-                            <g id="layerMain"></g>
-                            <g id="layerOverlay"></g>
+                            <g id="world">
+                                <rect id="gridBg" x="-10000" y="-10000" width="20000" height="20000" fill="#fffdf8"/>
+                                <rect id="gridMinor" x="-10000" y="-10000" width="20000" height="20000" fill="url(#ckGridDots)"/>
+                                <rect id="gridMajor" x="-10000" y="-10000" width="20000" height="20000" fill="url(#ckGridDotsMajor)"/>
+                                <g id="layerMain"></g>
+                                <g id="layerOverlay"></g>
+                            </g>
                         </svg>
                     </div>
                     <!-- 悬浮属性面板：拖标题栏移动位置；窄屏自动回退为静态面板 -->
@@ -150,9 +207,11 @@
                 <div class="info-box">
                     <p><strong>快捷键与操作：</strong></p>
                     <ul>
-                        <li><strong>W</strong> 连线模式 / <strong>T</strong> 自由文字标注 / <strong>Esc</strong> 回选择模式或取消连线；连线时端点自动吸附 20px 内的器件端口（红圈提示），拐点自动走正交路径；工具栏「走线」按钮可切换为两点斜线。</li>
-                        <li><strong>R</strong> 旋转 90°，<strong>H</strong>/<strong>V</strong> 水平/垂直镜像；<strong>Ctrl+C/V</strong> 复制粘贴，<strong>Del</strong> 删除，<strong>Ctrl+Z/Y</strong> 撤销重做。</li>
-                        <li><strong>Ctrl+G</strong> 成组 / <strong>Ctrl+Shift+G</strong> 解组；空白处拖拽 = 框选；Ctrl+单击 = 多选。</li>
+                        <li><strong>W</strong> 连线模式 / <strong>T</strong> 自由文字标注 / <strong>I</strong> 弹出器件选择器 / <strong>F</strong> 适应内容 / <strong>U</strong> 撤销 / <strong>Esc</strong> 回选择模式或取消连线。</li>
+                        <li><strong>Ctrl+A</strong> 全选 / <strong>Ctrl+C/V</strong> 复制粘贴 / <strong>Ctrl+Z/Y</strong> 撤销重做 / <strong>Del</strong> 删除。</li>
+                        <li><strong>R</strong> 旋转 90°，<strong>H</strong>/<strong>V</strong> 水平/垂直镜像；<strong>Ctrl+G</strong> 成组 / <strong>Ctrl+Shift+G</strong> 解组；空白处拖拽 = 框选；Ctrl+单击 = 多选。</li>
+                        <li><strong>滚轮</strong>缩放（以光标为中心）/ <strong>中键</strong>或<strong>空格+拖拽</strong>平移画布。</li>
+                        <li>插入器件 4 种方式：① Insert 菜单按分类选择 ② <strong>I</strong> 键弹出搜索面板 ③ 左侧器件库拖入画布 ④ 左侧点击后跟随鼠标放置。</li>
                         <li>器件库按 Razavi 符号分类分组（可折叠），底部「绘图辅助」含连接点 / 箭头 / 功能块 / MUX；NMOS/PMOS 可在右侧属性栏切换三端教材版 / 四端完整版变体。</li>
                         <li>「模板」可一键插入差分对 / 电流镜 / 五管 OTA / 套筒 / 折叠共源共栅，插入即自动成组，可整体拖动摆放；导出支持 SVG / PNG（均可选透明背景）与 PDF（白底）。</li>
                         <li>选中连线后可直接<strong>拖动某一水平/垂直段</strong>平移（相邻段自动伸缩）；<strong>双击</strong>器件/功能块/标注编辑文字。</li>

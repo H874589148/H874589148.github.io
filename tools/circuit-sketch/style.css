@@ -1,19 +1,75 @@
 /* tools/circuit-sketch/style.css */
 .tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
 
-/* ---- 工具栏 ---- */
-.ck-toolbar {
+/* ---- 菜单栏 ---- */
+.ck-menubar {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 2px;
     align-items: center;
+    position: relative;
+    z-index: 50;
     margin-bottom: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
+    padding: 4px 8px;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
-.ck-toolbar .btn { font-size: 0.85rem; padding: 5px 10px; }
-.tb-sep { width: 1.5px; height: 22px; background: var(--color-border-sketch); margin: 0 4px; }
-.btn-danger { border-color: #c0583a; color: #c0583a; }
-.btn-danger:hover { background: #c0583a; color: #fff; }
+.ck-menubar button {
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: left;
+}
+.ck-menu-trigger { padding: 7px 12px; white-space: nowrap; }
+.ck-menu-trigger span { color: var(--color-text-secondary); font-size: 0.75rem; }
+.ck-menubar button:hover:not(:disabled),
+.ck-menubar button:focus-visible,
+.ck-menubar button[aria-expanded="true"] {
+    background: var(--color-bg-paper);
+    border-color: var(--color-border);
+}
+.ck-menubar button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.ck-menu-popup {
+    position: fixed;
+    z-index: 51;
+    min-width: 224px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 5px;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border-sketch);
+    border-radius: 4px;
+    box-shadow: 3px 4px 10px var(--color-shadow);
+}
+.ck-menu-popup[hidden] { display: none; }
+.ck-menu-popup > button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 32px;
+    padding: 5px 9px 5px 24px;
+    position: relative;
+}
+.ck-menu-popup > button:disabled { color: var(--color-text-muted); cursor: default; opacity: 0.65; }
+.ck-menu-popup > button[aria-checked="true"]::before { content: '✓'; position: absolute; left: 6px; color: var(--color-primary); }
+.ck-menu-popup hr { border: 0; border-top: 1px solid var(--color-border); margin: 5px 2px; }
+.ck-menu-popup kbd, .ck-menu-arrow { margin-left: auto; white-space: nowrap; color: var(--color-text-muted); }
+.ck-menu-popup kbd { font: 0.72rem var(--font-mono); }
+.ck-menu-device svg { width: 36px; height: 28px; flex-shrink: 0; }
+.ck-menu-note { font-size: 0.75rem; color: var(--color-text-muted); padding: 5px 9px; }
+.ck-menu-status { margin-left: auto; padding: 0 8px; font-size: 0.78rem; color: var(--color-text-secondary); }
+@media (max-width: 600px) {
+    .ck-menu-trigger { padding: 7px 8px; }
+    .ck-menu-trigger span { display: none; }
+    .ck-menu-status { flex-basis: 100%; margin-left: 0; }
+}
+#ckCanvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 
 /* ---- 两栏布局（属性面板悬浮于画布卡片内） ---- */
 .ck-layout {
@@ -67,18 +123,6 @@
 .ck-tpl-list { display: flex; flex-direction: column; gap: 6px; margin-top: var(--space-xs); }
 .ck-tpl-list .btn { font-size: 0.85rem; padding: 5px 10px; text-align: left; }
 
-/* 导出透明背景复选 */
-.ck-exp-opt {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.82rem;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    user-select: none;
-}
-.ck-exp-opt input { cursor: pointer; }
-
 /* 画布 */
 .chart-label {
     font-family: var(--font-hand);
@@ -88,14 +132,17 @@
 }
 #ckStatus { font-family: var(--font-mono); font-size: 0.82rem; color: var(--color-text-muted); margin-left: 10px; }
 .ck-canvas-wrap {
-    overflow: auto;
-    max-height: 72vh;
+    overflow: hidden;
+    height: 72vh;
     border: 1.5px solid var(--color-border-sketch);
     border-radius: var(--radius-sm);
     background: #fffdf8;
     cursor: crosshair;
+    position: relative;
 }
-#ckCanvas { display: block; user-select: none; }
+.ck-canvas-wrap.panning { cursor: grab; }
+.ck-canvas-wrap.panning:active { cursor: grabbing; }
+#ckCanvas { display: block; width: 100%; height: 100%; user-select: none; }
 
 /* ---- 属性栏（默认悬浮于画布卡片右上角，拖标题栏移动） ---- */
 .ck-canvas-card { position: relative; }
@@ -137,6 +184,49 @@
 .info-box { margin-top: var(--space-md); }
 .info-box ul { margin-top: var(--space-sm); padding-left: var(--space-lg); }
 .info-box li { margin-bottom: var(--space-xs); font-size: 0.9rem; }
+
+/* ---- I 键器件选择器（浮动面板） ---- */
+.ck-picker-mask {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100; background: rgba(0,0,0,0.18);
+}
+.ck-picker {
+    position: fixed; z-index: 101;
+    width: 340px; max-height: 420px;
+    background: var(--color-card-bg);
+    border: 1.5px solid var(--color-border-sketch);
+    border-radius: 6px;
+    box-shadow: 4px 6px 18px var(--color-shadow);
+    display: flex; flex-direction: column;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+.ck-picker-hd {
+    padding: 8px 12px; font-size: 0.9rem; font-weight: 600;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+}
+.ck-picker-input {
+    width: 100%; padding: 7px 10px; border: none; border-bottom: 1px solid var(--color-border);
+    font: inherit; font-size: 0.88rem; background: transparent; color: var(--color-text);
+    outline: none;
+}
+.ck-picker-body {
+    overflow-y: auto; flex: 1; padding: 4px 0;
+}
+.ck-picker-cat {
+    padding: 3px 12px; font-size: 0.75rem; color: var(--color-text-muted);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.ck-picker-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 12px; cursor: pointer; font-size: 0.85rem;
+    color: var(--color-text); border: none; background: none; width: 100%; text-align: left;
+}
+.ck-picker-item:hover, .ck-picker-item.active {
+    background: rgba(58,90,140,0.1);
+}
+.ck-picker-item svg { width: 36px; height: 24px; flex-shrink: 0; }
+.ck-picker-empty { padding: 12px; text-align: center; color: var(--color-text-muted); font-size: 0.85rem; }
 
 @media (max-width: 980px) {
     .ck-layout { grid-template-columns: 1fr; }
