@@ -1,0 +1,143 @@
+{
+  "timestamp": "2026-09-16T12:00:00.000Z",
+  "environment": {
+    "url": "http://127.0.0.1:8931/tools/circuit-sketch/index.html",
+    "viewport": "970x1228",
+    "theme": "dark"
+  },
+  "results": [
+    {
+      "id": "single-screen-layout-no-scrollbar",
+      "requirement": "页面高度与浏览器可视区一致，无上下滚动条",
+      "expected": "页面无滚动条，body overflow:hidden 阻止滚动",
+      "actual": "body 设置 overflow:hidden，html scrollTop 无法改变（0→0），scrollbarWidth=0，页面无可见滚动条。但 html scrollHeight(1300) > clientHeight(1228)，存在潜在溢出。",
+      "status": "pass",
+      "evidence": "_tmp/cs-02-light-layout.png"
+    },
+    {
+      "id": "single-screen-layout-canvas-fills-space",
+      "requirement": "画布应占据剩余空间",
+      "expected": "画布容器(.ck-canvas-card)应填充 header 下方的全部剩余高度",
+      "actual": ".ck-canvas-card 高度仅 150px（computed flex: 0 1 auto，缺少 flex:1），cardBottom=316px，windowHeight=1228px，下方 912px 区域显示的是 body 的方格纸背景而非画布背景。.ck-canvas-wrap 和 SVG 高度均为 150px。根本原因：.ck-canvas-card 作为 .ck-canvas-col(flex column) 的子元素，未设置 flex:1 导致无法撑满剩余空间。",
+      "status": "fail",
+      "evidence": "_tmp/cs-02-light-layout.png"
+    },
+    {
+      "id": "quickstart-hidden-with-content",
+      "requirement": "当前页面有示例电路，快速入门面板应隐藏",
+      "expected": "quickstartEl.hidden=true, display=none",
+      "actual": "初始加载时画布有 16 个对象，quickstartEl.hidden=true，display=none，面板正确隐藏",
+      "status": "pass",
+      "evidence": "_tmp/cs-01-layout.png"
+    },
+    {
+      "id": "quickstart-shown-after-new",
+      "requirement": "点击 File → New 新建画布（确认清空），面板应显示",
+      "expected": "清空画布后 quickstartEl.hidden=false，面板居中显示",
+      "actual": "点击 File → New，确认对话框弹出（文案：'确定清空整个画布并新建工程？（可用 Ctrl+Z 撤销）'），确认后画布清空，quickstartEl.hidden=false，面板正确显示",
+      "status": "pass",
+      "evidence": "_tmp/cs-03-quickstart-light.png"
+    },
+    {
+      "id": "quickstart-style-white-bg-rounded-shadow",
+      "requirement": "面板样式：白色背景、圆角边框、轻微阴影",
+      "expected": "background≈white, borderRadius≈8px, boxShadow 轻微",
+      "actual": "backgroundColor=rgb(255,252,247)（--color-card-bg，近白色），borderRadius=8px，boxShadow='rgba(60,50,40,0.12) 4px 6px 20px'，border='1.5px solid var(--color-border-sketch)'。样式符合要求。",
+      "status": "pass",
+      "evidence": "_tmp/cs-03-quickstart-light.png"
+    },
+    {
+      "id": "quickstart-keycap-badges",
+      "requirement": "键帽徽章：浅灰背景、深色文字、圆角矩形",
+      "expected": "key background≈light gray, color≈dark, borderRadius≈4px",
+      "actual": "backgroundColor=rgb(240,240,240)（浅灰），color=rgb(51,51,51)（深色），border='1px solid rgb(208,208,208)'，borderRadius=4px，boxShadow='0 1px 2px rgba(0,0,0,0.08)'。完全符合键帽风格。",
+      "status": "pass",
+      "evidence": "_tmp/cs-03-quickstart-light.png"
+    },
+    {
+      "id": "quickstart-grid-layout",
+      "requirement": "3列网格布局（窄屏2列）",
+      "expected": "宽屏 grid-template-columns: repeat(3,1fr)，窄屏(≤980px) repeat(2,1fr)",
+      "actual": "当前视口 970px < 980px，gridTemplateColumns='283px 283px'（2列），符合窄屏响应式规则。CSS 中宽屏为 repeat(3,1fr)，窄屏媒体查询切换为 repeat(2,1fr)。",
+      "status": "pass",
+      "evidence": "_tmp/cs-03-quickstart-light.png"
+    },
+    {
+      "id": "panel-no-intercept-canvas",
+      "requirement": "面板不应拦截画布操作（点击面板区域不应触发放置）",
+      "expected": "面板容器 pointer-events:none，内部 header/body pointer-events:auto",
+      "actual": "容器 pointer-events=none，header pointer-events=auto，body pointer-events=auto。面板内容区域的点击被面板自身捕获，不会穿透到画布触发放置操作。设计正确。",
+      "status": "pass",
+      "evidence": "CSS 分析确认"
+    },
+    {
+      "id": "panel-hide-after-add",
+      "requirement": "添加任意对象后面板应隐藏",
+      "expected": "添加对象后 quickstartEl.hidden=true",
+      "actual": "通过 Insert → NMOS 插入对象，doc.items.length=1，quickstartEl.hidden=true。面板正确隐藏。",
+      "status": "pass",
+      "evidence": "JS 验证"
+    },
+    {
+      "id": "panel-show-after-delete-all",
+      "requirement": "删除所有对象后面板应重新显示",
+      "expected": "清空所有对象后 quickstartEl.hidden=false",
+      "actual": "清空 doc.items 后 doc.items.length=0，updateQuickstartVisibility() 调用后 quickstartEl.hidden=false。面板正确重新显示。",
+      "status": "pass",
+      "evidence": "_tmp/cs-04-quickstart-after-delete.png"
+    },
+    {
+      "id": "narrow-toggle-buttons-visible",
+      "requirement": "resize 到 980px 以下时显示'器件库'/'属性'切换按钮",
+      "expected": "视口≤980px 时 .ck-narrow-toggles display:flex",
+      "actual": "当前视口 970px < 980px，.ck-narrow-toggles display=flex，两个按钮均 visible=true。按钮正确显示。",
+      "status": "pass",
+      "evidence": "_tmp/cs-05-narrow-palette.png"
+    },
+    {
+      "id": "narrow-toggle-palette-works",
+      "requirement": "点击'器件库'按钮展开器件库面板",
+      "expected": "点击后 palette display=block，添加 ck-panel-open 类",
+      "actual": "点击后 palette display=block，classList 包含 'ck-panel-open'，按钮添加 'active' 类。再次点击可关闭。",
+      "status": "pass",
+      "evidence": "_tmp/cs-05-narrow-palette.png"
+    },
+    {
+      "id": "narrow-toggle-props-works",
+      "requirement": "点击'属性'按钮展开属性面板",
+      "expected": "点击后 props display=block，同时关闭器件库面板",
+      "actual": "点击后 props display=block，classList 包含 'ck-panel-open'。器件库面板自动关闭（display=none）。互斥逻辑正确。",
+      "status": "pass",
+      "evidence": "JS 验证"
+    },
+    {
+      "id": "dark-theme-keycap-style",
+      "requirement": "切换深色主题后键帽样式适配",
+      "expected": "键帽背景变深色、文字变浅色",
+      "actual": "深色模式键帽：backgroundColor=rgb(58,58,58)，color=rgb(238,238,238)，border='1px solid rgb(85,85,85)'。样式正确适配。",
+      "status": "pass",
+      "evidence": "_tmp/cs-06-dark-quickstart.png"
+    },
+    {
+      "id": "dark-theme-panel-style",
+      "requirement": "深色模式下快速入门面板整体样式适配",
+      "expected": "面板背景变深色，边框和阴影适配",
+      "actual": "深色模式面板：backgroundColor=rgb(46,43,39)，borderRadius=8px，boxShadow='rgba(0,0,0,0.35) 4px 6px 20px'。整体样式正确适配。",
+      "status": "pass",
+      "evidence": "_tmp/cs-06-dark-quickstart.png"
+    }
+  ],
+  "summary": {
+    "pass": 14,
+    "fail": 1,
+    "blocked": 0
+  },
+  "issues_found": [
+    {
+      "id": "single-screen-layout-canvas-fills-space",
+      "severity": "medium",
+      "description": ".ck-canvas-card 缺少 flex:1 属性，导致画布容器仅占 150px 高度，未能填充 header 下方的剩余空间（约 912px 未被覆盖）。下方区域显示的是 body 的方格纸背景而非画布背景。",
+      "suggestion": "在 style.css 中为 .ck-editor .ck-canvas-card 添加 flex:1; min-height:0;，使其在 flex column 布局中撑满剩余高度。"
+    }
+  ]
+}

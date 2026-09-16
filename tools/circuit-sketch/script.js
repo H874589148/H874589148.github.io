@@ -12,9 +12,22 @@ var layerMain = document.getElementById('layerMain');
 var layerOverlay = document.getElementById('layerOverlay');
 var wrap = document.getElementById('ckWrap');
 var statusEl = document.getElementById('ckStatus');
+var quickstartEl = document.getElementById('ckQuickstart');
+var togglePaletteBtn = document.getElementById('ckTogglePalette');
+var togglePropsBtn = document.getElementById('ckToggleProps');
 var world = document.getElementById('world');
 var gridMinor = document.getElementById('gridMinor');
 var gridMajor = document.getElementById('gridMajor');
+var layerPreview = document.getElementById('layerPreview');
+var viewport = document.getElementById('ckViewport');
+var palettePanel = document.getElementById('ckPalette');
+var propsPanel = document.getElementById('ckProps');
+var placement = null;
+var paletteDrag = null;
+var propsDrag = null;
+var lastPointer = null;
+var previewFrame = 0;
+var previewKey = '';
 
 /* ============================================
    无限画布：视图变换（平移 + 缩放）
@@ -47,7 +60,21 @@ function applyViewTransform() {
         'translate(' + viewTransform.x + ',' + viewTransform.y + ') ' +
         'scale(' + viewTransform.scale + ')');
     updateGridVisibility();
+    updateGridBounds();
+    schedulePlacementPreview();
     syncMenuStatus();
+}
+
+/* 网格只覆盖当前可见世界范围，没有固定图纸边界 */
+function updateGridBounds() {
+    var a = screenToCanvas(0, 0);
+    var b = screenToCanvas(svg.clientWidth, svg.clientHeight);
+    [gridMinor, gridMajor].forEach(function (grid) {
+        grid.setAttribute('x', a.x - 50);
+        grid.setAttribute('y', a.y - 50);
+        grid.setAttribute('width', b.x - a.x + 100);
+        grid.setAttribute('height', b.y - a.y + 100);
+    });
 }
 
 /* 根据缩放级别更新网格可见性 */
@@ -70,19 +97,41 @@ function zoomView(factor, mx, my) {
     applyViewTransform();
 }
 
+/* 悬浮面板之间最大的可用横向区域；静态面板不占画布空间 */
+function canvasUsableRect() {
+    var r = svg.getBoundingClientRect();
+    var left = Math.min(40, r.width / 4), right = r.width - left;
+    var spans = [];
+    [palettePanel, propsPanel].forEach(function (panel) {
+        if (getComputedStyle(panel).position !== 'absolute') return;
+        var p = panel.getBoundingClientRect();
+        if (p.bottom <= r.top || p.top >= r.bottom) return;
+        spans.push({ left: Math.max(left, p.left - r.left - 16), right: Math.min(right, p.right - r.left + 16) });
+    });
+    spans.sort(function (a, b) { return a.left - b.left; });
+    var cursor = left, best = { left: left, right: left };
+    spans.forEach(function (p) {
+        if (p.left - cursor > best.right - best.left) best = { left: cursor, right: p.left };
+        cursor = Math.max(cursor, p.right);
+    });
+    if (right - cursor > best.right - best.left) best = { left: cursor, right: right };
+    if (best.right <= best.left) best = { left: left, right: right };
+    var top = Math.min(40, r.height / 4);
+    return { x: best.left, y: top, width: best.right - best.left, height: r.height - 2 * top };
+}
+
 /* 适应全部内容仅改变视图，不写入文档或撤销栈 */
 function fitContent() {
-    var r = svg.getBoundingClientRect();
+    var r = canvasUsableRect();
     if (!r.width || !r.height) return;
     if (!doc.items.length) {
         viewTransform = { x: 0, y: 0, scale: 1 };
     } else {
         var b = Razavi.docBBox(doc);
-        var s = Math.min(Math.max(1, r.width - 80) / Math.max(1, b.x1 - b.x0),
-            Math.max(1, r.height - 80) / Math.max(1, b.y1 - b.y0));
+        var s = Math.min(r.width / Math.max(1, b.x1 - b.x0), r.height / Math.max(1, b.y1 - b.y0));
         s = Math.max(0.1, Math.min(10, s));
-        viewTransform = { x: r.width / 2 - (b.x0 + b.x1) * s / 2,
-            y: r.height / 2 - (b.y0 + b.y1) * s / 2, scale: s };
+        viewTransform = { x: r.x + r.width / 2 - (b.x0 + b.x1) * s / 2,
+            y: r.y + r.height / 2 - (b.y0 + b.y1) * s / 2, scale: s };
     }
     applyViewTransform();
 }
@@ -265,14 +314,24 @@ function moveItem(it, dx, dy) {
 /* ============================================
    渲染
    ============================================ */
+/* 默认墨色只在显示层映射主题，保留文档中的原始颜色 */
+function displayItemSvg(it) {
+    var display = Object.assign({}, it);
+    if (!it.stroke || it.stroke.toLowerCase() === '#1a1a1a') display.stroke = 'currentColor';
+    return '<g style="color:var(--ck-ink)">' +
+        Razavi.itemSvg(display, { font: FONT, stroke: 'currentColor' }) + '</g>';
+}
+
 function render() {
     var html = '';
-    doc.items.forEach(function (it) { html += Razavi.itemSvg(it, { font: FONT, stroke: '#1a1a1a' }); });
+    doc.items.forEach(function (it) { html += displayItemSvg(it); });
     layerMain.innerHTML = html;
     renderOverlay();
     renderProps();
     saveLocal();
     syncMenuState();
+    schedulePlacementPreview();
+    updateQuickstartVisibility();
 }
 
 function renderOverlay() {
@@ -353,11 +412,113 @@ function redo() {
    坐标换算与吸附
    ============================================ */
 function evPos(e) {
-    var r = svg.getBoundingClientRect();
-    var sx = e.clientX - r.left;
-    var sy = e.clientY - r.top;
-    return screenToCanvas(sx, sy);
+    var point = svg.createSVGPoint();
+    point.x = e.clientX;
+    point.y = e.clientY;
+    return point.matrixTransform(world.getScreenCTM().inverse());
 }
+
+/* 命中真实 SVG，而不是浮在其矩形范围内的面板 */
+function isCanvasPoint(e) {
+    if (!e) return false;
+    var hit = document.elementFromPoint(e.clientX, e.clientY);
+    return !!hit && (hit === svg || svg.contains(hit));
+}
+
+function placementPoint(e) {
+    if (spaceDown || isPanning || propsDrag || pickerEl || !isCanvasPoint(e)) return null;
+    var p = evPos(e);
+    return { x: snap(p.x), y: snap(p.y) };
+}
+
+/* 草稿不分配 id；预览和真正落下的器件共用全部默认属性 */
+function compDraft(type, x, y) {
+    return { kind: 'comp', type: type, x: x, y: y, rot: 0, fh: false, fv: false,
+        text: DEFAULT_TEXT[type] || '', stroke: '#1a1a1a', sw: 1.5, dash: '' };
+}
+
+function pendingType() {
+    return paletteDrag && paletteDrag.moved ? paletteDrag.type : (placement && placement.type);
+}
+
+function syncInteractionCursor() {
+    wrap.classList.toggle('placing', !!pendingType() || tool === 'wire' || tool === 'label');
+    wrap.classList.toggle('pan-ready', spaceDown && !isPanning);
+    wrap.classList.toggle('panning', isPanning);
+}
+
+function syncPaletteSelection() {
+    palettePanel.querySelectorAll('.pal-item').forEach(function (el) {
+        var active = !!placement && el.getAttribute('data-type') === placement.type;
+        el.classList.toggle('is-pending', active);
+        el.setAttribute('aria-pressed', String(active));
+    });
+}
+
+function hidePlacementPreview() {
+    if (previewKey) layerPreview.innerHTML = '';
+    previewKey = '';
+}
+
+function schedulePlacementPreview() {
+    if (previewFrame) return;
+    previewFrame = requestAnimationFrame(function () {
+        previewFrame = 0;
+        var type = pendingType();
+        var p = type && placementPoint(lastPointer);
+        if (!p || pickerEl) { hidePlacementPreview(); return; }
+        var key = type + ':' + p.x + ':' + p.y;
+        if (key !== previewKey) {
+            layerPreview.innerHTML = displayItemSvg(compDraft(type, p.x, p.y));
+            previewKey = key;
+        }
+        setStatus('｜ ' + Razavi.meta(type).nameZh + ' (' + p.x + ', ' + p.y + ')' +
+            (paletteDrag ? ' 松开放置一个' : ' 点击连续放置，Esc 退出'));
+    });
+}
+
+function cancelPlacement() {
+    placement = null;
+    hidePlacementPreview();
+    syncPaletteSelection();
+    syncInteractionCursor();
+    updateQuickstartVisibility();
+}
+
+function cancelPaletteDrag() {
+    if (paletteDrag) paletteDrag.cleanup();
+    hidePlacementPreview();
+    syncInteractionCursor();
+}
+
+function beginPlacement(type) {
+    if (!SYMBOLS[type]) return;
+    setTool('select');
+    placement = { type: type, mode: 'continuous' };
+    syncPaletteSelection();
+    syncInteractionCursor();
+    syncMenuState();
+    setStatus('｜ 已选取「' + Razavi.meta(type).nameZh + '」，点击连续放置，Esc 退出');
+    schedulePlacementPreview();
+    updateQuickstartVisibility();
+}
+
+/* 跟随只更新预览，不调用 render 或 saveLocal */
+window.addEventListener('pointermove', function (e) {
+    if (e.isPrimary === false) return;
+    lastPointer = { clientX: e.clientX, clientY: e.clientY };
+    schedulePlacementPreview();
+});
+window.addEventListener('pointerdown', function (e) {
+    if (e.isPrimary === false) return;
+    lastPointer = { clientX: e.clientX, clientY: e.clientY };
+    schedulePlacementPreview();
+});
+window.addEventListener('pointerout', function (e) {
+    if (!e.relatedTarget) { lastPointer = null; hidePlacementPreview(); }
+});
+svg.addEventListener('pointerleave', hidePlacementPreview);
+window.addEventListener('scroll', schedulePlacementPreview, true);
 
 function snapPort(x, y) {
     var p = nearestPort(x, y, 20);
@@ -365,16 +526,32 @@ function snapPort(x, y) {
 }
 
 function setStatus(extra) {
-    statusEl.textContent = (hintMsg ? '｜ ' + hintMsg + ' ' : '') + (extra || '');
+    if (statusEl) statusEl.textContent = (hintMsg ? '｜ ' + hintMsg + ' ' : '') + (extra || '');
+}
+
+/* 快速入门面板：画布完全空白时显示，添加任意对象后隐藏 */
+function updateQuickstartVisibility() {
+    if (!quickstartEl) return;
+    var isEmpty = !doc.items.length;
+    if (isEmpty && !placement) {
+        quickstartEl.removeAttribute('hidden');
+    } else {
+        quickstartEl.setAttribute('hidden', '');
+    }
 }
 
 /* ============================================
    画布鼠标交互
    ============================================ */
 svg.addEventListener('mousedown', function (e) {
-    if (e.button !== 0 || spaceDown) return;  // 空格键按下时跳过画布交互，留给平移处理器
+    if (e.button !== 0 || spaceDown || isPanning || paletteDrag || propsDrag) return;
     e.preventDefault();
     svg.focus({ preventScroll: true });
+    if (placement) {
+        var anchor = placementPoint(e);
+        if (anchor) addComp(placement.type, anchor.x, anchor.y);
+        return;
+    }
     var pos = evPos(e);
 
     /* ---- 连线模式 ---- */
@@ -454,7 +631,15 @@ svg.addEventListener('mousedown', function (e) {
 });
 
 window.addEventListener('mousemove', function (e) {
-    if (!drag && e.target.closest && e.target.closest('#ckMenubar')) return;
+    if (placement || paletteDrag || propsDrag || isPanning || spaceDown || pickerEl) return;
+    if (!drag && !isCanvasPoint(e)) {
+        if (hoverPort || (wireStart && wireStart.cur)) {
+            hoverPort = null;
+            if (wireStart) delete wireStart.cur;
+            renderOverlay();
+        }
+        return;
+    }
     var pos = evPos(e);
 
     /* 连线模式：端口吸附提示 + 预览 */
@@ -519,7 +704,7 @@ window.addEventListener('mouseup', function () {
 
 /* 双击编辑文字（器件标签 / 自由标注） */
 svg.addEventListener('dblclick', function (e) {
-    if (tool !== 'select') return;
+    if (tool !== 'select' || placement || paletteDrag || spaceDown || isPanning || e.button !== 0) return;
     var pos = evPos(e);
     var hit = hitItem(pos.x, pos.y);
     if (!hit) return;
@@ -550,57 +735,86 @@ svg.addEventListener('wheel', function (e) {
 }, { passive: false });
 
 /* 中键或空格+左键平移 */
+var panButton = null;
 svg.addEventListener('mousedown', function (e) {
+    if (paletteDrag || propsDrag || drag || isPanning) return;
     if (e.button === 1 || (e.button === 0 && spaceDown)) {
         e.preventDefault();
+        svg.focus({ preventScroll: true });
         isPanning = true;
+        panButton = e.button;
         panStart.x = e.clientX - viewTransform.x;
         panStart.y = e.clientY - viewTransform.y;
-        wrap.classList.add('panning');
+        hidePlacementPreview();
+        syncInteractionCursor();
     }
 });
+svg.addEventListener('auxclick', function (e) { if (e.button === 1) e.preventDefault(); });
 
+function endPan() {
+    isPanning = false;
+    panButton = null;
+    syncInteractionCursor();
+    schedulePlacementPreview();
+}
 window.addEventListener('mousemove', function (e) {
-    if (isPanning) {
-        viewTransform.x = e.clientX - panStart.x;
-        viewTransform.y = e.clientY - panStart.y;
-        applyViewTransform();
-    }
+    if (!isPanning) return;
+    if (!(e.buttons & (panButton === 1 ? 4 : 1))) { endPan(); return; }
+    viewTransform.x = e.clientX - panStart.x;
+    viewTransform.y = e.clientY - panStart.y;
+    applyViewTransform();
+});
+window.addEventListener('mouseup', function (e) {
+    if (isPanning && e.button === panButton) endPan();
 });
 
-window.addEventListener('mouseup', function (e) {
-    if (isPanning) {
-        isPanning = false;
-        wrap.classList.remove('panning');
-    }
-});
+/* 输入控件、菜单和选择器保留自身键盘行为 */
+function shortcutBlocked(e) {
+    var target = e.target;
+    return e.defaultPrevented || e.isComposing || pickerEl ||
+        (target && (target.isContentEditable || (target.closest && target.closest(
+            'input, textarea, select, button, a, [role="button"], #ckMenubar, .ck-picker-mask'))));
+}
 
 /* 空格键追踪 */
 window.addEventListener('keydown', function (e) {
-    if (e.code === 'Space' && !e.repeat) {
-        spaceDown = true;
-        if (!isPanning) wrap.classList.add('panning');
-    }
+    if (e.code !== 'Space' || shortcutBlocked(e) || e.ctrlKey || e.metaKey || e.altKey || paletteDrag || propsDrag || drag) return;
+    e.preventDefault();
+    spaceDown = true;
+    hidePlacementPreview();
+    syncInteractionCursor();
 });
-
 window.addEventListener('keyup', function (e) {
-    if (e.code === 'Space') {
-        spaceDown = false;
-        if (!isPanning) wrap.classList.remove('panning');
-    }
-});
+    if (e.code !== 'Space') return;
+    spaceDown = false;
+    syncInteractionCursor();
+    schedulePlacementPreview();
+}, true);
 
-/* 初始化视图变换 */
-applyViewTransform();
+function resetPointerInteractions() {
+    cancelPaletteDrag();
+    cancelPropsDrag();
+    spaceDown = false;
+    lastPointer = null;
+    endPan();
+    drag = null;
+    hoverPort = null;
+    if (wireStart) delete wireStart.cur;
+    hidePlacementPreview();
+    renderOverlay();
+    syncMenuState();
+    setStatus('');
+}
+window.addEventListener('blur', resetPointerInteractions);
+window.addEventListener('pointercancel', resetPointerInteractions);
+
+/* 初始化视图变换在 boot 中执行，确保面板与菜单均已就绪 */
 
 /* ============================================
    器件面板：11 个可折叠分组（10 个 razavi 分类 + 绘图辅助）
    拖放或点击放置
    ============================================ */
 var palList = document.getElementById('palList');
-var ghost = document.createElement('div');
-ghost.id = 'ckGhost';
-document.body.appendChild(ghost);
 
 /* 预览用 currentColor 承接主题色（SVG 表现属性不支持 var()，借 color 传递） */
 function palPreview(type) {
@@ -623,7 +837,7 @@ function palGroup(name, ids, isAux) {
         '<span class="pal-count">' + ids.length + '</span></div><div class="pal-grid">';
     ids.forEach(function (id) {
         var m = Razavi.meta(id);
-        s += '<div class="pal-item" data-type="' + id + '" title="' + Razavi.esc(m.nameZh + ' / ' + m.name) + '">' +
+        s += '<div class="pal-item" role="button" tabindex="0" aria-pressed="false" data-type="' + id + '" title="' + Razavi.esc(m.nameZh + ' / ' + m.name) + '">' +
             palPreview(id) + '<span>' + Razavi.esc(m.nameZh) + '</span></div>';
     });
     return s + '</div></div>';
@@ -647,46 +861,72 @@ function buildPalette() {
 }
 
 function bindPalItem(div, type) {
-    div.addEventListener('mousedown', function (e) {
+    div.addEventListener('dragstart', function (e) { e.preventDefault(); });
+    div.addEventListener('keydown', function (e) {
+        if ((e.key !== 'Enter' && e.key !== ' ') || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
         e.preventDefault();
-        ghost.innerHTML = palPreview(type);
-        ghost.style.display = 'block';
-        ghost.style.left = (e.clientX + 12) + 'px';
-        ghost.style.top = (e.clientY + 12) + 'px';
-        var sx = e.clientX, sy = e.clientY;
+        e.stopPropagation();
+        if (e.repeat) return;
+        beginPlacement(type);
+        svg.focus({ preventScroll: true });
+    });
+    div.addEventListener('pointerdown', function (e) {
+        if (e.button !== 0 || e.isPrimary === false || isPanning || propsDrag) return;
+        e.preventDefault();
+        setTool('select');
+        svg.focus({ preventScroll: true });
+        var sx = e.clientX, sy = e.clientY, pointerId = e.pointerId;
+        var state = { type: type, moved: false, cleanup: cleanup };
+        paletteDrag = state;
+        function track(ev) {
+            var dx = ev.clientX - sx, dy = ev.clientY - sy;
+            if (dx * dx + dy * dy >= 16) state.moved = true;
+            lastPointer = { clientX: ev.clientX, clientY: ev.clientY };
+        }
+        function cleanup() {
+            window.removeEventListener('pointermove', mv);
+            window.removeEventListener('pointerup', up);
+            window.removeEventListener('pointercancel', cancel);
+            div.removeEventListener('lostpointercapture', cancel);
+            if (paletteDrag === state) paletteDrag = null;
+            if (div.hasPointerCapture(pointerId)) div.releasePointerCapture(pointerId);
+        }
+        function cancel(ev) {
+            if (ev.pointerId !== pointerId) return;
+            cancelPaletteDrag();
+            syncMenuState();
+            setStatus('');
+        }
         function mv(ev) {
-            ghost.style.left = (ev.clientX + 12) + 'px';
-            ghost.style.top = (ev.clientY + 12) + 'px';
+            if (ev.pointerId !== pointerId) return;
+            if (!(ev.buttons & 1)) { cancel(ev); return; }
+            track(ev);
+            syncInteractionCursor();
+            schedulePlacementPreview();
         }
         function up(ev) {
-            window.removeEventListener('mousemove', mv);
-            window.removeEventListener('mouseup', up);
-            ghost.style.display = 'none';
-            var r = svg.getBoundingClientRect();
-            var x, y;
-            if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 4) {
-                /* 单击：放到画布可见区中心 */
-                var centerScreen = { x: r.width / 2, y: r.height / 2 };
-                var centerCanvas = screenToCanvas(centerScreen.x, centerScreen.y);
-                x = snap(centerCanvas.x);
-                y = snap(centerCanvas.y);
-            } else if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) {
-                var screenPos = { x: ev.clientX - r.left, y: ev.clientY - r.top };
-                var canvasPos = screenToCanvas(screenPos.x, screenPos.y);
-                x = snap(canvasPos.x);
-                y = snap(canvasPos.y);
-            } else return;
-            addComp(type, x, y);
+            if (ev.pointerId !== pointerId || ev.button !== 0) return;
+            ev.preventDefault();
+            track(ev);
+            var p = state.moved && placementPoint(ev);
+            var hit = document.elementFromPoint(ev.clientX, ev.clientY);
+            var clicked = !state.moved && hit && div.contains(hit);
+            setTool('select');
+            if (p) addComp(type, p.x, p.y);
+            else if (clicked) beginPlacement(type);
         }
-        window.addEventListener('mousemove', mv);
-        window.addEventListener('mouseup', up);
+        window.addEventListener('pointermove', mv);
+        window.addEventListener('pointerup', up);
+        window.addEventListener('pointercancel', cancel);
+        div.addEventListener('lostpointercapture', cancel);
+        try { div.setPointerCapture(pointerId); } catch (err) { /* 窗口监听仍可清理手势 */ }
     });
 }
 
 function addComp(type, x, y) {
     pushUndo();
-    var c = { kind: 'comp', id: uid(), type: type, x: x, y: y, rot: 0, fh: false, fv: false,
-        text: DEFAULT_TEXT[type] || '', stroke: '#1a1a1a', sw: 1.5, dash: '' };
+    var c = compDraft(type, x, y);
+    c.id = uid();
     doc.items.push(c);
     sel = [c.id];
     render();
@@ -747,9 +987,9 @@ function migrateDoc(d) {
 function insertFigure(key) {
     var fig = window.RAZAVI_FIGURES && RAZAVI_FIGURES[key];
     if (!fig) return;
-    var r = svg.getBoundingClientRect();
-    var centerScreen = { x: r.width / 2, y: r.height / 2 };
-    var centerCanvas = screenToCanvas(centerScreen.x, centerScreen.y);
+    setTool('select');
+    var r = canvasUsableRect();
+    var centerCanvas = screenToCanvas(r.x + r.width / 2, r.y + r.height / 2);
     var cx = snap(centerCanvas.x);
     var cy = snap(centerCanvas.y);
     var b = Razavi.docBBox(fig.doc);
@@ -1005,36 +1245,107 @@ propVariant.addEventListener('change', function () {
     document.getElementById('ckSwatches').appendChild(d);
 });
 
-/* ---- 悬浮属性面板拖动（拖标题栏，钳制在画布卡片内；窄屏 static 定位下天然失效） ---- */
+/* ---- 属性面板按视口钳制，窄屏清除拖动定位 ---- */
+function cancelPropsDrag() {
+    if (propsDrag) propsDrag.cleanup();
+}
+function positionProps(left, top) {
+    var maxL = Math.max(0, viewport.clientWidth - propsPanel.offsetWidth);
+    var maxT = Math.max(0, viewport.clientHeight - propsPanel.offsetHeight);
+    propsPanel.style.left = Math.max(0, Math.min(maxL, left)) + 'px';
+    propsPanel.style.top = Math.max(0, Math.min(maxT, top)) + 'px';
+    propsPanel.style.right = 'auto';
+}
+function clampProps() {
+    if (getComputedStyle(propsPanel).position !== 'absolute') {
+        cancelPropsDrag();
+        propsPanel.style.removeProperty('left');
+        propsPanel.style.removeProperty('top');
+        propsPanel.style.removeProperty('right');
+    } else if (propsPanel.style.left) {
+        positionProps(propsPanel.offsetLeft, propsPanel.offsetTop);
+    }
+}
 (function initPropsDrag() {
-    var panel = document.getElementById('ckProps');
     var hd = document.getElementById('ckPropsHd');
-    if (!panel || !hd) return;
-    hd.addEventListener('mousedown', function (e) {
-        if (e.button !== 0) return;
-        var card = panel.offsetParent;
-        if (!card) return;
+    hd.addEventListener('pointerdown', function (e) {
+        if (e.button !== 0 || e.isPrimary === false || paletteDrag || isPanning || drag ||
+                getComputedStyle(propsPanel).position !== 'absolute') return;
         e.preventDefault();
-        /* 首次拖动：从 right 定位切换为显式 left/top */
-        panel.style.left = panel.offsetLeft + 'px';
-        panel.style.top = panel.offsetTop + 'px';
-        panel.style.right = 'auto';
-        var sx = e.clientX, sy = e.clientY;
-        var ox = panel.offsetLeft, oy = panel.offsetTop;
+        cancelPropsDrag();
+        var rect = propsPanel.getBoundingClientRect();
+        var dx = e.clientX - rect.left, dy = e.clientY - rect.top, pointerId = e.pointerId;
+        var state = { cleanup: cleanup };
+        propsDrag = state;
+        hidePlacementPreview();
+        function cleanup() {
+            window.removeEventListener('pointermove', mv);
+            window.removeEventListener('pointerup', up);
+            window.removeEventListener('pointercancel', up);
+            hd.removeEventListener('lostpointercapture', up);
+            if (propsDrag === state) propsDrag = null;
+            if (hd.hasPointerCapture(pointerId)) hd.releasePointerCapture(pointerId);
+            schedulePlacementPreview();
+        }
         function mv(ev) {
-            var maxL = Math.max(0, card.clientWidth - panel.offsetWidth);
-            var maxT = Math.max(0, card.clientHeight - panel.offsetHeight);
-            panel.style.left = Math.max(0, Math.min(maxL, ox + ev.clientX - sx)) + 'px';
-            panel.style.top = Math.max(0, Math.min(maxT, oy + ev.clientY - sy)) + 'px';
+            if (ev.pointerId !== pointerId) return;
+            if (!(ev.buttons & 1)) { cleanup(); return; }
+            if (getComputedStyle(propsPanel).position !== 'absolute') { clampProps(); return; }
+            var r = viewport.getBoundingClientRect();
+            positionProps(ev.clientX - r.left - dx, ev.clientY - r.top - dy);
         }
-        function up() {
-            document.removeEventListener('mousemove', mv);
-            document.removeEventListener('mouseup', up);
+        function up(ev) {
+            if (ev.pointerId === pointerId) cleanup();
         }
-        document.addEventListener('mousemove', mv);
-        document.addEventListener('mouseup', up);
+        window.addEventListener('pointermove', mv);
+        window.addEventListener('pointerup', up);
+        window.addEventListener('pointercancel', up);
+        hd.addEventListener('lostpointercapture', up);
+        try { hd.setPointerCapture(pointerId); } catch (err) { /* 窗口监听仍可结束拖动 */ }
     });
 })();
+
+/* 窄屏面板切换：一次只展开一个 */
+function toggleNarrowPanel(which) {
+    if (!palettePanel || !propsPanel) return;
+    var isPalette = which === 'palette';
+    var target = isPalette ? palettePanel : propsPanel;
+    var other = isPalette ? propsPanel : palettePanel;
+    var btn = isPalette ? togglePaletteBtn : togglePropsBtn;
+    var otherBtn = isPalette ? togglePropsBtn : togglePaletteBtn;
+    var isOpen = target.classList.contains('ck-panel-open');
+    // 关闭另一个
+    other.classList.remove('ck-panel-open');
+    if (otherBtn) otherBtn.classList.remove('active');
+    // 切换当前
+    if (isOpen) {
+        target.classList.remove('ck-panel-open');
+        if (btn) btn.classList.remove('active');
+    } else {
+        target.classList.add('ck-panel-open');
+        if (btn) btn.classList.add('active');
+    }
+}
+if (togglePaletteBtn) togglePaletteBtn.addEventListener('click', function () { toggleNarrowPanel('palette'); });
+if (togglePropsBtn) togglePropsBtn.addEventListener('click', function () { toggleNarrowPanel('props'); });
+
+/* 尺寸与主题变化只影响显示层，不保存文档 */
+function refreshViewport() {
+    clampProps();
+    updateGridBounds();
+    schedulePlacementPreview();
+}
+function observeViewport() {
+    window.addEventListener('resize', refreshViewport);
+    if (window.ResizeObserver) {
+        var resizeObserver = new ResizeObserver(refreshViewport);
+        [viewport, wrap, propsPanel].forEach(function (el) { resizeObserver.observe(el); });
+    }
+    new MutationObserver(function () {
+        syncMenuState();
+        schedulePlacementPreview();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+}
 
 /* ============================================
    菜单系统与键盘
@@ -1044,18 +1355,24 @@ var menuStatus = document.getElementById('ckMenuStatus');
 var exportOptions = { svgTransparent: false, pngTransparent: false };
 
 function setTool(t) {
+    cancelPaletteDrag();
+    cancelPropsDrag();
+    cancelPlacement();
+    if (isPanning) endPan();
     tool = t;
     wireStart = null;
     hoverPort = null;
-    wrap.style.cursor = t === 'select' ? 'default' : 'crosshair';
-    render();
+    drag = null;
+    syncInteractionCursor();
+    renderOverlay();
     syncMenuState();
+    setStatus('');
 }
 
 function syncMenuStatus() {
     if (!menuStatus) return;
-    menuStatus.textContent = ({ select: '选择', wire: '连线', label: '文字标注' }[tool] || '选择') +
-        ' · ' + Math.round(viewTransform.scale * 100) + '%';
+    var label = placement ? '连续放置 · Esc 退出' : ({ select: '选择', wire: '连线', label: '文字标注' }[tool] || '选择');
+    menuStatus.textContent = label + ' · ' + Math.round(viewTransform.scale * 100) + '%';
 }
 
 function syncMenuState() {
@@ -1068,7 +1385,7 @@ function syncMenuState() {
         'zoom-in': viewTransform.scale >= 10, 'zoom-out': viewTransform.scale <= 0.1
     };
     var checked = {
-        'tool-select': tool === 'select', 'tool-wire': tool === 'wire', 'tool-label': tool === 'label',
+        'tool-select': tool === 'select' && !placement, 'tool-wire': tool === 'wire', 'tool-label': tool === 'label',
         'toggle-grid': gridEnabled, 'toggle-theme': Theme.get() === 'dark',
         'svg-transparent': exportOptions.svgTransparent, 'png-transparent': exportOptions.pngTransparent
     };
@@ -1092,7 +1409,7 @@ var menuActions = {
             setStatus('');
         } catch (err) { alert('保存失败，请导出 JSON 备份：' + err.message); }
     },
-    'import-json': function () { impFile.click(); },
+    'import-json': function () { setTool('select'); impFile.click(); },
     'export-svg': exportSVG, 'export-png': exportPNG, 'export-pdf': exportPDF, 'export-json': exportJSON,
     'svg-transparent': function () { exportOptions.svgTransparent = !exportOptions.svgTransparent; },
     'png-transparent': function () { exportOptions.pngTransparent = !exportOptions.pngTransparent; },
@@ -1133,7 +1450,7 @@ var menuActions = {
 
 /* 插入分类与左侧面板使用相同的 catalog，不维护第二套器件清单 */
 function buildInsertMenu() {
-    var html = '<p class="ck-menu-note">选择器件后插入视口中心</p>';
+    var html = '<p class="ck-menu-note">选择器件后连续点击放置，Esc 退出</p>';
     function category(name, ids, index) {
         if (!ids.length) return;
         var menuId = 'menuDevice' + index;
@@ -1173,6 +1490,7 @@ function closeMenus(restoreFocus) {
     var trigger = menubar.querySelector('.ck-menu-trigger[aria-expanded="true"]');
     menubar.querySelectorAll('.ck-menu > .ck-menu-popup').forEach(closeMenu);
     if (restoreFocus && trigger) trigger.focus({ preventScroll: true });
+    schedulePlacementPreview();
 }
 
 function menuItems(popup) {
@@ -1201,6 +1519,7 @@ function openMenu(button, focusFirst) {
     if (y + h > vh - 8) y = parent ? vh - h - 8 : Math.max(8, r.top - h - 2);
     popup.style.left = Math.max(8, Math.min(x, vw - w - 8)) + 'px';
     popup.style.top = Math.max(8, Math.min(y, vh - h - 8)) + 'px';
+    schedulePlacementPreview();
     if (focusFirst) {
         var items = menuItems(popup);
         if (items.length) items[0].focus({ preventScroll: true });
@@ -1208,11 +1527,7 @@ function openMenu(button, focusFirst) {
 }
 
 function insertMenuDevice(type) {
-    if (!SYMBOLS[type]) return;
-    var r = svg.getBoundingClientRect();
-    var p = screenToCanvas(r.width / 2, r.height / 2);
-    setTool('select');
-    addComp(type, snap(p.x), snap(p.y));
+    beginPlacement(type);
 }
 
 function initMenus() {
@@ -1311,6 +1626,8 @@ var pickerEl = null;
 
 function openDevicePicker() {
     if (pickerEl) closeDevicePicker();
+    cancelPaletteDrag();
+    hidePlacementPreview();
     var mask = document.createElement('div');
     mask.className = 'ck-picker-mask';
     var panel = document.createElement('div');
@@ -1318,7 +1635,7 @@ function openDevicePicker() {
     /* 居中于视口 */
     panel.style.left = '50%'; panel.style.top = '40%';
     panel.style.transform = 'translate(-50%, -40%)';
-    panel.innerHTML = '<div class="ck-picker-hd">插入器件（Esc 关闭）</div>' +
+    panel.innerHTML = '<div class="ck-picker-hd">选取后连续放置（Esc 关闭）</div>' +
         '<input class="ck-picker-input" type="text" placeholder="搜索器件名称…" autocomplete="off">' +
         '<div class="ck-picker-body"></div>';
     mask.appendChild(panel);
@@ -1332,7 +1649,10 @@ function openDevicePicker() {
         renderPickerList(body, input.value.trim().toLowerCase());
     });
     input.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeDevicePicker(); svg.focus(); }
+        if (e.key === 'Tab') return;
+        e.stopPropagation();
+        if (e.isComposing) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeDevicePicker(); svg.focus({ preventScroll: true }); }
         else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
             var items = Array.prototype.slice.call(body.querySelectorAll('.ck-picker-item'));
@@ -1350,8 +1670,23 @@ function openDevicePicker() {
             if (active) { pickFromPicker(active.getAttribute('data-type')); }
         }
     });
+    mask.addEventListener('keydown', function (e) {
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeDevicePicker();
+            svg.focus({ preventScroll: true });
+        } else if (e.key === 'Tab') {
+            var focusable = [input].concat(Array.prototype.slice.call(body.querySelectorAll('button')));
+            var i = focusable.indexOf(document.activeElement);
+            if ((e.shiftKey && i <= 0) || (!e.shiftKey && i === focusable.length - 1)) {
+                e.preventDefault();
+                focusable[e.shiftKey ? focusable.length - 1 : 0].focus();
+            }
+        }
+    });
     mask.addEventListener('click', function (e) {
-        if (e.target === mask) { closeDevicePicker(); svg.focus(); }
+        if (e.target === mask) { closeDevicePicker(); svg.focus({ preventScroll: true }); }
     });
 }
 
@@ -1383,7 +1718,7 @@ function renderPickerList(body, query) {
     if (auxIds.length) {
         html += '<div class="ck-picker-cat">绘图辅助</div>';
         auxIds.forEach(function (id) {
-            var a = Razavi.AUX[id];
+            var a = Razavi.meta(id);
             if (!firstType) firstType = id;
             html += '<button type="button" class="ck-picker-item" data-type="' + Razavi.esc(id) + '">' +
                 palPreview(id) + '<span>' + Razavi.esc(a.nameZh || id) + '</span></button>';
@@ -1391,6 +1726,7 @@ function renderPickerList(body, query) {
     }
     if (!html) html = '<div class="ck-picker-empty">无匹配器件</div>';
     body.innerHTML = html;
+    if (firstType) body.querySelector('.ck-picker-item').classList.add('active');
     /* 绑定点击 */
     Array.prototype.forEach.call(body.querySelectorAll('.ck-picker-item'), function (btn) {
         btn.addEventListener('click', function () { pickFromPicker(btn.getAttribute('data-type')); });
@@ -1404,7 +1740,7 @@ function renderPickerList(body, query) {
 
 function pickFromPicker(type) {
     closeDevicePicker();
-    svg.focus();
+    svg.focus({ preventScroll: true });
     insertMenuDevice(type);
 }
 
@@ -1413,40 +1749,63 @@ function closeDevicePicker() {
         pickerEl.parentNode.removeChild(pickerEl);
     }
     pickerEl = null;
+    schedulePlacementPreview();
 }
+
+/* 捕获拖入期间的 Esc，避免焦点变化使取消丢失 */
+window.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || (!paletteDrag && !propsDrag)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (paletteDrag) setTool('select');
+    else cancelPropsDrag();
+}, true);
 
 document.addEventListener('keydown', function (e) {
     if (menubar.querySelector('.ck-menu-trigger[aria-expanded="true"]')) {
         if (e.key === 'Escape') { e.preventDefault(); closeMenus(true); }
         return;
     }
-    /* 器件选择器打开时，键盘事件由选择器自身处理 */
-    if (pickerEl) return;
-    var tag = (e.target.tagName || '').toUpperCase();
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (shortcutBlocked(e) || e.altKey) return;
     var k = e.key.toLowerCase();
     var ctrl = e.ctrlKey || e.metaKey;
-    if (ctrl && k === 'a') { e.preventDefault(); setTool('select'); sel = doc.items.map(function (it) { return it.id; }); render(); }
-    else if (ctrl && k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
-    else if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
-    else if (ctrl && k === 'c') { copySel(); }
-    else if (ctrl && k === 'v') { pasteClip(); }
-    else if (ctrl && k === 'g' && !e.shiftKey) { e.preventDefault(); groupSel(); }
-    else if (ctrl && k === 'g' && e.shiftKey) { e.preventDefault(); ungroupSel(); }
-    else if (k === 'delete' || k === 'backspace') { e.preventDefault(); delSel(); }
-    else if (k === 'escape') {
-        if (wireStart) { wireStart = null; render(); }
+    if (k === 'escape') {
+        e.preventDefault();
+        if (isPanning) endPan();
+        if (placement || paletteDrag) setTool('select');
+        else if (wireStart) { wireStart = null; renderOverlay(); }
         else if (tool !== 'select') setTool('select');
-        else if (sel.length) { sel = []; render(); }
+        else {
+            drag = null;
+            sel = [];
+            renderOverlay();
+            renderProps();
+            syncMenuState();
+        }
+        return;
     }
-    else if (k === 'w') setTool('wire');
+    if (paletteDrag || propsDrag || drag || isPanning) return;
+    if (ctrl) {
+        if (k === 'a') { e.preventDefault(); setTool('select'); sel = doc.items.map(function (it) { return it.id; }); render(); }
+        else if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+        else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+        else if (k === 'c') { e.preventDefault(); copySel(); }
+        else if (k === 'v') { e.preventDefault(); pasteClip(); }
+        else if (k === 'g') { e.preventDefault(); if (e.shiftKey) ungroupSel(); else groupSel(); }
+        return;
+    }
+    if (e.shiftKey) return;
+    if (k === 'w') setTool('wire');
     else if (k === 't') setTool('label');
-    else if (k === 'i') openDevicePicker();
+    else if (k === 'i') { e.preventDefault(); openDevicePicker(); }
     else if (k === 'f') { e.preventDefault(); fitContent(); }
-    else if (k === 'u') { undo(); }
-    else if (k === 'r') transformSel('rot');
-    else if (k === 'h') transformSel('fh');
-    else if (k === 'v') transformSel('fv');
+    else if (k === 'u') { e.preventDefault(); undo(); }
+    else if (!placement) {
+        if (k === 'delete' || k === 'backspace') { e.preventDefault(); delSel(); }
+        else if (k === 'r') transformSel('rot');
+        else if (k === 'h') transformSel('fh');
+        else if (k === 'v') transformSel('fv');
+    }
 });
 
 /* ============================================
@@ -1527,6 +1886,7 @@ impFile.addEventListener('change', function () {
             drag = null;
             hintMsg = migrated ? '导入的旧版工程已自动迁移为 Razavi 器件库' : '已导入 JSON 工程，Ctrl+Z 可恢复原画布';
             setTool('select');
+            render();
             fitContent();
             setStatus('');
         } catch (err) {
@@ -1545,8 +1905,10 @@ function newDoc() {
     drag = null;
     hintMsg = '';
     setTool('select');
+    render();
     fitContent();
     setStatus('');
+    updateQuickstartVisibility();
 }
 
 function saveLocal() {
@@ -1615,11 +1977,14 @@ function sampleDoc() {
 (function boot() {
     buildPalette();
     initMenus();
+    applyViewTransform();
+    observeViewport();
     var loaded = loadLocal();
     if (!loaded) sampleDoc();
     else if (loaded === 'v1') hintMsg = '已从旧版存档自动迁移为 Razavi 器件库';
     render();
     setStatus('');
+    updateQuickstartVisibility();
 
     /* 跳转传图：?fig=ota5|telescopic|folded|diffpair|curmirror → pushUndo 后载入标准图 */
     var mq = /[?&]fig=([a-z0-9-]+)/i.exec(location.search || '');
@@ -1633,5 +1998,6 @@ function sampleDoc() {
         hintMsg = '已载入标准图「' + fig.name + '」，Ctrl+Z 可恢复原画布';
         render();
         setStatus('');
+        updateQuickstartVisibility();
     }
 })();
