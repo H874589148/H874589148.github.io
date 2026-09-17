@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPI计算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dpi-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / DPI计算</span>
+    </nav>
+    <main class="container-wide">
+        <header class="dpi-header">
+            <div><h1>DPI计算</h1><p class="tool-desc">Direct Power Injection · 测试台拓扑、功率与电压换算、网络阻抗频响</p></div>
+            <a href="../Direct_power_injection_DPI_simulation_framework_and_postprocessing.pdf" target="_blank" rel="noopener">阅读原论文 ↗</a>
+        </header>
+        <div class="info-box">
+            基于 Lavarda / Deutschmann（2015）的 DPI 仿真框架整理。源设定功率是匹配条件下的可用功率，<strong>不等于 DUT 实际吸收功率</strong>。
+            本工具是线性集中参数估算，不运行 SPICE，不预测 IC 非线性失效或 IEC 合规性。
+        </div>
+        <noscript><p class="warn-box">请启用 JavaScript 以显示拓扑图、参数输入框和实时计算结果。</p></noscript>
+        <div class="tab-nav" role="tablist" aria-label="DPI计算功能">
+            <button type="button" class="tab-btn active" role="tab" id="tab-bench" data-tab="bench" aria-selected="true" aria-controls="panel-bench">拓扑与参数</button>
+            <button type="button" class="tab-btn" role="tab" id="tab-response" data-tab="response" aria-selected="false" aria-controls="panel-response" tabindex="-1">阻抗频响</button>
+            <button type="button" class="tab-btn" role="tab" id="tab-convert" data-tab="convert" aria-selected="false" aria-controls="panel-convert" tabindex="-1">dBm / mW 换算</button>
+        </div>
+
+        <section id="panel-bench" role="tabpanel" aria-labelledby="tab-bench">
+            <section class="paper-card tool-section">
+                <h2>完整测试台 · Fig.6 功能重绘</h2>
+                <p class="hint">OUT1 注入、OUT2 监测；点击图中模块定位对应参数。完整图用于连接说明，下方单频计算仅求 OUT1 注入端的等效网络。</p>
+                <div id="benchFigure" class="schematic wide-figure" aria-label="完整DPI测试台拓扑"></div>
+                <p class="hint">电池经 BAN 接 VDD；同板驱动经 L_RF_BLOCK 接 IN；OUT1 经 BAN 接线束负载；OUT2 的同板负载与监测支路并接。所有地符号代表公共参考地。</p>
+            </section>
+            <div class="actions">
+                <button type="button" class="btn" id="resetBench">载入论文典型值</button>
+                <button type="button" class="btn" id="showResponse">查看阻抗频响 →</button>
+                <span class="hint">非论文参数使用明确标注的演示值；修改单位保持物理量不变。</span>
+            </div>
+            <section class="paper-card tool-section parameter-card" id="params-rf" tabindex="-1">
+                <h2>1. RF 源与匹配电压</h2>
+                <p class="hint">Fig.1、式(1)–(3)，PDF 第2页。R_s = R_0，R_0 默认 50 Ω；V_s,pk 是理想源开路峰值，不是负载峰值。</p>
+                <div id="rfFields" class="parameter-grid"></div>
+                <div class="formula-box">
+                    <p>P_av[W] = 10<sup>P[dBm]/10</sup> × 10<sup>−3</sup> = V<sub>s,pk</sub>² / (8R<sub>0</sub>)</p>
+                    <p>V<sub>s,pk</sub> = √(8R<sub>0</sub>P_av)；V<sub>L,pk</sub> = V<sub>s,pk</sub>/2；V<sub>L,pp</sub> = 2V<sub>L,pk</sub>；V<sub>L,rms</sub> = V<sub>L,pk</sub>/√2</p>
+                </div>
+                <p class="error" id="rfError" role="status"></p>
+                <div id="rfResults" class="result-grid" aria-live="polite"></div>
+                <details><summary>CW / AM 激励与延迟注入说明</summary>
+                    <p>先让 DUT 达到稳定工作点，再于 t_D 注入 RF。令 τ = t − t_D；t &lt; t_D 时扰动为 0，之后 CW 为 v_s(t) = V_s,pk·sin(2πf_DPIτ)。t_D 由实际电路的建立时间决定，论文没有给出通用数值。</p>
+                    <p>论文 AM 示例：m = 0.8、f_m = 1 kHz，峰值包络与 CW 相同。归一化激励为 v_AM = V_s,pk·[1 + m·sin(2πf_mτ)]/(1+m)·sin(2πf_DPIτ)。相同峰值下，匹配负载平均功率为 P_CW·(1+m²/2)/(1+m)²。本页数值结果均按 CW 计算。</p>
+                </details>
+            </section>
+            <section class="paper-card tool-section parameter-card" id="params-block" tabindex="-1">
+                <h2>2. 隔直电容与寄生模型</h2>
+                <p class="hint">Fig.2–3，PDF 第2–3页。隔直电容位于 RF 源与注入端之间，不能将其下端误接地。</p>
+                <label for="blockModel">计算模型</label>
+                <select id="blockModel"><option value="ideal">理想电容（默认）</option><option value="parasitic">ESR + ESL + (C ∥ R_leak)</option></select>
+                <div id="blockFields" class="parameter-grid"></div>
+                <div id="parasiticFields" class="parameter-grid" hidden></div>
+                <div id="blockFigure" class="schematic" aria-label="隔直电容等效模型"></div>
+                <div class="formula-box">
+                    <p>ω = 2πf；Z<sub>C,ideal</sub> = 1/(jωC<sub>block</sub>)</p>
+                    <p>Z<sub>block</sub> = ESR + jωESL + 1/(1/R<sub>leak</sub> + jωC<sub>block</sub>)</p>
+                    <p>f<sub>SRF,approx</sub> = 1/(2π√(ESL·C<sub>block</sub>))（忽略漏电的近似）</p>
+                </div>
+                <p class="hint">原 Fig.3 的泄漏支路画为电阻，但标注 L_LEAK；这里按器件符号及漏电含义记为 R_leak，仅与 C 并联。ESR、ESL、R_leak 的演示初值不是论文数据。理想电容没有自谐振点。</p>
+            </section>
+            <section class="paper-card tool-section parameter-card" id="params-ban" tabindex="-1">
+                <h2>3. BAN 与 DUT 注入端负载</h2>
+                <label class="check-line"><input type="checkbox" id="useBan" checked> 在 OUT1 注入端并接 BAN（取消后只保留 DUT 等效负载）</label>
+                <div id="banFields" class="parameter-grid"></div>
+                <div id="banFigure" class="schematic" aria-label="BAN三端网络及外部终端"></div>
+                <p class="hint">Fig.4，PDF 第3页：L_BAN 串在外部终端与 DUT 端之间；DUT 端有 R_BAN 与 C_BAN 串联接地支路。计算从 DUT 端向 BAN 看入的阻抗，必须指定外部端口终端。</p>
+                <div id="dutFields" class="parameter-grid"></div>
+                <div class="formula-box">
+                    <p>Z<sub>RC</sub> = R<sub>BAN</sub> + 1/(jωC<sub>BAN</sub>)；Z<sub>BAN</sub> = (R<sub>ext</sub> + jωL<sub>BAN</sub>) ∥ Z<sub>RC</sub></p>
+                    <p>Z<sub>DUT</sub> = R<sub>DUT</sub> + jX<sub>DUT</sub>；Z<sub>eq</sub> = Z<sub>DUT</sub> ∥ Z<sub>BAN</sub>（不接 BAN 时 Z<sub>eq</sub> = Z<sub>DUT</sub>）</p>
+                    <p>H = Z<sub>eq</sub> / (R<sub>0</sub> + Z<sub>block</sub> + Z<sub>eq</sub>)；V<sub>DUT,pk</sub> = V<sub>s,pk</sub>·|H|</p>
+                    <p>P<sub>DUT</sub> = (V<sub>DUT,pk</sub>²/2)·Re{1/Z<sub>DUT</sub>}；a ∥ b = ab/(a+b)</p>
+                </div>
+                <p class="hint">R_ext 为纯电阻终端；取 0 Ω 表示外部理想电源的交流接地。R_DUT、X_DUT 是用户提供的单频等效阻抗，不是芯片模型。频扫中 R、X 保持常数，不包含 IC、PCB、线缆传输线及钳位非线性。</p>
+                <div id="injectionFigure" class="schematic" aria-label="单频注入计算等效拓扑"></div>
+                <p class="error" id="networkError" role="status"></p>
+                <div id="networkResults" class="result-grid" aria-live="polite"></div>
+            </section>
+            <section class="paper-card tool-section parameter-card" id="params-monitor" tabindex="-1">
+                <h2>4. 监测支路与 RF 隔离</h2>
+                <div class="actions"><button type="button" class="btn" id="monitorText">正文：R_M = 10 kΩ</button><button type="button" class="btn" id="monitorFigurePreset">Fig.5：R_M = 150 kΩ</button></div>
+                <div id="monitorFields" class="parameter-grid"></div>
+                <div id="monitorFigure" class="schematic" aria-label="低通监测网络和示波器输入阻抗"></div>
+                <div class="formula-box">
+                    <p>f<sub>c,ideal</sub> = 1/(2πR<sub>M</sub>C<sub>M</sub>)；H<sub>0</sub> = R<sub>in</sub>/(R<sub>M</sub>+R<sub>in</sub>)</p>
+                    <p>f<sub>c,loaded</sub> = 1/[2π(R<sub>M</sub>∥R<sub>in</sub>)(C<sub>M</sub>+C<sub>in</sub>)]</p>
+                    <p>H<sub>M</sub>(f) = 1/[1+R<sub>M</sub>/R<sub>in</sub>+jωR<sub>M</sub>(C<sub>M</sub>+C<sub>in</sub>)]；|Z<sub>RF_BLOCK</sub>| = ωL<sub>RF_BLOCK</sub></p>
+                </div>
+                <p class="hint">Fig.5 的 R_M = 150 kΩ 与正文 10 kΩ 不一致，保留两个预设。默认示波器为 1 MΩ ∥ 10 pF。监测传递函数假设 OUT2 为理想低阻驱动；带载截止频率相对 H_0 为 −3 dB，与 OUT1 注入网络独立计算。</p>
+                <p class="error" id="monitorError" role="status"></p>
+                <div id="monitorResults" class="result-grid" aria-live="polite"></div>
+            </section>
+        </section>
+
+        <section id="panel-response" role="tabpanel" aria-labelledby="tab-response" hidden>
+            <div class="paper-card tool-section">
+                <h2>集中参数阻抗频响</h2>
+                <p>使用「拓扑与参数」中的同一组参数，修改后实时重绘。横轴频率与纵轴阻抗均为对数刻度，虚线标记单频计算的 f_DPI。</p>
+                <div id="sweepFields" class="parameter-grid"></div>
+                <button type="button" class="btn" id="editParams">← 修改网络参数</button>
+                <p class="error" id="sweepError" role="status"></p>
+            </div>
+            <div class="chart-container"><h3>|Z(f)| / Ω</h3><canvas id="impedanceChart" width="1000" height="420" role="img" aria-label="隔直电容、BAN与DUT并联等效阻抗的幅频曲线"></canvas></div>
+            <div class="legend"><span class="legend-block">实线：Z_block</span><span class="legend-ban">长虚线：Z_BAN</span><span class="legend-eq">短虚线：Z_eq</span></div>
+            <div class="info-box" id="resonanceInfo" aria-live="polite"></div>
+            <details><summary>为什么不直接标一个“BAN 谐振点”？</summary><p>BAN 是带损耗、带终端的三端网络，不等同于无损 LC。R_ext = 0 时，有限频率零电纳点只有在 L_BAN &gt; C_BAN·R_BAN² 时才存在，f = 1/[2π√(C_BAN·(L_BAN − C_BAN·R_BAN²))]；非零终端与 DUT 并联后条件还会改变。默认参数不满足此条件。这里展示实际阻抗曲线，不将 1/(2π√LC) 冒充 BAN 的谐振频率。</p></details>
+            <details><summary>当前扫频参数快照</summary><pre id="sweepSummary"></pre></details>
+        </section>
+
+        <section id="panel-convert" role="tabpanel" aria-labelledby="tab-convert" hidden>
+            <div class="paper-card tool-section">
+                <h2>dBm ↔ mW · 双向实时换算</h2>
+                <p class="hint">编辑任一功率输入，另一侧自动更新；负 dBm 合法。线性功率必须 &gt; 0，0 mW 的对数极限为 −∞ dBm，不作为有限输入。</p>
+                <div class="parameter-grid">
+                    <div class="field"><label for="convertDbm">对数功率</label><div class="input-unit-row"><input id="convertDbm" type="number" value="37" step="any" min="-300" max="300"><span class="unit">dBm</span></div></div>
+                    <div class="field"><label for="convertLinear">线性功率</label><div class="input-unit-row"><input id="convertLinear" type="number" value="5011.87233627272" step="any" min="0"><select id="convertUnit" aria-label="线性功率单位"><option value="0.001">mW</option><option value="1">W</option><option value="0.000001">μW</option></select></div></div>
+                </div>
+                <div id="convertFields" class="parameter-grid"></div>
+                <div class="formula-box"><p>P[mW] = 10<sup>P[dBm]/10</sup>；P[dBm] = 10·log<sub>10</sub>(P[mW])</p><p>匹配负载：V_rms = √(P[W]·R_0)，V_pk = √2·V_rms，V_pp = 2√2·V_rms；理想源开路 V_s,pk = 2V_pk</p></div>
+                <p class="error" id="convertError" role="status"></p>
+                <div id="convertResults" class="result-grid" aria-live="polite"></div>
+                <button type="button" class="btn" id="applyPower">将此功率与 R_0 应用到拓扑参数</button>
+                <p class="hint" id="applyStatus" role="status"></p>
+            </div>
+            <div class="paper-card tool-section"><h2>功率速查 · 50 Ω 匹配负载</h2><div class="table-scroll"><table class="sketch-table"><thead><tr><th>dBm</th><th>mW</th><th>负载 V_rms / V</th><th>负载 V_pp / V</th></tr></thead><tbody id="powerTable"></tbody></table></div><p class="hint">例如 37 dBm ≈ 5.012 W，对应匹配负载 44.774 Vpp；论文的“约 40 Vpp”是粗略描述。源开路峰峰值则约 89.549 Vpp。</p></div>
+        </section>
+
+        <details class="paper-card reference-section"><summary>论文参数速查、出处及计算边界</summary>
+            <div class="table-scroll"><table class="sketch-table"><thead><tr><th>内容</th><th>论文数值 / 描述</th><th>出处</th></tr></thead><tbody>
+                <tr><td>RF 源</td><td>50 Ω；1 MHz–1 GHz；最大示例功率 37 dBm</td><td>第2页，II-A / Fig.1</td></tr>
+                <tr><td>隔直电容</td><td>6.8 nF，0805；需考虑寄生</td><td>第2–3页，II-B / Fig.2–3</td></tr>
+                <tr><td>BAN</td><td>5 μH、150 Ω、6.8 nF；线束电感典型 1 μH/m</td><td>第3页，II-C / Fig.4</td></tr>
+                <tr><td>监测低通</td><td>C_M = 10 nF；正文 R_M = 10 kΩ，图为 150 kΩ</td><td>第3页，II-D / Fig.5</td></tr>
+                <tr><td>示波器 / RF 隔离</td><td>1 MΩ ∥ 10 pF；L_RF_BLOCK 典型 5 μH</td><td>第3页，II-E / II-F</td></tr>
+                <tr><td>AM 示例</td><td>m = 0.8，f_m = 1 kHz；包络峰值与 CW 一致</td><td>第2页，II</td></tr>
+                <tr><td>扫描示例</td><td>文中提及 278 个频率步与 1 dBm 功率步长</td><td>第4页，III</td></tr>
+            </tbody></table></div>
+            <p>以上为该论文中的示例、典型值或对当时标准的转述，不能替代现行标准。图号对应原论文，页码为 PDF 页序。阻抗、分压和带载低通公式由上述等效电路推导，非论文原编号公式。寄生初值、R_ext、Z_DUT 是演示假设。</p>
+            <p>频响图使用 601 个对数等距绘图点，与论文的测试步进无关；不声称还原 278 点的标准频率列表。高频集中参数近似可能失效，真实谐振、线缆传播和 PCB 寄生应以测量或电路 / 电磁仿真为准。</p>
+        </details>
+        <details class="paper-card reference-section"><summary>仿真与后处理方法 · 不在浏览器中生成 PASS/FAIL</summary>
+            <ol><li>先运行至无干扰稳态，再延迟注入 RF，等待新的注入暂态衰减。</li><li>在各自稳定时间窗内求平均：V̄ = (1/Δt)∫v(t)dt；DC shift = V̄_after − V̄_before。</li><li>若 |DC shift| ≤ 允许偏移则 PASS，否则 FAIL；容差和其他判据必须由实际 DUT 规格定义。</li><li>逐频率、功率运行瞬态仿真得到易感性表。首次失败后终止、ΔP 起点优化和二分搜索会遗漏非单调“孤岛”，不能假定每个更高功率点都会失败。</li></ol>
+            <p>对应原论文第4–5页、Fig.7–10。这里保留流程与公式说明；没有 DUT 非线性模型、稳定时间窗和波形数据，不能用本页线性分压结果判断芯片是否失效。</p>
+        </details>
+    </main>
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> · 总浏览 <span id="busuanzi_value_site_pv">-</span> · 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../razavi/razavi-symbols.js"></script>
+    <script src="../../razavi/render.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

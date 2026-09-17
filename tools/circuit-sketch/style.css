@@ -333,6 +333,41 @@ body.ck-page { display: flex; flex-direction: column; }
 .ck-narrow-btn:hover { border-color: var(--color-primary); }
 .ck-narrow-btn.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 
+/* ---- 文字编辑会话：绝对定位，不改变单屏 flex 高度链 ---- */
+.ck-text-host { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; }
+.ck-text-host[hidden] { display: none; }
+.ck-text-box {
+    position: absolute; transform-origin: top left; box-sizing: border-box;
+    padding: 6px; border: 0; outline: 1px dashed var(--color-primary);
+    background: var(--ck-bg); color: var(--ck-ink); caret-color: var(--ck-ink);
+    min-width: 24px; min-height: 24px; overflow: auto; overscroll-behavior: contain;
+    white-space: pre; overflow-wrap: normal; word-break: normal;
+    font-family: 'Arial Narrow', Arial, sans-serif; font-size: 13px;
+    pointer-events: auto; user-select: text; cursor: text;
+}
+.ck-text-line { box-sizing: border-box; margin: 0; border: 0; font-size: 0; line-height: 0; white-space: pre; }
+.ck-text-line > span { position: relative; display: inline-block; height: 0; line-height: normal; vertical-align: top; }
+.ck-text-toolbar {
+    position: absolute; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+    width: max-content; padding: 7px; box-sizing: border-box; overflow: auto; overscroll-behavior: contain;
+    background: var(--color-card-bg); color: var(--color-text); border: 1px solid var(--color-border-sketch);
+    box-shadow: 2px 3px 10px var(--color-shadow); border-radius: 6px; pointer-events: auto;
+    font: 13px 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+.ck-text-toolbar button {
+    min-width: 30px; min-height: 30px; padding: 3px 7px; border: 1px solid var(--color-border);
+    background: transparent; color: inherit; border-radius: 3px; cursor: pointer;
+}
+.ck-text-toolbar button[aria-pressed="true"] { background: var(--color-primary); color: #fff; }
+.ck-text-toolbar button[aria-pressed="mixed"] { border-style: dashed; background: var(--color-bg-paper); }
+.ck-text-toolbar button:focus-visible { outline: 2px solid var(--color-primary); }
+.ck-text-toolbar label { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ck-text-toolbar input { width: 65px; min-width: 0; padding: 4px; font: inherit; appearance: textfield; }
+.ck-text-toolbar input::-webkit-inner-spin-button, .ck-text-toolbar input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.ck-text-hint { flex-basis: 100%; color: var(--color-text-secondary); font-size: 12px; }
+.ck-text-summary { display: block; max-height: 64px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+#propEditText { margin-top: 4px; }
+
 /* ---- I 键器件选择器（浮动面板） ---- */
 .ck-picker-mask {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;

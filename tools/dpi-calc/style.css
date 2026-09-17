@@ -1,0 +1,65 @@
+/* DPI 工具：复用站点主题，器件图与曲线随主题同步。 */
+.dpi-page [hidden] { display: none !important; }
+.dpi-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.tool-desc, .hint { color: var(--color-text-secondary); }
+.tool-desc { margin-top: 8px; }
+.hint { font-size: .9rem; margin: 10px 0; }
+.dpi-page h2 { margin-bottom: 12px; }
+.dpi-page h3 { margin-bottom: 10px; }
+.dpi-page .paper-card { margin-bottom: 24px; }
+.parameter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin: 18px 0; }
+.field { min-width: 0; }
+.field small { display: block; color: var(--color-text-muted); font-size: .8rem; margin-top: 4px; }
+.input-unit-row { display: flex; align-items: center; gap: 8px; }
+.input-unit-row input { min-width: 0; flex: 1; }
+.input-unit-row select { flex: 0 0 82px; width: 82px; padding: 8px 4px; }
+.unit { min-width: 44px; color: var(--color-text-secondary); font-family: var(--font-mono); }
+#blockModel { max-width: 480px; }
+.check-line { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.check-line input { width: 18px; height: 18px; accent-color: var(--color-primary); }
+.actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 12px 0 20px; }
+.dpi-page .btn:disabled { opacity: .55; cursor: not-allowed; }
+.dpi-page input[aria-invalid="true"] { border-color: var(--color-accent); }
+.dpi-page input:disabled, .dpi-page select:disabled { opacity: .5; }
+.error { color: var(--color-accent); margin: 12px 0; }
+.error:empty { display: none; }
+.result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0; }
+.result-item { padding: 14px; background: var(--color-bg-paper); border: 1px dashed var(--color-border); border-radius: var(--radius-sm); }
+.result-label { display: block; color: var(--color-text-secondary); font-size: .85rem; }
+.result-value { display: block; color: var(--color-primary); font-family: var(--font-mono); font-size: 1.05rem; overflow-wrap: anywhere; }
+.dpi-page .formula-box { text-align: left; font-size: .93rem; line-height: 2; overflow-x: auto; }
+.dpi-page .formula-box p { min-width: min-content; }
+.schematic { overflow-x: auto; background: var(--color-bg-paper); border: 1px dashed var(--color-border); border-radius: var(--radius-md); margin: 16px 0; }
+.schematic svg { width: 100%; min-width: 560px; height: auto; display: block; }
+.wide-figure svg { min-width: 900px; }
+.schematic [data-focus] { cursor: pointer; }
+.schematic [data-focus]:hover rect, .schematic [data-focus]:focus rect { stroke: var(--color-accent); stroke-width: 2.5px; }
+.schematic [data-focus]:focus { outline: none; }
+.parameter-card { scroll-margin-top: 90px; }
+.parameter-card:focus { outline: 3px solid var(--color-primary); outline-offset: 4px; }
+.dpi-page button:focus-visible, .dpi-page summary:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+.dpi-page details { margin-top: 14px; }
+.dpi-page summary { cursor: pointer; color: var(--color-primary); }
+.dpi-page details p, .dpi-page details ol { margin-top: 12px; }
+.dpi-page ol { padding-left: 24px; }
+.table-scroll { overflow-x: auto; margin: 16px 0; }
+.sketch-table { font-size: .9rem; }
+.sketch-table td { min-width: 100px; }
+.reference-section { margin-top: 24px; }
+.dpi-page pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: .85rem; padding: 14px; background: var(--color-bg-paper); }
+.legend { display: flex; gap: 20px; flex-wrap: wrap; margin: 12px 0; font-size: .9rem; }
+.legend-block { color: var(--color-primary); }
+.legend-ban { color: var(--color-accent); }
+.legend-eq { color: var(--color-text-secondary); }
+.dpi-page .chart-container canvas { width: 100%; height: 380px; }
+@media (max-width: 600px) {
+    .dpi-page .paper-card { padding: 16px; }
+    .parameter-grid, .result-grid { grid-template-columns: 1fr; }
+    .dpi-page .breadcrumb { display: none; }
+    .dpi-page .tab-btn { flex: 1; padding: 10px 6px; }
+    .dpi-page .chart-container { padding: 8px; }
+    .dpi-page .chart-container canvas { height: 320px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+}

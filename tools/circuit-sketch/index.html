@@ -94,9 +94,9 @@
                     <hr role="separator">
                     <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuTransform">旋转 / 镜像 <span class="ck-menu-arrow">›</span></button>
                     <div class="ck-menu-popup" id="menuTransform" role="menu" aria-label="旋转与镜像" hidden>
-                        <button type="button" role="menuitem" id="rotBtn" data-action="rotate" data-min-selection="1">旋转 90° <kbd>R</kbd></button>
-                        <button type="button" role="menuitem" id="fhBtn" data-action="flip-h" data-min-selection="1">水平镜像 <kbd>H</kbd></button>
-                        <button type="button" role="menuitem" id="fvBtn" data-action="flip-v" data-min-selection="1">垂直镜像 <kbd>V</kbd></button>
+                        <button type="button" role="menuitem" id="rotBtn" data-action="rotate" data-min-selection="1">逆时针旋转 90° <kbd>R</kbd></button>
+                        <button type="button" role="menuitem" id="fhBtn" data-action="flip-h" data-min-selection="1">左右翻转 <kbd>Shift+R / H</kbd></button>
+                        <button type="button" role="menuitem" id="fvBtn" data-action="flip-v" data-min-selection="1">上下翻转 <kbd>Ctrl+R / V</kbd></button>
                     </div>
                     <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuAlign">Align 对齐 <span class="ck-menu-arrow">›</span></button>
                     <div class="ck-menu-popup" id="menuAlign" role="menu" aria-label="对齐" hidden>
@@ -142,7 +142,7 @@
                         <!-- 左：器件面板 -->
                         <aside class="paper-card ck-palette" id="ckPalette">
                             <h3>器件库</h3>
-                            <p class="hint">单击选取后连续放置，Esc 退出；拖入松开放置一个</p>
+                            <p class="hint">单击连续放置，拖入放置一个；R 逆时针，Shift+R 左右翻转，Ctrl+R 上下翻转；Esc 退出</p>
                             <div id="palList"></div>
                             <h3 class="ck-tpl-title">模板</h3>
                             <p class="hint">点击插入画布中心，自动成组可整体拖动</p>
@@ -203,14 +203,32 @@
                             </div>
                             <div class="field">
                                 <label for="propText">文字标签</label>
-                                <input type="text" id="propText" placeholder="双击器件也可编辑">
+                                <output id="propText" class="ck-text-summary">未选中文字</output>
+                                <button type="button" id="propEditText" class="btn" disabled>编辑文字</button>
                             </div>
                             <div class="field" id="propVariantRow" style="display:none;">
                                 <label for="propVariant">符号变体</label>
                                 <select id="propVariant"></select>
                             </div>
-                            <p class="hint">修改即时作用于全部选中对象。</p>
+                            <p class="hint">线条属性作用于全部选中对象；文字仅支持单项编辑。</p>
                         </aside>
+                        <!-- 编辑宿主不参与页面高度，正式文档仍由 SVG 绘制。 -->
+                        <div id="ckTextHost" class="ck-text-host" hidden>
+                            <div id="ckTextBox" class="ck-text-box" contenteditable="true" role="textbox" aria-label="画布文字" aria-multiline="true" spellcheck="false"></div>
+                            <div id="ckTextToolbar" class="ck-text-toolbar" role="toolbar" aria-label="文字格式">
+                                <button type="button" data-format="bold" aria-label="加粗" aria-pressed="false" title="加粗"><b>B</b></button>
+                                <button type="button" data-format="italic" aria-label="斜体" aria-pressed="false" title="斜体"><i>I</i></button>
+                                <button type="button" data-format="super" aria-label="上标" aria-pressed="false" title="上标">x<sup>2</sup></button>
+                                <button type="button" data-format="sub" aria-label="下标" aria-pressed="false" title="下标">x<sub>2</sub></button>
+                                <button type="button" data-align="start" aria-label="左对齐" aria-pressed="false">左</button>
+                                <button type="button" data-align="middle" aria-label="居中对齐" aria-pressed="false">中</button>
+                                <button type="button" data-align="end" aria-label="右对齐" aria-pressed="false">右</button>
+                                <label>字号 <input data-size type="number" min="6" max="144" step="any" inputmode="decimal" aria-label="字号（画布 px）"> px</label>
+                                <button type="button" data-size-step="-1" aria-label="字号减小 1 px">−</button>
+                                <button type="button" data-size-step="1" aria-label="字号增大 1 px">+</button>
+                                <span id="ckTextHint" class="ck-text-hint" role="status">Enter 确认，Esc 取消；Alt+Enter 换行</span>
+                            </div>
+                        </div>
                         <!-- 快速入门面板：画布空白时显示，添加对象后隐藏 -->
                         <div class="ck-quickstart" id="ckQuickstart" hidden>
                             <div class="ck-quickstart-hd">
@@ -226,15 +244,15 @@
                                     <div class="ck-qs-row"><span class="ck-key">Ctrl</span><span class="ck-key">Y</span><span class="ck-qs-desc">重做</span></div>
                                     <div class="ck-qs-row"><span class="ck-key">Del</span><span class="ck-qs-desc">删除选中</span></div>
                                     <div class="ck-qs-row"><span class="ck-key">F</span><span class="ck-qs-desc">适应内容</span></div>
-                                    <div class="ck-qs-row"><span class="ck-key">R</span><span class="ck-qs-desc">旋转 90°</span></div>
-                                    <div class="ck-qs-row"><span class="ck-key">H</span><span class="ck-qs-desc">水平镜像</span></div>
-                                    <div class="ck-qs-row"><span class="ck-key">V</span><span class="ck-qs-desc">垂直镜像</span></div>
+                                    <div class="ck-qs-row"><span class="ck-key">R</span><span class="ck-qs-desc">逆时针 90°</span></div>
+                                    <div class="ck-qs-row"><span class="ck-key">Shift+R</span><span class="ck-qs-desc">左右翻转（H）</span></div>
+                                    <div class="ck-qs-row"><span class="ck-key">Ctrl+R</span><span class="ck-qs-desc">上下翻转（V）</span></div>
                                     <div class="ck-qs-row"><span class="ck-key">Ctrl</span><span class="ck-key">G</span><span class="ck-qs-desc">成组</span></div>
                                     <div class="ck-qs-row"><span class="ck-key">滚轮</span><span class="ck-qs-desc">缩放画布</span></div>
                                     <div class="ck-qs-row"><span class="ck-key">中键</span><span class="ck-qs-desc">平移画布</span></div>
                                     <div class="ck-qs-row"><span class="ck-key">空格</span><span class="ck-key">拖拽</span><span class="ck-qs-desc">平移画布</span></div>
                                     <div class="ck-qs-row"><span class="ck-qs-note">单击器件连续放置，拖入松开放置一个</span></div>
-                                    <div class="ck-qs-row"><span class="ck-qs-note">双击器件编辑文字，选中连线拖动线段平移</span></div>
+                                    <div class="ck-qs-row"><span class="ck-qs-note">双击文字设置格式；Alt+Enter 换行，Enter 确认，Esc 取消</span></div>
                                 </div>
                             </div>
                         </div>
@@ -251,6 +269,7 @@
     <script src="../../razavi/razavi-symbols.js"></script>
     <script src="../../razavi/render.js"></script>
     <script src="../../razavi/figures.js"></script>
+    <script src="text-editor.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

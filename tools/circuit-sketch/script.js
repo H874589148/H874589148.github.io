@@ -6,7 +6,9 @@
 'use strict';
 
 var GRID = 10;
-var FONT = "'Fira Code',monospace";
+var FONT = Razavi.TEXT_FONTS.latin;
+var TEXT_OPTIONS = { editorText: true, font: FONT };
+var textEditor = null, textSession = null, transformPivot = null;
 var svg = document.getElementById('ckCanvas');
 var layerMain = document.getElementById('layerMain');
 var layerOverlay = document.getElementById('layerOverlay');
@@ -63,6 +65,7 @@ function applyViewTransform() {
     updateGridBounds();
     schedulePlacementPreview();
     syncMenuStatus();
+    if (textEditor) textEditor.reposition();
 }
 
 /* 网格只覆盖当前可见世界范围，没有固定图纸边界 */
@@ -86,6 +89,7 @@ function updateGridVisibility() {
 
 /* 视图菜单与滚轮共用缩放，菜单操作以视口中心为锚点 */
 function zoomView(factor, mx, my) {
+    if (editingBlocked()) return;
     var r = svg.getBoundingClientRect();
     if (mx == null) mx = r.width / 2;
     if (my == null) my = r.height / 2;
@@ -122,12 +126,13 @@ function canvasUsableRect() {
 
 /* 适应全部内容仅改变视图，不写入文档或撤销栈 */
 function fitContent() {
+    if (editingBlocked()) return;
     var r = canvasUsableRect();
     if (!r.width || !r.height) return;
     if (!doc.items.length) {
         viewTransform = { x: 0, y: 0, scale: 1 };
     } else {
-        var b = Razavi.docBBox(doc);
+        var b = Razavi.docBBox(doc, TEXT_OPTIONS);
         var s = Math.min(r.width / Math.max(1, b.x1 - b.x0), r.height / Math.max(1, b.y1 - b.y0));
         s = Math.max(0.1, Math.min(10, s));
         viewTransform = { x: r.x + r.width / 2 - (b.x0 + b.x1) * s / 2,
@@ -257,7 +262,7 @@ function toLocal(c, x, y) {
     return { x: lx, y: ly };
 }
 
-function itemBBox(it) { return Razavi.itemBBox(it); }
+function itemBBox(it) { return Razavi.itemBBox(it, TEXT_OPTIONS); }
 
 function compHit(c, x, y, tol) {
     var l = toLocal(c, x, y);
@@ -267,7 +272,8 @@ function compHit(c, x, y, tol) {
 }
 
 function labelHit(it, x, y) {
-    var b = Razavi.labelBBox(it);
+    var b = Razavi.textBBox(it);
+    if (!b) return false;
     return x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 2;
 }
 
@@ -291,8 +297,17 @@ function wireHit(x, y, tol) {
     return null;
 }
 
-/* 顶向下的命中：器件 → 标注 → 连线 */
+/* 先按显示层级检查实际文字范围，包含符号几何外的标号。 */
+function hitText(x, y) {
+    for (var i = doc.items.length - 1; i >= 0; i--) {
+        var it = doc.items[i];
+        if (canEditText(it) && Razavi.richPlain(Razavi.richForItem(it)) && labelHit(it, x, y)) return it;
+    }
+    return null;
+}
 function hitItem(x, y) {
+    var text = hitText(x, y);
+    if (text) return text;
     var i, it;
     for (i = doc.items.length - 1; i >= 0; i--) {
         it = doc.items[i];
@@ -319,13 +334,16 @@ function displayItemSvg(it) {
     var display = Object.assign({}, it);
     if (!it.stroke || it.stroke.toLowerCase() === '#1a1a1a') display.stroke = 'currentColor';
     return '<g style="color:var(--ck-ink)">' +
-        Razavi.itemSvg(display, { font: FONT, stroke: 'currentColor' }) + '</g>';
+        Razavi.itemSvg(display, { font: FONT, editorText: true, stroke: 'currentColor',
+            hideText: !!textSession && textSession.id === it.id && !!it.id }) + '</g>';
 }
 
+function drawMain() {
+    layerMain.innerHTML = doc.items.map(displayItemSvg).join('');
+}
 function render() {
-    var html = '';
-    doc.items.forEach(function (it) { html += displayItemSvg(it); });
-    layerMain.innerHTML = html;
+    if (transformPivot && transformPivot.key !== sel.slice().sort().join(',')) transformPivot = null;
+    drawMain();
     renderOverlay();
     renderProps();
     saveLocal();
@@ -366,6 +384,91 @@ function renderOverlay() {
     layerOverlay.innerHTML = s;
 }
 
+/* 文字会话只持有草稿；确认才分配 ID、记录工程撤销及持久化。 */
+function canEditText(it) {
+    return it && (it.kind === 'label' || (it.kind === 'comp' && Razavi.textPos(it.type) !== 'none'));
+}
+function editingBlocked() {
+    if (!textSession) return false;
+    if (textEditor) textEditor.notify();
+    return true;
+}
+function startTextEdit(it) {
+    if (editingBlocked() || !canEditText(it)) return;
+    setTool('select'); closeMenus(false);
+    spaceDown = false;
+    textSession = { id: it.id || null, item: it, original: JSON.stringify(Razavi.richForItem(it)) };
+    drawMain(); renderOverlay(); renderProps(); updateQuickstartVisibility(); syncMenuStatus();
+    textEditor.start(it);
+}
+function finishTextEdit(model) {
+    var session = textSession;
+    textSession = null;
+    var changed = false;
+    if (model) {
+        var text = Razavi.richPlain(model), item = session.id ? byId(session.id) : session.item;
+        var empty = !text.trim();
+        if (item && ((!session.id && !empty) || (session.id &&
+                (JSON.stringify(model) !== session.original || (empty && item.kind === 'label'))))) {
+            pushUndo(); changed = true;
+            if (empty && session.id && item.kind === 'label') {
+                doc.items = doc.items.filter(function (it) { return it.id !== session.id; });
+                doc.groups.forEach(function (g) { g.members = g.members.filter(function (id) { return id !== session.id; }); });
+                doc.groups = doc.groups.filter(function (g) { return g.members.length; });
+                sel = sel.filter(function (id) { return id !== session.id; });
+            } else {
+                item.richText = model; item.text = text;
+                if (item.kind === 'label') item.anchor = model.align;
+                if (!session.id) { item.id = uid(); doc.items.push(item); sel = [item.id]; }
+            }
+        }
+    }
+    if (changed) render();
+    else { drawMain(); renderOverlay(); renderProps(); syncMenuState(); updateQuickstartVisibility(); }
+    svg.focus({ preventScroll: true });
+}
+function initTextEditing() {
+    var host = document.getElementById('ckTextHost');
+    textEditor = CircuitTextEditor.create({
+        host: host, box: document.getElementById('ckTextBox'), bar: document.getElementById('ckTextToolbar'),
+        hint: document.getElementById('ckTextHint'), finish: finishTextEdit,
+        project: function (x, y) {
+            var p = svg.createSVGPoint(); p.x = x; p.y = y;
+            var matrix = world.getScreenCTM(), point = p.matrixTransform(matrix), r = host.getBoundingClientRect();
+            return { x: point.x - r.left, y: point.y - r.top, scale: Math.hypot(matrix.a, matrix.b) };
+        }
+    });
+    /* 外部点击不提交、不穿透；仅允许菜单导航和主题切换。 */
+    function allowedOutside(target) {
+        return target.closest && target.closest('.theme-toggle, #ckMenubar [aria-controls], #ckMenubar [data-action="toggle-theme"]');
+    }
+    ['pointerdown', 'mousedown', 'click', 'dblclick', 'auxclick', 'wheel', 'drop'].forEach(function (type) {
+        document.addEventListener(type, function (e) {
+            if (!textSession || host.contains(e.target) || allowedOutside(e.target)) return;
+            e.preventDefault(); e.stopImmediatePropagation(); textEditor.notify();
+        }, { capture: true, passive: false });
+    });
+    document.addEventListener('keydown', function (e) {
+        if (!textSession || host.contains(e.target)) return;
+        if (e.key === 'Escape' && !e.isComposing) {
+            e.preventDefault(); e.stopImmediatePropagation(); closeMenus(false); textEditor.cancel(); return;
+        }
+        if (allowedOutside(e.target) || menubar.contains(e.target)) return;
+        e.preventDefault(); e.stopImmediatePropagation(); textEditor.notify();
+    }, true);
+    window.addEventListener('beforeunload', function (e) {
+        if (textSession) { e.preventDefault(); e.returnValue = ''; }
+    });
+    function refreshFonts() {
+        Razavi.clearTextCache(); previewKey = '';
+        drawMain(); renderOverlay(); schedulePlacementPreview(); textEditor.refresh();
+    }
+    if (document.fonts) {
+        document.fonts.ready.then(refreshFonts);
+        document.fonts.addEventListener('loadingdone', refreshFonts);
+    }
+}
+
 /* Manhattan 路径：起点 → 拐点 → 终点（先水平后垂直），共线去重 */
 function manhattan(a, b) {
     var pts = [{ x: a.x, y: a.y }];
@@ -384,13 +487,15 @@ function wirePath(a, b) {
    撤销 / 重做（快照命令栈，上限 50）
    ============================================ */
 function pushUndo() {
+    transformPivot = null;
     suppressSave = false;    // 有真实编辑动作，允许写回本地存档
     undoStack.push(JSON.stringify(doc));
     if (undoStack.length > 50) undoStack.shift();
     redoStack = [];
 }
 function undo() {
-    if (!undoStack.length) return;
+    if (editingBlocked() || !undoStack.length) return;
+    transformPivot = null;
     redoStack.push(JSON.stringify(doc));
     doc = JSON.parse(undoStack.pop());
     sel = [];
@@ -399,7 +504,8 @@ function undo() {
     setStatus('');
 }
 function redo() {
-    if (!redoStack.length) return;
+    if (editingBlocked() || !redoStack.length) return;
+    transformPivot = null;
     undoStack.push(JSON.stringify(doc));
     doc = JSON.parse(redoStack.pop());
     sel = [];
@@ -432,14 +538,14 @@ function placementPoint(e) {
 }
 
 /* 草稿不分配 id；预览和真正落下的器件共用全部默认属性 */
-function compDraft(type, x, y) {
-    return { kind: 'comp', type: type, x: x, y: y, rot: 0, fh: false, fv: false,
+function compDraft(type, x, y, direction) {
+    direction = direction || {};
+    return { kind: 'comp', type: type, x: x, y: y, rot: direction.rot || 0, fh: !!direction.fh, fv: !!direction.fv,
         text: DEFAULT_TEXT[type] || '', stroke: '#1a1a1a', sw: 1.5, dash: '' };
 }
 
-function pendingType() {
-    return paletteDrag && paletteDrag.moved ? paletteDrag.type : (placement && placement.type);
-}
+function pendingDraft() { return paletteDrag && paletteDrag.moved ? paletteDrag : placement; }
+function pendingType() { var draft = pendingDraft(); return draft && draft.type; }
 
 function syncInteractionCursor() {
     wrap.classList.toggle('placing', !!pendingType() || tool === 'wire' || tool === 'label');
@@ -456,7 +562,7 @@ function syncPaletteSelection() {
 }
 
 function hidePlacementPreview() {
-    if (previewKey) layerPreview.innerHTML = '';
+    if (layerPreview.firstChild) layerPreview.innerHTML = '';
     previewKey = '';
 }
 
@@ -467,9 +573,10 @@ function schedulePlacementPreview() {
         var type = pendingType();
         var p = type && placementPoint(lastPointer);
         if (!p || pickerEl) { hidePlacementPreview(); return; }
-        var key = type + ':' + p.x + ':' + p.y;
+        var direction = pendingDraft();
+        var key = [type, p.x, p.y, direction.rot, direction.fh, direction.fv].join(':');
         if (key !== previewKey) {
-            layerPreview.innerHTML = displayItemSvg(compDraft(type, p.x, p.y));
+            layerPreview.innerHTML = displayItemSvg(compDraft(type, p.x, p.y, direction));
             previewKey = key;
         }
         setStatus('｜ ' + Razavi.meta(type).nameZh + ' (' + p.x + ', ' + p.y + ')' +
@@ -492,9 +599,9 @@ function cancelPaletteDrag() {
 }
 
 function beginPlacement(type) {
-    if (!SYMBOLS[type]) return;
+    if (editingBlocked() || !SYMBOLS[type]) return;
     setTool('select');
-    placement = { type: type, mode: 'continuous' };
+    placement = { type: type, mode: 'continuous', rot: 0, fh: false, fv: false };
     syncPaletteSelection();
     syncInteractionCursor();
     syncMenuState();
@@ -533,7 +640,7 @@ function setStatus(extra) {
 function updateQuickstartVisibility() {
     if (!quickstartEl) return;
     var isEmpty = !doc.items.length;
-    if (isEmpty && !placement) {
+    if (isEmpty && !placement && !textSession && tool !== 'label') {
         quickstartEl.removeAttribute('hidden');
     } else {
         quickstartEl.setAttribute('hidden', '');
@@ -549,7 +656,7 @@ svg.addEventListener('mousedown', function (e) {
     svg.focus({ preventScroll: true });
     if (placement) {
         var anchor = placementPoint(e);
-        if (anchor) addComp(placement.type, anchor.x, anchor.y);
+        if (anchor) addComp(placement.type, anchor.x, anchor.y, placement);
         return;
     }
     var pos = evPos(e);
@@ -572,15 +679,8 @@ svg.addEventListener('mousedown', function (e) {
 
     /* ---- 标注模式 ---- */
     if (tool === 'label') {
-        var lt = prompt('标注文字：', '');
-        if (lt !== null && lt !== '') {
-            pushUndo();
-            var lb = { kind: 'label', id: uid(), x: snap(pos.x), y: snap(pos.y),
-                text: lt, anchor: 'start', size: 13, stroke: '#1a1a1a' };
-            doc.items.push(lb);
-            sel = [lb.id];
-        }
-        render();
+        startTextEdit({ kind: 'label', x: snap(pos.x), y: snap(pos.y),
+            text: '', anchor: 'start', size: 13, stroke: '#1a1a1a' });
         return;
     }
 
@@ -631,7 +731,7 @@ svg.addEventListener('mousedown', function (e) {
 });
 
 window.addEventListener('mousemove', function (e) {
-    if (placement || paletteDrag || propsDrag || isPanning || spaceDown || pickerEl) return;
+    if (textSession || placement || paletteDrag || propsDrag || isPanning || spaceDown || pickerEl) return;
     if (!drag && !isCanvasPoint(e)) {
         if (hoverPort || (wireStart && wireStart.cur)) {
             hoverPort = null;
@@ -708,15 +808,7 @@ svg.addEventListener('dblclick', function (e) {
     var pos = evPos(e);
     var hit = hitItem(pos.x, pos.y);
     if (!hit) return;
-    if (hit.kind === 'label') {
-        var t0 = prompt('标注文字：', hit.text || '');
-        if (t0 !== null) { pushUndo(); hit.text = t0; render(); }
-        return;
-    }
-    if (hit.kind === 'comp' && Razavi.textPos(hit.type) !== 'none') {
-        var t = prompt('文字标签：', hit.text || '');
-        if (t !== null) { pushUndo(); hit.text = t; render(); }
-    }
+    if (canEditText(hit)) startTextEdit(hit);
 });
 
 /* ============================================
@@ -771,7 +863,7 @@ window.addEventListener('mouseup', function (e) {
 /* 输入控件、菜单和选择器保留自身键盘行为 */
 function shortcutBlocked(e) {
     var target = e.target;
-    return e.defaultPrevented || e.isComposing || pickerEl ||
+    return textSession || e.defaultPrevented || e.isComposing || pickerEl ||
         (target && (target.isContentEditable || (target.closest && target.closest(
             'input, textarea, select, button, a, [role="button"], #ckMenubar, .ck-picker-mask'))));
 }
@@ -876,7 +968,7 @@ function bindPalItem(div, type) {
         setTool('select');
         svg.focus({ preventScroll: true });
         var sx = e.clientX, sy = e.clientY, pointerId = e.pointerId;
-        var state = { type: type, moved: false, cleanup: cleanup };
+        var state = { type: type, moved: false, rot: 0, fh: false, fv: false, cleanup: cleanup };
         paletteDrag = state;
         function track(ev) {
             var dx = ev.clientX - sx, dy = ev.clientY - sy;
@@ -911,8 +1003,9 @@ function bindPalItem(div, type) {
             var p = state.moved && placementPoint(ev);
             var hit = document.elementFromPoint(ev.clientX, ev.clientY);
             var clicked = !state.moved && hit && div.contains(hit);
+            var direction = { rot: state.rot, fh: state.fh, fv: state.fv };
             setTool('select');
-            if (p) addComp(type, p.x, p.y);
+            if (p) addComp(type, p.x, p.y, direction);
             else if (clicked) beginPlacement(type);
         }
         window.addEventListener('pointermove', mv);
@@ -923,9 +1016,10 @@ function bindPalItem(div, type) {
     });
 }
 
-function addComp(type, x, y) {
+function addComp(type, x, y, direction) {
+    if (editingBlocked()) return;
     pushUndo();
-    var c = compDraft(type, x, y);
+    var c = compDraft(type, x, y, direction);
     c.id = uid();
     doc.items.push(c);
     sel = [c.id];
@@ -948,12 +1042,23 @@ function normalizeItem(it) {
         it.stroke = it.stroke || '#1a1a1a';
     } else {
         it.kind = 'comp';
-        it.rot = it.rot || 0;
+        it.rot = Number.isFinite(it.rot) ? ((Math.round(it.rot) % 4) + 4) % 4 : 0;
         it.fh = !!it.fh; it.fv = !!it.fv;
         it.text = it.text || '';
         it.stroke = it.stroke || '#1a1a1a';
         it.sw = it.sw || 1.5;
         it.dash = it.dash || '';
+    }
+    if (it.kind !== 'wire') {
+        it.text = String(it.text == null ? '' : it.text);
+        if (it.kind === 'label') {
+            it.size = Razavi.textSize(it.size);
+            it.anchor = ['start', 'middle', 'end'].indexOf(it.anchor) >= 0 ? it.anchor : 'start';
+        }
+        if (it.richText) {
+            it.richText = Razavi.richForItem(it);
+            it.text = Razavi.richPlain(it.richText);
+        }
     }
 }
 
@@ -985,6 +1090,7 @@ function migrateDoc(d) {
    模板：共享标准图（RAZAVI_FIGURES）深拷贝插入画布中心并自动成组
    ============================================ */
 function insertFigure(key) {
+    if (editingBlocked()) return;
     var fig = window.RAZAVI_FIGURES && RAZAVI_FIGURES[key];
     if (!fig) return;
     setTool('select');
@@ -992,7 +1098,7 @@ function insertFigure(key) {
     var centerCanvas = screenToCanvas(r.x + r.width / 2, r.y + r.height / 2);
     var cx = snap(centerCanvas.x);
     var cy = snap(centerCanvas.y);
-    var b = Razavi.docBBox(fig.doc);
+    var b = Razavi.docBBox(fig.doc, TEXT_OPTIONS);
     var dx = cx - snap((b.x0 + b.x1) / 2);
     var dy = cy - snap((b.y0 + b.y1) / 2);
     pushUndo();
@@ -1029,26 +1135,44 @@ function selBBox() {
     return { x0: x0, y0: y0, x1: x1, y1: y1, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
 }
 
-/* 旋转/镜像：绕选区 bbox 中心（吸附网格），器件自身同步旋转/翻转 */
+/* 镜像以屏幕轴为准：奇数次旋转时交换器件局部镜像轴。 */
+function transformDirection(it, kind) {
+    if (kind === 'rot') it.rot = ((it.rot || 0) + 3) % 4;
+    else {
+        var axis = (it.rot || 0) % 2 ? (kind === 'fh' ? 'fv' : 'fh') : kind;
+        it[axis] = !it[axis];
+    }
+}
 function transformSel(kind) {
+    if (editingBlocked()) return;
+    var pending = pendingDraft();
+    if (pending) {
+        transformDirection(pending, kind);
+        schedulePlacementPreview();
+        return;
+    }
     var items = selItems();
     if (!items.length) return;
-    var bb = selBBox();
-    var cx = snap(bb.cx), cy = snap(bb.cy);
+    var bb = selBBox(), single = items.length === 1 && items[0].kind !== 'wire';
+    var signature = JSON.stringify(items), key = sel.slice().sort().join(',');
+    var previous = transformPivot && transformPivot.key === key && transformPivot.after === signature ? transformPivot : null;
+    var cx = single ? items[0].x : (previous ? previous.x : snap(bb.cx));
+    var cy = single ? items[0].y : (previous ? previous.y : snap(bb.cy));
+    function transformPoint(p) {
+        if (kind === 'rot') { var dx = p.x - cx, dy = p.y - cy; p.x = cx + dy; p.y = cy - dx; }
+        else if (kind === 'fh') p.x = 2 * cx - p.x;
+        else p.y = 2 * cy - p.y;
+    }
     pushUndo();
     items.forEach(function (it) {
-        if (it.kind === 'wire') {
-            it.pts.forEach(function (p) {
-                if (kind === 'rot') { var dx = p.x - cx, dy = p.y - cy; p.x = cx - dy; p.y = cy + dx; }
-                else if (kind === 'fh') p.x = 2 * cx - p.x;
-                else p.y = 2 * cy - p.y;
-            });
-        } else {
-            if (kind === 'rot') { var ddx = it.x - cx, ddy = it.y - cy; it.x = cx - ddy; it.y = cy + ddx; if (it.kind === 'comp') it.rot = (it.rot + 1) % 4; }
-            else if (kind === 'fh') { it.x = 2 * cx - it.x; if (it.kind === 'comp') it.fh = !it.fh; }
-            else { it.y = 2 * cy - it.y; if (it.kind === 'comp') it.fv = !it.fv; }
+        if (it.kind === 'wire') it.pts.forEach(transformPoint);
+        else {
+            transformPoint(it);
+            if (it.kind === 'comp') transformDirection(it, kind);
         }
     });
+    /* 连续变换保留同一中心，正向标号改变外框时也可四次旋转复原。 */
+    transformPivot = { key: key, after: JSON.stringify(items), x: cx, y: cy };
     render();
 }
 
@@ -1177,18 +1301,20 @@ var propWidth = document.getElementById('propWidth');
 var propColor = document.getElementById('propColor');
 var propDash = document.getElementById('propDash');
 var propText = document.getElementById('propText');
+var propEditText = document.getElementById('propEditText');
 var propVariantRow = document.getElementById('propVariantRow');
 var propVariant = document.getElementById('propVariant');
 
 function renderProps() {
     var items = selItems();
     selInfo.textContent = items.length ? '已选中 ' + items.length + ' 项' : '未选中任何对象';
+    propEditText.disabled = !!textSession || items.length !== 1 || !canEditText(items[0]);
+    propText.textContent = items.length === 1 && canEditText(items[0]) ? (items[0].text || '（空白标号）') :
+        (items.length > 1 ? '多选时不编辑文字' : '未选中文字');
     if (!items.length) { propVariantRow.style.display = 'none'; return; }
     propWidth.value = String(items[0].sw || 1.5);
     if (items[0].stroke) propColor.value = items[0].stroke;
     propDash.value = items[0].dash || '';
-    var t0 = items.filter(function (it) { return it.kind === 'comp' || it.kind === 'label'; })[0];
-    propText.value = t0 ? (t0.text || '') : '';
     /* 符号变体：选中项中含可变体器件（nmos/pmos）即可用，作用于全部此类器件 */
     var varComps = items.filter(function (it) { return it.kind === 'comp' && Razavi.variantOptions(it.type); });
     if (varComps.length) {
@@ -1204,6 +1330,7 @@ function renderProps() {
 }
 
 function applyProps(fn) {
+    if (editingBlocked()) return;
     var items = selItems();
     if (!items.length) return;
     pushUndo();
@@ -1223,9 +1350,9 @@ propDash.addEventListener('change', function () {
     var v = propDash.value;
     applyProps(function (it) { it.dash = v; });
 });
-propText.addEventListener('change', function () {
-    var v = propText.value;
-    applyProps(function (it) { if (it.kind === 'comp' || it.kind === 'label') it.text = v; });
+propEditText.addEventListener('click', function () {
+    var items = selItems();
+    if (items.length === 1) startTextEdit(items[0]);
 });
 propVariant.addEventListener('change', function () {
     var v = propVariant.value;
@@ -1334,6 +1461,7 @@ function refreshViewport() {
     clampProps();
     updateGridBounds();
     schedulePlacementPreview();
+    if (textEditor) textEditor.reposition();
 }
 function observeViewport() {
     window.addEventListener('resize', refreshViewport);
@@ -1355,6 +1483,8 @@ var menuStatus = document.getElementById('ckMenuStatus');
 var exportOptions = { svgTransparent: false, pngTransparent: false };
 
 function setTool(t) {
+    if (editingBlocked()) return;
+    transformPivot = null;
     cancelPaletteDrag();
     cancelPropsDrag();
     cancelPlacement();
@@ -1367,11 +1497,12 @@ function setTool(t) {
     renderOverlay();
     syncMenuState();
     setStatus('');
+    updateQuickstartVisibility();
 }
 
 function syncMenuStatus() {
     if (!menuStatus) return;
-    var label = placement ? '连续放置 · Esc 退出' : ({ select: '选择', wire: '连线', label: '文字标注' }[tool] || '选择');
+    var label = textSession ? 'Enter 确认，Esc 取消' : placement ? '连续放置 · Esc 退出' : ({ select: '选择', wire: '连线', label: '文字标注' }[tool] || '选择');
     menuStatus.textContent = label + ' · ' + Math.round(viewTransform.scale * 100) + '%';
 }
 
@@ -1391,7 +1522,8 @@ function syncMenuState() {
     };
     menubar.querySelectorAll('[data-action]').forEach(function (btn) {
         var action = btn.getAttribute('data-action');
-        btn.disabled = !!disabled[action] || count < Number(btn.getAttribute('data-min-selection') || 0);
+        var transform = ['rotate', 'flip-h', 'flip-v'].indexOf(action) >= 0;
+        btn.disabled = !!disabled[action] || (!(transform && pendingDraft()) && count < Number(btn.getAttribute('data-min-selection') || 0));
         if (Object.prototype.hasOwnProperty.call(checked, action)) btn.setAttribute('aria-checked', String(checked[action]));
     });
     document.getElementById('wireModeBtn').textContent = '走线：' + (wireMode === 'orth' ? '正交' : '斜线') + '（点击切换）';
@@ -1450,7 +1582,8 @@ var menuActions = {
 
 /* 插入分类与左侧面板使用相同的 catalog，不维护第二套器件清单 */
 function buildInsertMenu() {
-    var html = '<p class="ck-menu-note">选择器件后连续点击放置，Esc 退出</p>';
+    var html = '<button type="button" role="menuitem" data-action="tool-label">插入文字 <kbd>T</kbd></button><hr role="separator">' +
+        '<p class="ck-menu-note">连续放置；R 逆时针，Shift+R 左右翻转，Ctrl+R 上下翻转，Esc 退出</p>';
     function category(name, ids, index) {
         if (!ids.length) return;
         var menuId = 'menuDevice' + index;
@@ -1543,6 +1676,7 @@ function initMenus() {
         }
         var action = btn.getAttribute('data-action');
         var device = btn.getAttribute('data-device');
+        if (textSession && action !== 'toggle-theme') { textEditor.notify(); return; }
         var keepOpen = btn.getAttribute('role') === 'menuitemcheckbox';
         if (!keepOpen) {
             closeMenus(false);
@@ -1625,6 +1759,7 @@ function initMenus() {
 var pickerEl = null;
 
 function openDevicePicker() {
+    if (editingBlocked()) return;
     if (pickerEl) closeDevicePicker();
     cancelPaletteDrag();
     hidePlacementPreview();
@@ -1784,6 +1919,15 @@ document.addEventListener('keydown', function (e) {
         }
         return;
     }
+    var transformKey = k === 'r' || (!ctrl && !e.shiftKey && (k === 'h' || k === 'v'));
+    var canvasContext = document.activeElement === svg || svg.contains(document.activeElement) ||
+        (document.activeElement === document.body && isCanvasPoint(lastPointer));
+    if (transformKey && !(ctrl && e.shiftKey) && canvasContext && !propsDrag && !drag && !isPanning &&
+            !spaceDown && (pendingDraft() || (tool === 'select' && selItems().length))) {
+        e.preventDefault();
+        if (!e.repeat) transformSel(k === 'h' || e.shiftKey ? 'fh' : (k === 'v' || ctrl ? 'fv' : 'rot'));
+        return;
+    }
     if (paletteDrag || propsDrag || drag || isPanning) return;
     if (ctrl) {
         if (k === 'a') { e.preventDefault(); setTool('select'); sel = doc.items.map(function (it) { return it.id; }); render(); }
@@ -1802,9 +1946,7 @@ document.addEventListener('keydown', function (e) {
     else if (k === 'u') { e.preventDefault(); undo(); }
     else if (!placement) {
         if (k === 'delete' || k === 'backspace') { e.preventDefault(); delSel(); }
-        else if (k === 'r') transformSel('rot');
-        else if (k === 'h') transformSel('fh');
-        else if (k === 'v') transformSel('fv');
+        /* 变换键已在修饰键分发前处理，避免误拦截浏览器快捷键。 */
     }
 });
 
@@ -1814,7 +1956,7 @@ document.addEventListener('keydown', function (e) {
 function exportSvgStr(withBg) {
     return Razavi.docSvg(doc, {
         standalone: true, bg: withBg ? '#ffffff' : null, margin: 20,
-        font: FONT, stroke: '#1a1a1a', textColor: '#1a1a1a'
+        font: FONT, editorText: true, stroke: '#1a1a1a', textColor: '#1a1a1a'
     });
 }
 
@@ -1828,12 +1970,18 @@ function download(name, blob) {
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
 }
 
-function exportSVG() {
+async function exportSVG() {
+    if (editingBlocked()) return;
+    await readyTextFonts();
+    if (editingBlocked()) return;
     var r = exportSvgStr(!exportOptions.svgTransparent);
     download('circuit.svg', new Blob([r.str], { type: 'image/svg+xml' }));
 }
 
-function exportPNG() {
+async function exportPNG() {
+    if (editingBlocked()) return;
+    await readyTextFonts();
+    if (editingBlocked()) return;
     var trans = exportOptions.pngTransparent;
     var r = exportSvgStr(!trans);
     var img = new Image();
@@ -1849,7 +1997,10 @@ function exportPNG() {
 }
 
 /* 导出 PDF：白底 2x 位图（JPEG 不支持透明），走 common.js 最小 PDF 生成器 */
-function exportPDF() {
+async function exportPDF() {
+    if (editingBlocked()) return;
+    await readyTextFonts();
+    if (editingBlocked()) return;
     var r = exportSvgStr(true);
     var img = new Image();
     img.onload = function () {
@@ -1864,7 +2015,12 @@ function exportPDF() {
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
 }
 
+async function readyTextFonts() {
+    if (document.fonts) await document.fonts.ready;
+    Razavi.clearTextCache();
+}
 function exportJSON() {
+    if (editingBlocked()) return;
     download('circuit.json', new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }));
 }
 
@@ -1874,6 +2030,7 @@ impFile.addEventListener('change', function () {
     if (!f) return;
     var rd = new FileReader();
     rd.onload = function () {
+        if (editingBlocked()) { impFile.value = ''; return; }
         try {
             var d = JSON.parse(rd.result);
             if (!d || !Array.isArray(d.items)) throw new Error('bad json');
@@ -1898,6 +2055,7 @@ impFile.addEventListener('change', function () {
 });
 
 function newDoc() {
+    if (editingBlocked()) return;
     if (doc.items.length && !confirm('确定清空整个画布并新建工程？（可用 Ctrl+Z 撤销）')) return;
     pushUndo();
     doc = { items: [], groups: [] };
@@ -1912,7 +2070,7 @@ function newDoc() {
 }
 
 function saveLocal() {
-    if (suppressSave) return;
+    if (suppressSave || textSession) return;
     try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch (e) { /* 存储满忽略 */ }
 }
 
@@ -1977,6 +2135,7 @@ function sampleDoc() {
 (function boot() {
     buildPalette();
     initMenus();
+    initTextEditing();
     applyViewTransform();
     observeViewport();
     var loaded = loadLocal();
