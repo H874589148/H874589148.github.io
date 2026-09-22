@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24点计算器 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="p24-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">趣味游戏 / 24点计算器</span>
+    </nav>
+    <main class="container">
+        <header class="p24-header">
+            <div><h1>24点计算器</h1><p class="tool-desc">四个数字，加减乘除各取所需，凑出 24 · 交换/结合等价解法自动合并</p></div>
+        </header>
+
+        <div class="tab-nav" role="tablist" aria-label="24点功能">
+            <button type="button" class="tab-btn active" role="tab" id="tab-calc" data-tab="calc" aria-selected="true" aria-controls="panel-calc">24点计算器</button>
+            <button type="button" class="tab-btn" role="tab" id="tab-game" data-tab="game" aria-selected="false" aria-controls="panel-game" tabindex="-1">24点游戏</button>
+        </div>
+
+        <!-- ===== Tab 1：计算器 ===== -->
+        <section id="panel-calc" role="tabpanel" aria-labelledby="tab-calc">
+            <div class="paper-card tool-section">
+                <h2>输入四个数字</h2>
+                <p class="hint">点击数字按钮依次填入；点击某个输入框后，再点数字可单独修改该框。对应牌面：A=1，J=11，Q=12，K=13。</p>
+                <div class="num-inputs" id="numInputs" role="group" aria-label="四个数字输入框">
+                    <input type="text" class="num-input" readonly aria-label="第 1 个数字" placeholder="?">
+                    <input type="text" class="num-input" readonly aria-label="第 2 个数字" placeholder="?">
+                    <input type="text" class="num-input" readonly aria-label="第 3 个数字" placeholder="?">
+                    <input type="text" class="num-input" readonly aria-label="第 4 个数字" placeholder="?">
+                </div>
+                <div class="num-pad" id="numPad" role="group" aria-label="数字按钮 1 至 13"></div>
+                <div class="actions">
+                    <button type="button" class="btn btn-primary" id="calcRun">计算</button>
+                    <button type="button" class="btn" id="calcClear">清空</button>
+                </div>
+            </div>
+            <div class="paper-card tool-section">
+                <h2>答案</h2>
+                <div class="answers" id="calcAnswers" aria-live="polite"><p class="hint">输入四个数字后点击「计算」。</p></div>
+            </div>
+        </section>
+
+        <!-- ===== Tab 2：游戏 ===== -->
+        <section id="panel-game" role="tabpanel" aria-labelledby="tab-game" hidden>
+            <div class="paper-card tool-section">
+                <h2>随机发牌</h2>
+                <p class="hint">从一副 52 张扑克牌（无大小王）中随机抽 4 张，想想怎么用它们凑出 24，再点「解答」对答案。</p>
+                <div class="poker-row" id="pokerRow" aria-label="四张扑克牌"></div>
+                <div class="actions">
+                    <button type="button" class="btn btn-primary" id="gameDeal">生成</button>
+                    <button type="button" class="btn" id="gameSolve">解答</button>
+                </div>
+            </div>
+            <div class="paper-card tool-section">
+                <h2>答案</h2>
+                <div class="answers" id="gameAnswers" aria-live="polite"><p class="hint">点击「生成」发牌后开始。</p></div>
+            </div>
+        </section>
+
+        <div class="info-box">
+            <p><strong>规则与算法说明：</strong></p>
+            <ul>
+                <li>每个数字必须且只能使用一次，运算符为 ＋ − × ÷，中间结果允许为分数（如 8 ÷ (3 − 8 ÷ 3) = 24）。</li>
+                <li>求解采用"两两合并"递归，并对等价状态剪枝，计算量远小于枚举全部树形。</li>
+                <li>由加法/乘法交换律、结合律，以及 × 与 ÷、+ 与 − 之间的重结合产生的等价写法视为同一种解法，仅显示一种（如 (2+4)×2×2 与 (4+2)×2×2 合并为 2 × 2 × (2 + 4)；3×4÷(1÷2) 与 4÷(1÷2÷3) 也会合并）。</li>
+            </ul>
+        </div>
+    </main>
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> · 总浏览 <span id="busuanzi_value_site_pv">-</span> · 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

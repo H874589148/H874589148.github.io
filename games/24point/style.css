@@ -1,0 +1,104 @@
+/* 24点计算器：复用站点主题变量，白/黑夜模式自适应。 */
+.p24-page [hidden] { display: none !important; }
+.p24-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.p24-page .tool-desc { color: var(--color-text-secondary); margin-top: 8px; }
+.p24-page .hint { color: var(--color-text-secondary); font-size: .9rem; margin: 10px 0; }
+.p24-page h2 { margin-bottom: 12px; }
+.p24-page .paper-card { margin-bottom: 24px; }
+.p24-page .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+.p24-page button:focus-visible, .p24-page .num-input:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+
+/* ---- Tab 1：数字输入 ---- */
+.num-inputs { display: flex; gap: 14px; flex-wrap: wrap; margin: 16px 0; }
+.num-input {
+    width: 76px; height: 76px;
+    font-family: var(--font-mono); font-size: 1.8rem; text-align: center;
+    color: var(--color-text);
+    background: var(--color-card-bg);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    caret-color: transparent;
+    transition: border-color .15s, transform .1s;
+    padding: 0;
+}
+.num-input:hover { transform: translateY(-2px); }
+.num-input.filled { border-style: solid; border-color: var(--color-border-sketch); }
+.num-input.active { border: 2px solid var(--color-primary); box-shadow: 0 0 0 3px rgba(58, 90, 140, .2); }
+.num-pad { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 10px; margin: 8px 0 4px; }
+.num-key {
+    font-family: var(--font-mono); font-size: 1.2rem;
+    padding: 10px 0;
+    background: var(--color-card-bg);
+    color: var(--color-text);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sketch);
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+}
+.num-key:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--color-border-sketch); color: var(--color-primary); }
+.num-key:active { transform: translate(1px, 1px); box-shadow: none; }
+
+/* ---- Tab 2：扑克牌 ---- */
+.poker-row { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin: 20px 0 8px; perspective: 700px; }
+.poker-card {
+    position: relative;
+    width: 96px; height: 134px;
+    background: var(--color-card-bg);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: 10px 12px 11px 13px;
+    box-shadow: var(--shadow-sketch);
+    color: var(--color-text);
+    user-select: none;
+}
+.poker-card.red { color: var(--color-accent); }
+.poker-card .corner {
+    position: absolute;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 1.05rem; line-height: 1.05;
+    text-align: center;
+}
+.poker-card .corner.tl { top: 6px; left: 8px; }
+.poker-card .corner.br { bottom: 6px; right: 8px; transform: rotate(180deg); }
+.poker-card .pip {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem;
+}
+.poker-card.empty { border-style: dashed; border-color: var(--color-border); color: var(--color-text-muted); }
+.poker-card.empty .pip { font-size: 2.2rem; font-family: var(--font-title); }
+.poker-card.dealt { animation: p24deal .38s ease both; }
+@keyframes p24deal {
+    from { transform: rotateY(88deg) translateY(-10px); opacity: .2; }
+    to { transform: rotateY(0) translateY(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .poker-card.dealt { animation: none; }
+}
+
+/* ---- 答案区 ---- */
+.answers { min-height: 60px; }
+.answers .ans-count { font-family: var(--font-title); font-size: 1.25rem; color: var(--color-primary); margin-bottom: 10px; }
+.answers .ans-none { font-family: var(--font-title); font-size: 1.25rem; color: var(--color-accent); }
+.answers ol { margin: 0; padding-left: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.answers ol li {
+    font-family: var(--font-mono); font-size: 1rem;
+    background: var(--color-bg-paper);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    counter-increment: ans;
+    overflow-wrap: anywhere;
+}
+.answers ol { counter-reset: ans; }
+.answers ol li::before { content: counter(ans) ". "; color: var(--color-text-muted); }
+
+/* ---- 响应式 ---- */
+@media (max-width: 600px) {
+    .num-input { width: 62px; height: 62px; font-size: 1.4rem; }
+    .poker-card { width: 80px; height: 112px; }
+    .poker-card .pip { font-size: 2.4rem; }
+    .p24-page .tab-btn { flex: 1; padding: 10px 6px; }
+}

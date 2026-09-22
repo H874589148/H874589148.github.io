@@ -305,6 +305,11 @@
         <!-- ========== 趣味游戏 ========== -->
         <h2 class="section-title">趣味游戏</h2>
         <div class="card-grid">
+            <a href="games/24point/index.html" class="nav-card">
+                <div class="card-icon" id="icon-24point"></div>
+                <div class="card-title">24点计算器</div>
+                <div class="card-desc">四则运算凑 24：手动输入或随机发牌，全部解法去重展示</div>
+            </a>
             <a href="games/index.html" class="nav-card">
                 <div class="card-icon" id="icon-game"></div>
                 <div class="card-title">小游戏合集</div>
@@ -366,6 +371,7 @@
         document.getElementById('icon-waveform').innerHTML = Icons.waveform;
         document.getElementById('icon-fmea').innerHTML = Icons.fmea;
         document.getElementById('icon-dice').innerHTML = Icons.dice;
+        document.getElementById('icon-24point').innerHTML = Icons['24point'];
         document.getElementById('icon-book').innerHTML = Icons.book;
         document.getElementById('icon-links').innerHTML = Icons.links;
         document.getElementById('icon-game').innerHTML = Icons.game;
@@ -400,6 +406,7 @@
             'tools/fmea/': 'fmea fmeda 失效模式 故障 可靠性 iso 26262 asil spfm lfm pmhf fit mtbf 失效率 功能安全',
             'blog/': '论文 博客 笔记 blog paper 分享',
             'links/': '链接 导航 资源 网站 links 友链',
+            'games/24point/': '24点 扑克 速算 四则运算 凑24 加减乘除 卡牌 发牌 poker',
             'games/': '游戏 小游戏 休闲 game'
         };
         (function initSearch() {
