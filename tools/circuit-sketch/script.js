@@ -1148,6 +1148,8 @@ function insertFigure(key) {
     if (ids.length >= 2) doc.groups.push({ id: uid(), members: ids.slice() });
     hintMsg = '已插入模板「' + fig.name + '」，自动成组可整体拖动';
     render();
+    /* 焦点从模板按钮移回画布，避免 shortcutBlocked 把按钮键盘焦点误判为屏蔽，保证 Ctrl+Z 等快捷键可用 */
+    svg.focus();
 }
 
 document.querySelectorAll('.ck-tpl-list [data-tpl]').forEach(function (btn) {
