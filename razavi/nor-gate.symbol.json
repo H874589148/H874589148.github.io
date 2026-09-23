@@ -100,6 +100,8 @@
       },
       "radius": 3.374313,
       "part": "negation-bubble",
+      "fill": "none",
+      "stroke": "foreground",
       "style": {
         "strokeRole": "emphasis",
         "lineCap": "butt",

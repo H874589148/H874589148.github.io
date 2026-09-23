@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>逻辑真值表 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="tt-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">常用工具 / 逻辑真值表</span>
+    </nav>
+    <main class="container">
+        <header class="tt-header">
+            <div><h1>逻辑真值表</h1><p class="tool-desc">文本表达式或画布搭建组合逻辑，枚举全部输入组合生成真值表 · 位并行引擎一次计算 2<sup>n</sup> 行 · 本地运行，数据不上传</p></div>
+        </header>
+
+        <div class="tab-nav" role="tablist" aria-label="输入方式">
+            <button type="button" class="tab-btn active" role="tab" id="tab-text" data-tab="text" aria-selected="true" aria-controls="panel-text">01 文本输入</button>
+            <button type="button" class="tab-btn" role="tab" id="tab-canvas" data-tab="canvas" aria-selected="false" aria-controls="panel-canvas" tabindex="-1">02 画布搭建</button>
+        </div>
+
+        <!-- ===== Tab 1：文本输入 ===== -->
+        <section id="panel-text" role="tabpanel" aria-labelledby="tab-text">
+            <div class="paper-card tool-section">
+                <div class="tt-panel-head">
+                    <h2>描述你的逻辑</h2>
+                    <div class="tt-row">
+                        <label class="tt-small-label" for="textExample">载入示例</label>
+                        <select id="textExample" class="tt-select">
+                            <option value="">选择一个示例…</option>
+                            <option value="majority">三输入多数表决器</option>
+                            <option value="mux">2 选 1 选择器</option>
+                            <option value="adder">全加器 · 多输出</option>
+                            <option value="constant">常量输出</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="tt-text-layout">
+                    <div class="tt-codebox">
+                        <div class="tt-code-head"><span>circuit.logic</span><span>BOOLEAN EXPRESSION</span></div>
+                        <textarea id="src" aria-label="逻辑表达式" spellcheck="false" autocapitalize="off" autocomplete="off"># 三输入多数表决器
+# 至少两个输入为 1 时，maj 输出 1
+input a, b, c
+
+maj = (a & b) | (a & c) | (b & c)</textarea>
+                    </div>
+                    <aside class="tt-syntax">
+                        <h3>语法速查 <span class="hint">/ 优先级由高到低</span></h3>
+                        <div class="tt-operator"><span>非 NOT</span><code>~a　!a</code></div>
+                        <div class="tt-operator"><span>与 AND</span><code>a & b　a * b</code></div>
+                        <div class="tt-operator"><span>异或 XOR</span><code>a ^ b</code></div>
+                        <div class="tt-operator"><span>或 OR</span><code>a | b　a + b</code></div>
+                        <details>
+                            <summary>门函数与声明规则</summary>
+                            <p><code>and, or, nand, nor, xor, xnor</code> 至少 2 个参数；<code>not, buf</code> 为 1 个参数。支持括号、常量 0/1、# 或 // 注释。</p>
+                            <p>每行一个等式。右侧未赋值的名字自动作为输入；显式声明的输出与未被引用的定义共同作为输出。支持 <code>input a, b</code>、<code>output y</code> 和可选 <code>assign</code> 前缀，不支持完整 HDL。</p>
+                        </details>
+                    </aside>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn btn-primary" id="genText">生成真值表 →</button>
+                    <span class="hint"><kbd>Ctrl / ⌘ + Enter</kbd> 快速生成 · 仅 0 / 1 · 每行一个等式 · 不执行输入代码</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== Tab 2：画布搭建 ===== -->
+        <section id="panel-canvas" role="tabpanel" aria-labelledby="tab-canvas" hidden>
+            <div class="paper-card tool-section">
+                <div class="tt-panel-head">
+                    <h2>搭建逻辑电路</h2>
+                    <span class="hint">内嵌电路示意图编辑器 ·  Razavi 器件库</span>
+                </div>
+                <div class="tt-frame-wrap">
+                    <iframe id="ckFrame" src="../circuit-sketch/index.html?embed=tt&amp;devices=and-gate,or-gate,nand-gate,nor-gate,xor-gate,xnor-gate,inverter,buffer,tt-in,tt-out,tt-const0,tt-const1,dot" title="逻辑电路画布（电路示意图编辑器 embed 模式）"></iframe>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn btn-primary" id="genCanvas">生成真值表 →</button>
+                    <button type="button" class="btn" id="loadExample">载入示例（2 选 1 选择器）</button>
+                    <button type="button" class="btn" id="clearCanvas">清空画布</button>
+                    <span class="hint">放置器件后按 <kbd>W</kbd> 连线，双击器件改名；门输入悬空、多驱动、时序器件会在生成时报错</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 结果区 ===== -->
+        <div class="paper-card tool-section" id="panel-result">
+            <div class="tt-panel-head">
+                <h2 id="resultTitle">真值表</h2>
+                <span class="tt-badge" id="resultSource">等待计算</span>
+            </div>
+            <div class="tt-stats">
+                <div class="tt-stat"><div class="tt-stat-label">输入信号</div><div class="tt-stat-value" id="statInputs">—</div><div class="tt-stat-names" id="inputNames">—</div></div>
+                <div class="tt-stat"><div class="tt-stat-label">输出信号</div><div class="tt-stat-value" id="statOutputs">—</div><div class="tt-stat-names" id="outputNames">—</div></div>
+                <div class="tt-stat"><div class="tt-stat-label">输入组合</div><div class="tt-stat-value" id="statRows">—</div><div class="tt-stat-names">完整枚举 / 2^n</div></div>
+                <div class="tt-stat"><div class="tt-stat-label">后台求值耗时</div><div class="tt-stat-value"><span id="statTime">—</span><small> ms</small></div><div class="tt-stat-names">不含界面渲染</div></div>
+            </div>
+            <div id="status" role="status" aria-live="polite"></div>
+            <div id="summary"></div>
+            <div id="provenance"></div>
+            <div class="tt-table-tools">
+                <label><input type="checkbox" id="showInternal"> 显示中间信号</label>
+                <label><input type="checkbox" id="onlyOnes"> 只看输出含 1 的行</label>
+                <span class="tt-spacer"></span>
+                <span id="exportProgress" role="status"></span>
+                <button type="button" class="btn" id="exportCsv" title="导出当前列集合的全部行，不受筛选影响" disabled>导出 CSV ↓</button>
+            </div>
+            <div id="tableWrap" class="tt-table-wrap"><table id="tt" aria-label="逻辑真值表"></table></div>
+            <div class="tt-pagination">
+                <span id="pageInfo" class="hint"></span>
+                <span class="tt-spacer"></span>
+                <button type="button" class="btn" id="prevPage">上一页</button>
+                <button type="button" class="btn" id="nextPage">下一页</button>
+            </div>
+            <p class="hint tt-foot-hint">最左侧输入为最低位，按 0、1 交替枚举。每页 512 行；CSV 导出全部行，不受筛选影响。</p>
+        </div>
+
+        <div class="info-box">
+            <p><strong>功能与规则说明：</strong></p>
+            <ul>
+                <li>仅支持组合逻辑，最多 20 个输入（约 100 万行）；求值在后台 Worker 中进行，60 秒超时保护，表达式仅作为数据解析、绝不执行。</li>
+                <li>画布搭建复用「电路示意图编辑器」的画布与 Razavi 符号库：8 种组合逻辑门 + 逻辑输入（绿）/ 逻辑输出（蓝）/ 常量（灰）/ 连接点。</li>
+                <li>连线规则：端点重合与 T 接（含连接点）视为相连；十字交叉不相连（主流 EDA 约定）。门的每个输入引脚必须有唯一驱动，触发器等时序器件不支持。</li>
+                <li>「显示中间信号」可展开每个门输出列；「只看输出含 1」快速筛选；CSV 导出始终包含全部行。</li>
+            </ul>
+        </div>
+    </main>
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> · 总浏览 <span id="busuanzi_value_site_pv">-</span> · 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../razavi/razavi-symbols.js"></script>
+    <script src="../../razavi/render.js"></script>
+    <script src="engine.js"></script>
+    <script src="canvas-netlist.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

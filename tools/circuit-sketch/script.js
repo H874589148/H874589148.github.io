@@ -150,6 +150,32 @@ function uid() { return 'i' + (_uid++); }
    ============================================ */
 var SYMBOLS = Razavi.metaAll();
 
+/* ============================================
+   embed 精简模式：?embed=tt&devices=id1,id2,…
+   供真值表模块 iframe 嵌入；禁用本地存档与标准图载入，UI 隐藏 File 菜单/模板区/返回导航
+   ============================================ */
+var EMBED = (function () {
+    var mq = /[?&]embed=([a-z]+)/i.exec(location.search || '');
+    if (!mq || mq[1].toLowerCase() !== 'tt') return null;
+    var md = /[?&]devices=([a-z0-9,-]+)/i.exec(location.search || '');
+    var devices = md ? md[1].split(',').filter(function (id) { return !!SYMBOLS[id]; }) : [];
+    return { mode: 'tt', devices: devices };
+})();
+
+/* 器件可见性：embed 模式按 devices 白名单；主编辑器过滤 ttOnly 专用符号 */
+function deviceVisible(id) {
+    if (EMBED) return EMBED.devices.indexOf(id) >= 0;
+    var m = SYMBOLS[id];
+    return !(m && m.ttOnly);
+}
+
+/* embed 模式器件面板分组（设备白名单过滤后展示） */
+var EMBED_GROUPS = [
+    { name: '逻辑门', ids: ['and-gate', 'or-gate', 'nand-gate', 'nor-gate', 'xor-gate', 'xnor-gate', 'inverter', 'buffer'] },
+    { name: '输入输出', ids: ['tt-in', 'tt-out', 'tt-const0', 'tt-const1'] },
+    { name: '连接', ids: ['dot'] }
+];
+
 /* 放置器件时的默认文字标签 */
 var DEFAULT_TEXT = {
     nmos: 'M1', pmos: 'M1', npn: 'Q1', pnp: 'Q1',
@@ -639,6 +665,7 @@ function setStatus(extra) {
 /* 快速入门面板：画布完全空白时显示，添加任意对象后隐藏 */
 function updateQuickstartVisibility() {
     if (!quickstartEl) return;
+    if (EMBED) { quickstartEl.setAttribute('hidden', ''); return; }
     var isEmpty = !doc.items.length;
     if (isEmpty && !placement && !textSession && tool !== 'label') {
         quickstartEl.removeAttribute('hidden');
@@ -937,12 +964,19 @@ function palGroup(name, ids, isAux) {
 
 function buildPalette() {
     var s = '';
-    Razavi.CATS.forEach(function (cat) {
-        var ids = [];
-        Razavi.CATALOG.forEach(function (e) { if (e.palette && e.category === cat.id) ids.push(e.id); });
-        if (ids.length) s += palGroup(cat.name, ids, false);
-    });
-    s += palGroup('绘图辅助', Razavi.AUX_ORDER.slice(), true);
+    if (EMBED) {
+        EMBED_GROUPS.forEach(function (g) {
+            var ids = g.ids.filter(function (id) { return EMBED.devices.indexOf(id) >= 0; });
+            if (ids.length) s += palGroup(g.name, ids, false);
+        });
+    } else {
+        Razavi.CATS.forEach(function (cat) {
+            var ids = [];
+            Razavi.CATALOG.forEach(function (e) { if (e.palette && e.category === cat.id) ids.push(e.id); });
+            if (ids.length) s += palGroup(cat.name, ids, false);
+        });
+        s += palGroup('绘图辅助', Razavi.AUX_ORDER.filter(deviceVisible), true);
+    }
     palList.innerHTML = s;
     Array.prototype.forEach.call(palList.querySelectorAll('.pal-group-hd'), function (hd) {
         hd.addEventListener('click', function () { hd.parentNode.classList.toggle('collapsed'); });
@@ -1598,11 +1632,11 @@ function buildInsertMenu() {
         html += '</div>';
     }
     Razavi.CATS.forEach(function (cat, index) {
-        var ids = Razavi.CATALOG.filter(function (e) { return e.palette && e.category === cat.id; })
+        var ids = Razavi.CATALOG.filter(function (e) { return e.palette && e.category === cat.id && deviceVisible(e.id); })
             .map(function (e) { return e.id; });
         category(cat.name, ids, index);
     });
-    category('绘图辅助', Razavi.AUX_ORDER, 'Aux');
+    category('绘图辅助', Razavi.AUX_ORDER.filter(deviceVisible), 'Aux');
     document.getElementById('menuInsert').innerHTML = html;
 }
 
@@ -1831,7 +1865,7 @@ function renderPickerList(body, query) {
     Razavi.CATS.forEach(function (cat) {
         var ids = [];
         Razavi.CATALOG.forEach(function (e) {
-            if (!e.palette || e.category !== cat.id) return;
+            if (!e.palette || e.category !== cat.id || !deviceVisible(e.id)) return;
             if (query && (e.name + ' ' + e.nameZh + ' ' + e.id).toLowerCase().indexOf(query) < 0) return;
             ids.push(e.id);
         });
@@ -1847,6 +1881,7 @@ function renderPickerList(body, query) {
     /* 绘图辅助 */
     var auxIds = [];
     Razavi.AUX_ORDER.forEach(function (id) {
+        if (!deviceVisible(id)) return;
         if (query && (id + ' ' + (Razavi.AUX[id].nameZh || '') + ' ' + (Razavi.AUX[id].name || '')).toLowerCase().indexOf(query) < 0) return;
         auxIds.push(id);
     });
@@ -2070,7 +2105,7 @@ function newDoc() {
 }
 
 function saveLocal() {
-    if (suppressSave || textSession) return;
+    if (EMBED || suppressSave || textSession) return;
     try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch (e) { /* 存储满忽略 */ }
 }
 
@@ -2133,21 +2168,26 @@ function sampleDoc() {
 }
 
 (function boot() {
+    if (EMBED) document.body.classList.add('ck-embed');
     buildPalette();
     initMenus();
     initTextEditing();
     applyViewTransform();
     observeViewport();
-    var loaded = loadLocal();
-    if (!loaded) sampleDoc();
-    else if (loaded === 'v1') hintMsg = '已从旧版存档自动迁移为 Razavi 器件库';
+    if (EMBED) {
+        doc = { items: [], groups: [] };            // embed 模式禁用本地存档，始终空画布启动
+    } else {
+        var loaded = loadLocal();
+        if (!loaded) sampleDoc();
+        else if (loaded === 'v1') hintMsg = '已从旧版存档自动迁移为 Razavi 器件库';
+    }
     render();
     setStatus('');
     updateQuickstartVisibility();
 
-    /* 跳转传图：?fig=ota5|telescopic|folded|diffpair|curmirror → pushUndo 后载入标准图 */
+    /* 跳转传图：?fig=ota5|telescopic|folded|diffpair|curmirror → pushUndo 后载入标准图（embed 模式禁用） */
     var mq = /[?&]fig=([a-z0-9-]+)/i.exec(location.search || '');
-    if (mq && window.RAZAVI_FIGURES && RAZAVI_FIGURES[mq[1]]) {
+    if (!EMBED && mq && window.RAZAVI_FIGURES && RAZAVI_FIGURES[mq[1]]) {
         var fig = RAZAVI_FIGURES[mq[1]];
         pushUndo();                                    // Ctrl+Z 可恢复原画布
         doc = normalizeDoc(JSON.parse(JSON.stringify(fig.doc)));
@@ -2158,5 +2198,30 @@ function sampleDoc() {
         render();
         setStatus('');
         updateQuickstartVisibility();
+    }
+
+    /* embed 模式：与宿主页面（真值表模块）的 postMessage 数据桥
+       tt-get-doc → 回发 tt-doc；tt-load-doc → 校验后清空并载入（示例注入） */
+    if (EMBED) {
+        window.addEventListener('message', function (e) {
+            if (e.source !== window.parent) return;
+            var d = e.data;
+            if (!d || typeof d !== 'object') return;
+            if (d.type === 'tt-get-doc') {
+                window.parent.postMessage({ type: 'tt-doc', doc: JSON.parse(JSON.stringify(doc)) }, '*');
+            } else if (d.type === 'tt-load-doc') {
+                var incoming = d.doc;
+                if (!incoming || !Array.isArray(incoming.items)) return;
+                pushUndo();                            // Ctrl+Z 可恢复注入前画布
+                doc = normalizeDoc(JSON.parse(JSON.stringify(incoming)));
+                doc.groups = [];
+                sel = [];
+                render();
+                fitContent();
+                setStatus('');
+                updateQuickstartVisibility();
+            }
+        });
+        window.parent.postMessage({ type: 'tt-ready' }, '*');
     }
 })();

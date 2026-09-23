@@ -44,9 +44,41 @@ var AUX = {
         name: 'MUX', bbox: [-24, -24, 24, 24], textPos: 'center',
         ports: [{ x: -24, y: -10, n: 'in0' }, { x: -24, y: 10, n: 'in1' }, { x: 24, y: 0, n: 'out' }, { x: 0, y: 24, n: 'sel' }],
         body: function () { return '<path d="M-24,-24 L-24,24 L24,10 L24,-10 Z"/><path d="M0,24 L0,17"/>'; }
+    },
+    /* ---- 真值表模块专用 IO 符号（ttOnly：仅 embed=tt 模式的器件面板显示） ----
+       填充/描边走 style 内 CSS 变量，亮/暗主题在 circuit-sketch/style.css 定义，回退色随行内默认 */
+    'tt-in': {
+        name: '逻辑输入', bbox: [-32, -18, 32, 18], textPos: 'center', ttOnly: true,
+        ports: [{ x: 32, y: 0, n: 'out' }],
+        body: function () {
+            return '<rect x="-32" y="-18" width="64" height="36" rx="7" style="fill:var(--tt-in-bg,#e9f7f1);stroke:var(--tt-in-fg,#3d9a76)"/>';
+        }
+    },
+    'tt-out': {
+        name: '逻辑输出', bbox: [-32, -18, 32, 18], textPos: 'center', ttOnly: true,
+        ports: [{ x: -32, y: 0, n: 'in' }],
+        body: function () {
+            return '<rect x="-32" y="-18" width="64" height="36" rx="7" style="fill:var(--tt-out-bg,#eaf2fb);stroke:var(--tt-out-fg,#4a7fbd)"/>';
+        }
+    },
+    'tt-const0': {
+        name: '常量 0', bbox: [-18, -18, 18, 18], textPos: 'none', ttOnly: true,
+        ports: [{ x: 18, y: 0, n: 'out' }],
+        body: function () {
+            return '<rect x="-18" y="-18" width="36" height="36" rx="7" style="fill:var(--tt-const-bg,#f0f0f0);stroke:var(--tt-const-fg,#8a8a8a)"/>' +
+                '<text x="0" y="6" font-size="16" text-anchor="middle" stroke="none" style="fill:var(--tt-const-fg,#8a8a8a)">0</text>';
+        }
+    },
+    'tt-const1': {
+        name: '常量 1', bbox: [-18, -18, 18, 18], textPos: 'none', ttOnly: true,
+        ports: [{ x: 18, y: 0, n: 'out' }],
+        body: function () {
+            return '<rect x="-18" y="-18" width="36" height="36" rx="7" style="fill:var(--tt-const-bg,#f0f0f0);stroke:var(--tt-const-fg,#8a8a8a)"/>' +
+                '<text x="0" y="6" font-size="16" text-anchor="middle" stroke="none" style="fill:var(--tt-const-fg,#8a8a8a)">1</text>';
+        }
     }
 };
-var AUX_ORDER = ['dot', 'arrow', 'block', 'mux'];
+var AUX_ORDER = ['dot', 'arrow', 'block', 'mux', 'tt-in', 'tt-out', 'tt-const0', 'tt-const1'];
 
 /* ============================================ 基础工具 ============================================ */
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -281,7 +313,7 @@ function textPos(id) {
 function meta(id) {
     if (AUX[id]) {
         var a = AUX[id];
-        return { id: id, name: a.name, nameZh: a.name, cat: 'aux', catName: '绘图辅助', bbox: a.bbox, textPos: a.textPos, razavi: false, hasVariants: false };
+        return { id: id, name: a.name, nameZh: a.name, cat: 'aux', catName: '绘图辅助', bbox: a.bbox, textPos: a.textPos, razavi: false, hasVariants: false, ttOnly: a.ttOnly === true };
     }
     var e = catEntry(id);
     return {

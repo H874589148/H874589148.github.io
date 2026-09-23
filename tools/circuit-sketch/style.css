@@ -19,13 +19,32 @@ body.ck-page { display: flex; flex-direction: column; }
     --ck-ink: #1a1a1a;
     --ck-grid-minor: #d4cfc0;
     --ck-grid-major: #b8b3a3;
+    /* 真值表 embed 模式 tt-* IO 符号配色（render.js AUX body 引用） */
+    --tt-in-bg: #e9f7f1;
+    --tt-in-fg: #3d9a76;
+    --tt-out-bg: #eaf2fb;
+    --tt-out-fg: #4a7fbd;
+    --tt-const-bg: #f0f0f0;
+    --tt-const-fg: #8a8a8a;
 }
 [data-theme="dark"] .ck-editor {
     --ck-bg: var(--color-bg);
     --ck-ink: var(--color-text);
     --ck-grid-minor: var(--color-bg-grid);
     --ck-grid-major: var(--color-border);
+    --tt-in-bg: #16352b;
+    --tt-in-fg: #5cc79c;
+    --tt-out-bg: #16283c;
+    --tt-out-fg: #6ea3e0;
+    --tt-const-bg: #2c2c30;
+    --tt-const-fg: #9a9aa2;
 }
+
+/* embed 精简模式：隐藏返回导航 / 标题行 / File 菜单 / 模板区 */
+.ck-embed .top-nav { display: none; }
+.ck-embed .ck-header-row { display: none; }
+.ck-embed .ck-menubar .ck-menu:first-child { display: none; }
+.ck-embed .ck-tpl-title, .ck-embed .ck-tpl-list { display: none; }
 
 /* 紧凑顶部：标题 + 说明 + 菜单 */
 .ck-header {

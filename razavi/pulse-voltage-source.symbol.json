@@ -44,6 +44,8 @@
         "y": 0
       },
       "radius": 10.755814,
+      "fill": "none",
+      "stroke": "foreground",
       "style": {
         "strokeRole": "normal",
         "lineCap": "butt",
