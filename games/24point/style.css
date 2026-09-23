@@ -95,6 +95,30 @@
 .answers ol { counter-reset: ans; }
 .answers ol li::before { content: counter(ans) ". "; color: var(--color-text-muted); }
 
+/* ---- 计时器与历史成绩 ---- */
+.game-timer {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 8px 0 0;
+}
+.history-avg { font-family: var(--font-title); font-size: 1.15rem; color: var(--color-primary); margin: 0 0 12px; }
+.history-list { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.history-list li {
+    display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
+    background: var(--color-bg-paper);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+}
+.history-list .h-no { font-family: var(--font-mono); font-size: .9rem; color: var(--color-text-muted); }
+.history-list .h-time { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; }
+.history-list .h-cards { font-family: var(--font-mono); font-size: 1rem; display: inline-flex; gap: 6px; }
+.history-list .h-cards .red { color: var(--color-accent); }
+.history-list .h-unsolvable { font-size: .9rem; color: var(--color-text-muted); }
+
 /* ---- 响应式 ---- */
 @media (max-width: 600px) {
     .num-input { width: 62px; height: 62px; font-size: 1.4rem; }

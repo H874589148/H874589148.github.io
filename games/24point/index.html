@@ -57,6 +57,7 @@
             <div class="paper-card tool-section">
                 <h2>随机发牌</h2>
                 <p class="hint">从一副 52 张扑克牌（无大小王）中随机抽 4 张，想想怎么用它们凑出 24，再点「解答」对答案。</p>
+                <div class="game-timer" id="gameTimer" role="timer">0.0 秒</div>
                 <div class="poker-row" id="pokerRow" aria-label="四张扑克牌"></div>
                 <div class="actions">
                     <button type="button" class="btn btn-primary" id="gameDeal">生成</button>
@@ -66,6 +67,11 @@
             <div class="paper-card tool-section">
                 <h2>答案</h2>
                 <div class="answers" id="gameAnswers" aria-live="polite"><p class="hint">点击「生成」发牌后开始。</p></div>
+            </div>
+            <div class="paper-card tool-section">
+                <h2>历史成绩</h2>
+                <p class="history-avg" id="historyAvg" aria-live="polite">暂无成绩，点击「生成」开始第一局。</p>
+                <ol class="history-list" id="historyList"></ol>
             </div>
         </section>
 

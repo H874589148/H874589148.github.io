@@ -146,7 +146,27 @@ function solve24(numbers) {
     return Array.from(new Set(Array.from(found.values()).map(fmtExpr)));
 }
 
-var api = { solve24: solve24, canonKey: canonKey, fmtExpr: fmtExpr, frac: frac };
+/* ==================== 计时与成绩（纯函数，可 Node 测试） ==================== */
+function fmtTime(ms) {
+    var t = Math.max(0, ms) / 1000;
+    if (t < 60) return t.toFixed(1) + ' 秒';
+    var total = Math.round(t * 10);   // 十分位先取整，避免 9.96 秒格式化成 '010.0'
+    var m = Math.floor(total / 600), s = (total - m * 600) / 10;
+    return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1);
+}
+function pushRecord(list, rec, maxLen) {
+    list.unshift(rec);
+    if (list.length > maxLen) list.length = maxLen;
+    return list;
+}
+function avgMs(list) {
+    if (!list.length) return null;
+    var sum = 0;
+    for (var i = 0; i < list.length; i++) sum += list[i].ms;
+    return sum / list.length;
+}
+
+var api = { solve24: solve24, canonKey: canonKey, fmtExpr: fmtExpr, frac: frac, fmtTime: fmtTime, pushRecord: pushRecord, avgMs: avgMs };
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 root.P24 = api;
 if (typeof document === 'undefined') return;
@@ -246,7 +266,38 @@ function paintHand(dealt) {
         pokerRow.appendChild(card);
     }
 }
+/* ---- 计时与历史成绩（内存保存，不持久化，刷新/关闭即清空） ---- */
+var dealStart = null;      // 上次点「生成」的时间戳（null = 尚未发牌）
+var timerId = null;
+var records = [];          // [{no, ms, hand, solvable}]，最新在顶，最多 10 条
+var handNo = 0;            // 已发局数，即当前局序号
+var handSolvable = true;   // 当前局是否可解
+
+function renderHistory() {
+    var avgEl = $('historyAvg'), listEl = $('historyList');
+    if (!records.length) {
+        avgEl.textContent = '暂无成绩，点击「生成」开始第一局。';
+        listEl.innerHTML = '';
+        return;
+    }
+    avgEl.textContent = '平均成绩 ' + fmtTime(avgMs(records)) + ' · 共 ' + records.length + ' 局';
+    listEl.innerHTML = records.map(function (r) {
+        var cards = r.hand.map(function (c) {
+            return '<span class="' + (isRed(c.suit) ? 'red' : '') + '">' + esc(rankText(c.rank) + SUITS[c.suit]) + '</span>';
+        }).join(' ');
+        return '<li><span class="h-no">#' + r.no + '</span><span class="h-time">' + esc(fmtTime(r.ms)) + '</span>' +
+            '<span class="h-cards">' + cards + '</span>' +
+            (r.solvable ? '' : '<span class="h-unsolvable">（无解）</span>') + '</li>';
+    }).join('');
+}
+
 $('gameDeal').addEventListener('click', function () {
+    /* 1. 结算上一局：用时 = 距上次点「生成」的间隔（纯生成间隔，点「解答」不停表） */
+    if (dealStart !== null) {
+        pushRecord(records, { no: handNo, ms: Date.now() - dealStart, hand: hand.slice(), solvable: handSolvable }, 10);
+        renderHistory();
+    }
+    /* 2. 洗牌发牌 */
     var deck = [];
     for (var r = 1; r <= 13; r++) for (var s = 0; s < 4; s++) deck.push({ rank: r, suit: s });
     for (var i = deck.length - 1; i > 0; i--) {
@@ -254,8 +305,17 @@ $('gameDeal').addEventListener('click', function () {
         var t = deck[i]; deck[i] = deck[j]; deck[j] = t;
     }
     hand = deck.slice(0, 4);
+    handNo++;
+    handSolvable = solve24(hand.map(function (c) { return c.rank; })).length > 0;
     paintHand(true);
     $('gameAnswers').innerHTML = '<p class="hint">牌已发好，先心算，再点「解答」。</p>';
+    /* 3. 计时器归零重走 */
+    dealStart = Date.now();
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(function () {
+        $('gameTimer').textContent = fmtTime(Date.now() - dealStart);
+    }, 100);
+    $('gameTimer').textContent = fmtTime(0);
 });
 $('gameSolve').addEventListener('click', function () {
     if (!hand) {
