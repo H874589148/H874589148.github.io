@@ -88,7 +88,7 @@ maj = (a & b) | (a & c) | (b & c)</textarea>
                     <button type="button" class="btn btn-primary" id="genCanvas">生成真值表 →</button>
                     <button type="button" class="btn" id="loadExample">载入示例（2 选 1 选择器）</button>
                     <button type="button" class="btn" id="clearCanvas">清空画布</button>
-                    <span class="hint">放置器件后按 <kbd>W</kbd> 连线，双击器件改名；门输入悬空、多驱动、时序器件会在生成时报错</span>
+                    <span class="hint">放置后按 <kbd>W</kbd> 连线；按 <kbd>Esc</kbd> 返回选择模式，双击输入/输出端口或名称改名；<kbd>Enter</kbd> 确认，<kbd>Esc</kbd> 取消</span>
                 </div>
             </div>
         </section>
@@ -129,7 +129,8 @@ maj = (a & b) | (a & c) | (b & c)</textarea>
             <p><strong>功能与规则说明：</strong></p>
             <ul>
                 <li>仅支持组合逻辑，最多 20 个输入（约 100 万行）；求值在后台 Worker 中进行，60 秒超时保护，表达式仅作为数据解析、绝不执行。</li>
-                <li>画布搭建复用「电路示意图编辑器」的画布与 Razavi 符号库：8 种组合逻辑门 + 逻辑输入（绿）/ 逻辑输出（蓝）/ 常量（灰）/ 连接点。</li>
+                <li>画布搭建复用「电路示意图编辑器」的画布与 Razavi 符号库：8 种组合逻辑门 + 逻辑输入 / 逻辑输出 / 常量 0 / 常量 1 / 连接点。输入/输出使用单色空心端口，默认输入引线向右、输出引线向左；四种器件也可在主编辑器的「输入输出」分组中使用。</li>
+                <li>双击输入/输出端口或名称可改名：以英文字母或下划线开头，仅含英文字母、数字、下划线；区分大小写，输入与输出不能重名，留空时生成真值表自动命名。常量 0/1 固定不可改名；确认后的改名可用 Ctrl+Z 撤销。</li>
                 <li>连线规则：端点重合与 T 接（含连接点）视为相连；十字交叉不相连（主流 EDA 约定）。门的每个输入引脚必须有唯一驱动，触发器等时序器件不支持。</li>
                 <li>「显示中间信号」可展开每个门输出列；「只看输出含 1」快速筛选；CSV 导出始终包含全部行。</li>
             </ul>

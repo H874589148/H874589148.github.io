@@ -172,7 +172,7 @@ function deviceVisible(id) {
 /* embed 模式器件面板分组（设备白名单过滤后展示） */
 var EMBED_GROUPS = [
     { name: '逻辑门', ids: ['and-gate', 'or-gate', 'nand-gate', 'nor-gate', 'xor-gate', 'xnor-gate', 'inverter', 'buffer'] },
-    { name: '输入输出', ids: ['tt-in', 'tt-out', 'tt-const0', 'tt-const1'] },
+    { name: '输入输出', ids: Razavi.LOGIC_IO_ORDER },
     { name: '连接', ids: ['dot'] }
 ];
 
@@ -414,6 +414,21 @@ function renderOverlay() {
 function canEditText(it) {
     return it && (it.kind === 'label' || (it.kind === 'comp' && Razavi.textPos(it.type) !== 'none'));
 }
+function isLogicSignal(it) {
+    return it && it.kind === 'comp' && (it.type === 'tt-in' || it.type === 'tt-out');
+}
+function validateSignalName(model, item) {
+    if (!isLogicSignal(item)) return '';
+    var text = Razavi.richPlain(model);
+    if (text === '') return '';
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(text) || /[\r\n]/.test(text)) {
+        return '信号名须以英文字母或下划线开头，仅含英文字母、数字、下划线；不能包含空格或换行。';
+    }
+    var duplicate = doc.items.some(function (other) {
+        return other.id !== item.id && isLogicSignal(other) && String(other.text || '').trim() === text;
+    });
+    return duplicate ? '信号名「' + text + '」已被其他输入或输出使用，请使用不同名称。' : '';
+}
 function editingBlocked() {
     if (!textSession) return false;
     if (textEditor) textEditor.notify();
@@ -425,7 +440,10 @@ function startTextEdit(it) {
     spaceDown = false;
     textSession = { id: it.id || null, item: it, original: JSON.stringify(Razavi.richForItem(it)) };
     drawMain(); renderOverlay(); renderProps(); updateQuickstartVisibility(); syncMenuStatus();
-    textEditor.start(it);
+    textEditor.start(it, isLogicSignal(it) ? {
+        singleLine: true, selectAll: true,
+        hint: (it.type === 'tt-in' ? '输入' : '输出') + '信号名；Enter 确认，Esc 取消；仅限英文字母、数字、下划线，不以数字开头；留空时生成真值表自动命名'
+    } : {});
 }
 function finishTextEdit(model) {
     var session = textSession;
@@ -457,7 +475,7 @@ function initTextEditing() {
     var host = document.getElementById('ckTextHost');
     textEditor = CircuitTextEditor.create({
         host: host, box: document.getElementById('ckTextBox'), bar: document.getElementById('ckTextToolbar'),
-        hint: document.getElementById('ckTextHint'), finish: finishTextEdit,
+        hint: document.getElementById('ckTextHint'), finish: finishTextEdit, validate: validateSignalName,
         project: function (x, y) {
             var p = svg.createSVGPoint(); p.x = x; p.y = y;
             var matrix = world.getScreenCTM(), point = p.matrixTransform(matrix), r = host.getBoundingClientRect();
@@ -930,7 +948,7 @@ window.addEventListener('pointercancel', resetPointerInteractions);
 /* 初始化视图变换在 boot 中执行，确保面板与菜单均已就绪 */
 
 /* ============================================
-   器件面板：11 个可折叠分组（10 个 razavi 分类 + 绘图辅助）
+   器件面板：12 个可折叠分组（10 个 razavi 分类 + 输入输出 + 绘图辅助）
    拖放或点击放置
    ============================================ */
 var palList = document.getElementById('palList');
@@ -944,8 +962,7 @@ function palPreview(type) {
     if (m.razavi) {
         inner = Razavi.symbolInner(type, { stroke: 'currentColor', sw: 1.5, textColor: 'currentColor', showPinNames: false });
     } else {
-        inner = '<g stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
-            Razavi.AUX[type].body({ stroke: 'currentColor' }) + '</g>';
+        inner = Razavi.itemSvg({ kind: 'comp', type: type, x: 0, y: 0, text: '', stroke: 'currentColor', sw: 1.5 }, { editorText: true });
     }
     return '<svg width="56" height="40" viewBox="' + vb + '" preserveAspectRatio="xMidYMid meet" style="color:var(--color-border-sketch)">' + inner + '</svg>';
 }
@@ -975,7 +992,10 @@ function buildPalette() {
             Razavi.CATALOG.forEach(function (e) { if (e.palette && e.category === cat.id) ids.push(e.id); });
             if (ids.length) s += palGroup(cat.name, ids, false);
         });
-        s += palGroup('绘图辅助', Razavi.AUX_ORDER.filter(deviceVisible), true);
+        Razavi.AUX_GROUPS.forEach(function (g) {
+            var ids = g.ids.filter(deviceVisible);
+            if (ids.length) s += palGroup(g.name, ids, g.id === 'aux');
+        });
     }
     palList.innerHTML = s;
     Array.prototype.forEach.call(palList.querySelectorAll('.pal-group-hd'), function (hd) {
@@ -1638,7 +1658,9 @@ function buildInsertMenu() {
             .map(function (e) { return e.id; });
         category(cat.name, ids, index);
     });
-    category('绘图辅助', Razavi.AUX_ORDER.filter(deviceVisible), 'Aux');
+    Razavi.AUX_GROUPS.forEach(function (g) {
+        category(g.name, g.ids.filter(deviceVisible), g.id);
+    });
     document.getElementById('menuInsert').innerHTML = html;
 }
 
@@ -1880,22 +1902,20 @@ function renderPickerList(body, query) {
                 palPreview(id) + '<span>' + Razavi.esc(m.nameZh) + ' <small style="color:var(--color-text-muted)">' + Razavi.esc(m.name) + '</small></span></button>';
         });
     });
-    /* 绘图辅助 */
-    var auxIds = [];
-    Razavi.AUX_ORDER.forEach(function (id) {
-        if (!deviceVisible(id)) return;
-        if (query && (id + ' ' + (Razavi.AUX[id].nameZh || '') + ' ' + (Razavi.AUX[id].name || '')).toLowerCase().indexOf(query) < 0) return;
-        auxIds.push(id);
-    });
-    if (auxIds.length) {
-        html += '<div class="ck-picker-cat">绘图辅助</div>';
-        auxIds.forEach(function (id) {
+    /* 共享辅助分组与器件面板、插入菜单保持一致。 */
+    Razavi.AUX_GROUPS.forEach(function (g) {
+        var ids = g.ids.filter(function (id) {
+            return deviceVisible(id) && (!query || (id + ' ' + Razavi.meta(id).nameZh).toLowerCase().indexOf(query) >= 0);
+        });
+        if (!ids.length) return;
+        html += '<div class="ck-picker-cat">' + Razavi.esc(g.name) + '</div>';
+        ids.forEach(function (id) {
             var a = Razavi.meta(id);
             if (!firstType) firstType = id;
             html += '<button type="button" class="ck-picker-item" data-type="' + Razavi.esc(id) + '">' +
                 palPreview(id) + '<span>' + Razavi.esc(a.nameZh || id) + '</span></button>';
         });
-    }
+    });
     if (!html) html = '<div class="ck-picker-empty">无匹配器件</div>';
     body.innerHTML = html;
     if (firstType) body.querySelector('.ck-picker-item').classList.add('active');

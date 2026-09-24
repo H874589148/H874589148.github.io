@@ -45,40 +45,42 @@ var AUX = {
         ports: [{ x: -24, y: -10, n: 'in0' }, { x: -24, y: 10, n: 'in1' }, { x: 24, y: 0, n: 'out' }, { x: 0, y: 24, n: 'sel' }],
         body: function () { return '<path d="M-24,-24 L-24,24 L24,10 L24,-10 Z"/><path d="M0,24 L0,17"/>'; }
     },
-    /* ---- 真值表模块专用 IO 符号（ttOnly：仅 embed=tt 模式的器件面板显示） ----
-       填充/描边走 style 内 CSS 变量，亮/暗主题在 circuit-sketch/style.css 定义，回退色随行内默认 */
+    /* ---- 共享逻辑 IO：沿用旧引脚坐标，单色轮廓与文字由统一渲染器输出 ---- */
     'tt-in': {
-        name: '逻辑输入', bbox: [-32, -18, 32, 18], textPos: 'center', ttOnly: true,
+        name: '逻辑输入', bbox: [-32, -18, 32, 18], textPos: 'top',
         ports: [{ x: 32, y: 0, n: 'out' }],
         body: function () {
-            return '<rect x="-32" y="-18" width="64" height="36" rx="7" style="fill:var(--tt-in-bg,#e9f7f1);stroke:var(--tt-in-fg,#3d9a76)"/>';
+            return '<path d="M-22,-12 H10 L22,0 L10,12 H-22 Z"/><path d="M22,0 H32"/>';
         }
     },
     'tt-out': {
-        name: '逻辑输出', bbox: [-32, -18, 32, 18], textPos: 'center', ttOnly: true,
+        name: '逻辑输出', bbox: [-32, -18, 32, 18], textPos: 'top',
         ports: [{ x: -32, y: 0, n: 'in' }],
         body: function () {
-            return '<rect x="-32" y="-18" width="64" height="36" rx="7" style="fill:var(--tt-out-bg,#eaf2fb);stroke:var(--tt-out-fg,#4a7fbd)"/>';
+            return '<path d="M22,-12 H-10 L-22,0 L-10,12 H22 Z"/><path d="M-32,0 H-22"/>';
         }
     },
     'tt-const0': {
-        name: '常量 0', bbox: [-18, -18, 18, 18], textPos: 'none', ttOnly: true,
+        name: '常量 0', bbox: [-18, -18, 18, 18], textPos: 'none', fixedText: '0',
         ports: [{ x: 18, y: 0, n: 'out' }],
         body: function () {
-            return '<rect x="-18" y="-18" width="36" height="36" rx="7" style="fill:var(--tt-const-bg,#f0f0f0);stroke:var(--tt-const-fg,#8a8a8a)"/>' +
-                '<text x="0" y="6" font-size="16" text-anchor="middle" stroke="none" style="fill:var(--tt-const-fg,#8a8a8a)">0</text>';
+            return '<rect x="-10" y="-10" width="20" height="20"/><path d="M10,0 H18"/>';
         }
     },
     'tt-const1': {
-        name: '常量 1', bbox: [-18, -18, 18, 18], textPos: 'none', ttOnly: true,
+        name: '常量 1', bbox: [-18, -18, 18, 18], textPos: 'none', fixedText: '1',
         ports: [{ x: 18, y: 0, n: 'out' }],
         body: function () {
-            return '<rect x="-18" y="-18" width="36" height="36" rx="7" style="fill:var(--tt-const-bg,#f0f0f0);stroke:var(--tt-const-fg,#8a8a8a)"/>' +
-                '<text x="0" y="6" font-size="16" text-anchor="middle" stroke="none" style="fill:var(--tt-const-fg,#8a8a8a)">1</text>';
+            return '<rect x="-10" y="-10" width="20" height="20"/><path d="M10,0 H18"/>';
         }
     }
 };
-var AUX_ORDER = ['dot', 'arrow', 'block', 'mux', 'tt-in', 'tt-out', 'tt-const0', 'tt-const1'];
+var LOGIC_IO_ORDER = ['tt-in', 'tt-out', 'tt-const0', 'tt-const1'];
+var AUX_GROUPS = [
+    { id: 'logic-io', name: '输入输出', ids: LOGIC_IO_ORDER },
+    { id: 'aux', name: '绘图辅助', ids: ['dot', 'arrow', 'block', 'mux'] }
+];
+var AUX_ORDER = AUX_GROUPS[1].ids.concat(LOGIC_IO_ORDER);
 
 /* ============================================ 基础工具 ============================================ */
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -312,8 +314,8 @@ function textPos(id) {
 
 function meta(id) {
     if (AUX[id]) {
-        var a = AUX[id];
-        return { id: id, name: a.name, nameZh: a.name, cat: 'aux', catName: '绘图辅助', bbox: a.bbox, textPos: a.textPos, razavi: false, hasVariants: false, ttOnly: a.ttOnly === true };
+        var a = AUX[id], group = AUX_GROUPS[LOGIC_IO_ORDER.indexOf(id) >= 0 ? 0 : 1];
+        return { id: id, name: a.name, nameZh: a.name, cat: group.id, catName: group.name, bbox: a.bbox, textPos: a.textPos, razavi: false, hasVariants: false, ttOnly: a.ttOnly === true };
     }
     var e = catEntry(id);
     return {
@@ -430,13 +432,13 @@ function itemBBox(it, opts) {
     }
     if (it.kind === 'label') return labelBBox(it, opts);
     var b = compWorldBBox(it);
-    return opts && opts.editorText && richPlain(richForItem(it)) ? unionBBox(b, textBBox(it)) : b;
+    return ((opts && opts.editorText) || LOGIC_IO_ORDER.indexOf(it.type) >= 0) && richPlain(richForItem(it)) ? unionBBox(b, textBBox(it)) : b;
 }
 
 /* 含文字标签的外扩包围盒（导出裁剪用） */
 function itemOuterBBox(it, opts) {
     var b = itemBBox(it, opts);
-    if (opts && opts.editorText) return b;
+    if ((opts && opts.editorText) || (it.kind === 'comp' && LOGIC_IO_ORDER.indexOf(it.type) >= 0)) return b;
     if (it.kind === 'comp' && it.text) {
         var tp = textPos(it.type);
         if (tp === 'top') return { x0: b.x0 - 6, y0: b.y0 - 24, x1: b.x1 + 6, y1: b.y1 };
@@ -473,13 +475,18 @@ function itemSvg(it, opts) {
     } else {
         pt = new Painter();
         pt.put('stroke', stroke);
-        body = '<g' + pt.tag() + ' stroke-width="' + (it.sw || 1.5) + '" fill="none" stroke-linecap="round" stroke-linejoin="round"' +
+        body = '<g' + pt.tag() + ' stroke-width="' + (it.sw || 1.5) + '" fill="none" stroke-linecap="' +
+            (m.cat === 'logic-io' ? 'butt' : 'round') + '" stroke-linejoin="' + (m.cat === 'logic-io' ? 'miter' : 'round') + '"' +
             (it.dash ? ' stroke-dasharray="' + it.dash + '"' : '') + '>' + AUX[it.type].body({ stroke: stroke }) + '</g>';
     }
     /* 符号体在 translate(x,y) 组内用局部坐标；文字标签用世界坐标，必须先闭合该组再追加 */
     var s = '<g transform="translate(' + fmt(it.x) + ',' + fmt(it.y) + ')"><g transform="rotate(' + ((it.rot || 0) * 90) +
         ') scale(' + (it.fh ? -1 : 1) + ',' + (it.fv ? -1 : 1) + ')">' + body + '</g></g>';
-    if (opts.editorText) return s + (opts.hideText ? '' : richSvg(it, stroke));
+    /* 固定逻辑值不参与旋转镜像，也不受可编辑标签或 hideText 影响。 */
+    if (AUX[it.type] && typeof AUX[it.type].fixedText === 'string') {
+        s += richSvg({ kind: 'label', x: it.x, y: it.y + 4, text: AUX[it.type].fixedText, size: 13, anchor: 'middle' }, stroke);
+    }
+    if (opts.editorText || LOGIC_IO_ORDER.indexOf(it.type) >= 0) return s + (opts.hideText ? '' : richSvg(it, stroke));
     if (!opts.hideText && it.text && m.textPos !== 'none') {
         var bb = compWorldBBox(it);
         var tx, ty, anchor = 'middle';
@@ -523,6 +530,7 @@ function docSvg(doc, opts) {
 
 return {
     CATS: CATS, CATALOG: CATALOG, AUX: AUX, AUX_ORDER: AUX_ORDER,
+    LOGIC_IO_ORDER: LOGIC_IO_ORDER, AUX_GROUPS: AUX_GROUPS,
     isRazavi: isRazavi, meta: meta, metaAll: metaAll, resolve: resolve,
     ports: ports, bboxArr: bboxArr, variantOptions: variantOptions, textPos: textPos,
     symbolInner: symbolInner, itemSvg: itemSvg,

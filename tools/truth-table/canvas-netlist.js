@@ -184,8 +184,8 @@ function buildIRFromDoc(doc, portsOf) {
         used.add(nm); gateName.set(c.id, nm);
     });
 
-    if (!inComps.length) throw new Error('画布中至少需要一个「逻辑输入」器件（输入输出分组中的绿色框）');
-    if (!outComps.length) throw new Error('画布中至少需要一个「逻辑输出」器件（输入输出分组中的蓝色框）');
+    if (!inComps.length) throw new Error('画布中至少需要一个「逻辑输入」器件（位于「输入输出」分组，默认引线向右）');
+    if (!outComps.length) throw new Error('画布中至少需要一个「逻辑输出」器件（位于「输入输出」分组，默认引线向左）');
 
     /* ---- 网络求值：唯一驱动者检查 ---- */
     function resolveDriver(root, loadDesc) {

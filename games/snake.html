@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水晶贪吃蛇 · Crystal Snake</title>
+<style>
+  *{margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  :root{
+    --ink:#3d3654;
+    --ink2:#7a739b;
+  }
+  body{
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(135deg,#a8ecfb 0%,#c3b6ff 45%,#ffc4e1 100%);
+    overflow:hidden;
+    user-select:none;
+  }
+  /* 背景漂浮气泡 */
+  .bubble{
+    position:fixed; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.95), rgba(255,255,255,.12) 60%, rgba(255,255,255,.03));
+    box-shadow:inset -4px -6px 12px rgba(255,255,255,.35);
+    animation:floatUp linear infinite;
+    opacity:.7;
+  }
+  @keyframes floatUp{
+    from{transform:translateY(105vh) scale(1);}
+    to{transform:translateY(-12vh) scale(1.15);}
+  }
+  .title{
+    font-size:30px; font-weight:800; letter-spacing:2px;
+    background:linear-gradient(90deg,#00c6ff,#7b5cff,#ff5fb0);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 6px rgba(255,255,255,.65));
+    margin-bottom:2px;
+  }
+  .subtitle{font-size:12px; color:var(--ink2); letter-spacing:4px; margin-bottom:14px;}
+  .hud{
+    width:600px; max-width:94vw;
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .pill{
+    background:rgba(255,255,255,.45);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1.5px solid rgba(255,255,255,.75);
+    border-radius:999px;
+    padding:7px 18px;
+    font-weight:700; font-size:15px;
+    box-shadow:0 4px 14px rgba(120,100,200,.15), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .pill b{background:linear-gradient(90deg,#7b5cff,#ff5fb0); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:17px;}
+  .btns{display:flex; gap:10px;}
+  button{
+    font-family:inherit; font-weight:700; font-size:14px; color:#fff;
+    border:none; border-radius:999px; padding:8px 20px; cursor:pointer;
+    background:linear-gradient(135deg,#38c8ff,#7b5cff);
+    box-shadow:0 4px 12px rgba(90,110,255,.4), inset 0 1.5px 0 rgba(255,255,255,.55);
+    transition:transform .12s, box-shadow .12s;
+  }
+  button:hover{transform:translateY(-1px) scale(1.03); box-shadow:0 6px 16px rgba(90,110,255,.5), inset 0 1.5px 0 rgba(255,255,255,.55);}
+  button:active{transform:scale(.96);}
+  #btnRestart{background:linear-gradient(135deg,#ff9a3d,#ff5fb0); box-shadow:0 4px 12px rgba(255,110,150,.4), inset 0 1.5px 0 rgba(255,255,255,.55);}
+  .board-wrap{
+    position:relative;
+    border-radius:26px;
+    padding:14px;
+    background:rgba(255,255,255,.38);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:2px solid rgba(255,255,255,.8);
+    box-shadow:0 18px 44px rgba(110,90,220,.28), inset 0 2px 0 rgba(255,255,255,.9);
+  }
+  canvas{display:block; border-radius:16px;}
+  .overlay{
+    position:absolute; inset:14px; border-radius:16px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    background:rgba(255,255,255,.55);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    z-index:5;
+    transition:opacity .25s;
+  }
+  .overlay[hidden]{display:none;}
+  .overlay .big{font-size:34px; font-weight:800;
+    background:linear-gradient(90deg,#00c6ff,#7b5cff,#ff5fb0);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
+  .overlay .sub{font-size:14px; color:var(--ink2); font-weight:600;}
+  .overlay .score-line{font-size:18px; font-weight:700;}
+  .overlay button{font-size:16px; padding:11px 34px;}
+  .tip{margin-top:12px; font-size:12px; color:var(--ink2); letter-spacing:1px;}
+  .tip kbd{
+    background:rgba(255,255,255,.6); border:1px solid rgba(255,255,255,.9);
+    border-radius:6px; padding:1px 7px; font-family:inherit; font-weight:700; font-size:11px;
+    box-shadow:0 1.5px 0 rgba(150,140,200,.3);
+  }
+</style>
+</head>
+<body>
+<div class="title">水晶贪吃蛇</div>
+<div class="subtitle">CRYSTAL SNAKE</div>
+<div class="hud">
+  <div class="pill">得分 <b id="score">0</b></div>
+  <div class="btns">
+    <button id="btnStart">开始</button>
+    <button id="btnRestart">重开</button>
+  </div>
+  <div class="pill">最高 <b id="best">0</b></div>
+</div>
+<div class="board-wrap">
+  <canvas id="game" width="560" height="560"></canvas>
+  <div class="overlay" id="ovStart">
+    <div class="big">水晶贪吃蛇</div>
+    <div class="sub">方向键 / WASD 控制 · 空格暂停</div>
+    <button id="btnOvStart">开始游戏</button>
+  </div>
+  <div class="overlay" id="ovOver" hidden>
+    <div class="big">游戏结束</div>
+    <div class="score-line">本局得分 <span id="finalScore">0</span></div>
+    <div class="sub" id="newRecord" hidden>新纪录！</div>
+    <button id="btnOvRestart">再来一局</button>
+  </div>
+</div>
+<div class="tip"><kbd>↑↓←→</kbd> / <kbd>WASD</kbd> 移动 · <kbd>空格</kbd> 暂停 · 触屏滑动也可以</div>
+
+<script>
+(function(){
+'use strict';
+const CELL = 28, COLS = 20, ROWS = 20;
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+
+/* ---------- 状态 ---------- */
+let snake, dir, dirQueue, food, score, best, speed, acc, lastT, tickAnim;
+let running = false, paused = false, dead = false;
+best = +(localStorage.getItem('crystalSnakeBest') || 0);
+$('best').textContent = best;
+
+function reset(){
+  snake = [{x:9,y:10},{x:8,y:10},{x:7,y:10}];
+  dir = {x:1,y:0}; dirQueue = [];
+  score = 0; speed = 150; acc = 0; dead = false; paused = false;
+  $('score').textContent = '0';
+  spawnFood();
+}
+function spawnFood(){
+  const types = ['apple','strawberry','orange','grape','watermelon','peach'];
+  while(true){
+    const x = (Math.random()*COLS)|0, y = (Math.random()*ROWS)|0;
+    if(snake.some(s => s.x===x && s.y===y)) continue;
+    food = {x, y, type: types[(Math.random()*types.length)|0], born: performance.now()};
+    break;
+  }
+}
+
+/* ---------- 逻辑 ---------- */
+function step(){
+  if(dirQueue.length){
+    const d = dirQueue.shift();
+    if(!(d.x === -dir.x && d.y === -dir.y)) dir = d;
+  }
+  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+  if(head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return gameOver();
+  if(snake.some((s,i) => i < snake.length - 1 && s.x === head.x && s.y === head.y)) return gameOver();
+  snake.unshift(head);
+  if(head.x === food.x && head.y === food.y){
+    score++; $('score').textContent = score;
+    speed = Math.max(70, 150 - score * 4);
+    tickAnim = performance.now();
+    spawnFood();
+  }else{
+    snake.pop();
+  }
+}
+function gameOver(){
+  dead = true; running = false;
+  $('finalScore').textContent = score;
+  const isNew = score > best;
+  if(isNew){ best = score; localStorage.setItem('crystalSnakeBest', best); $('best').textContent = best; }
+  $('newRecord').hidden = !isNew;
+  $('ovOver').hidden = false;
+  $('btnStart').textContent = '开始';
+}
+function startGame(){
+  if(running && !paused) return;
+  if(dead || !running){ reset(); dead = false; }
+  running = true; paused = false;
+  $('ovStart').hidden = true; $('ovOver').hidden = true;
+  $('btnStart').textContent = '暂停';
+  lastT = performance.now();
+}
+function togglePause(){
+  if(dead) return;
+  if(!running){ startGame(); return; }
+  paused = !paused;
+  $('btnStart').textContent = paused ? '继续' : '暂停';
+}
+
+/* ---------- 输入 ---------- */
+const KEYMAP = {ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+  w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0}, W:{x:0,y:-1}, S:{x:0,y:1}, A:{x:-1,y:0}, D:{x:1,y:0}};
+window.addEventListener('keydown', e => {
+  if(e.key === ' '){ e.preventDefault(); togglePause(); return; }
+  if(e.key === 'Enter'){ startGame(); return; }
+  const d = KEYMAP[e.key];
+  if(d){ e.preventDefault(); if(dirQueue.length < 3) dirQueue.push(d); }
+});
+// 触屏滑动
+let tX = 0, tY = 0;
+cv.addEventListener('touchstart', e => { tX = e.touches[0].clientX; tY = e.touches[0].clientY; }, {passive:true});
+cv.addEventListener('touchmove', e => {
+  const dx = e.touches[0].clientX - tX, dy = e.touches[0].clientY - tY;
+  if(Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+  const d = Math.abs(dx) > Math.abs(dy) ? {x: Math.sign(dx), y: 0} : {x: 0, y: Math.sign(dy)};
+  if(dirQueue.length < 3) dirQueue.push(d);
+  tX = e.touches[0].clientX; tY = e.touches[0].clientY;
+  e.preventDefault();
+}, {passive:false});
+$('btnStart').addEventListener('click', togglePause);
+$('btnRestart').addEventListener('click', () => { reset(); dead = false; startGame(); });
+$('btnOvStart').addEventListener('click', startGame);
+$('btnOvRestart').addEventListener('click', () => { reset(); dead = false; startGame(); });
+
+/* ---------- 绘制工具 ---------- */
+function rr(x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function gloss(cx, cy, rx, ry, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, -0.6, 0, 7);
+  ctx.fill();
+  ctx.restore();
+}
+function sparkle(x, y, r, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - r, y); ctx.lineTo(x + r, y);
+  ctx.moveTo(x, y - r); ctx.lineTo(x, y + r);
+  ctx.stroke();
+  ctx.restore();
+}
+function cuteFace(cx, cy, s, lookX, lookY){  // s: 整体缩放
+  // 眼睛
+  const ex = 5.4 * s, ey = -1.5 * s, er = 3.6 * s;
+  for(const side of [-1, 1]){
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx + side * ex, cy + ey, er, 0, 7); ctx.fill();
+    ctx.fillStyle = '#33304a';
+    ctx.beginPath(); ctx.arc(cx + side * ex + (lookX || 0) * 1.4 * s, cy + ey + (lookY || 0) * 1.4 * s, 1.9 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx + side * ex - 0.8 * s + (lookX || 0) * 1.4 * s, cy + ey - 0.9 * s + (lookY || 0) * 1.4 * s, 0.8 * s, 0, 7); ctx.fill();
+  }
+  // 微笑
+  ctx.strokeStyle = '#33304a'; ctx.lineWidth = 1.3 * s; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(cx, cy + 2.2 * s, 3.2 * s, 0.25, Math.PI - 0.25); ctx.stroke();
+  // 腮红
+  ctx.fillStyle = 'rgba(255,120,150,.55)';
+  for(const side of [-1, 1]){
+    ctx.beginPath(); ctx.ellipse(cx + side * 8.2 * s, cy + 3.4 * s, 2.4 * s, 1.5 * s, 0, 0, 7); ctx.fill();
+  }
+}
+
+/* ---------- Q版水果 ---------- */
+function drawFood(f, t){
+  const bob = Math.sin(t / 320 + f.x) * 2;
+  const cx = f.x * CELL + CELL / 2, cy = f.y * CELL + CELL / 2 + bob;
+  const pop = Math.min(1, (t - f.born) / 260);
+  const sc = 0.4 + 0.6 * pop;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+  // 底部小影子
+  ctx.fillStyle = 'rgba(90,70,160,.18)';
+  ctx.beginPath(); ctx.ellipse(cx, cy + 11, 9, 3, 0, 0, 7); ctx.fill();
+
+  const R = 10;
+  if(f.type === 'apple'){
+    ctx.fillStyle = '#ff4757';
+    ctx.beginPath(); ctx.arc(cx, cy + 1, R, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(200,30,50,.5)'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx, cy - R + 1); ctx.quadraticCurveTo(cx + 1, cy - R - 4, cx + 3, cy - R - 5); ctx.stroke();
+    ctx.fillStyle = '#2ed573';
+    ctx.beginPath(); ctx.ellipse(cx + 5.5, cy - R - 3, 4.5, 2.4, 0.5, 0, 7); ctx.fill();
+  }else if(f.type === 'strawberry'){
+    ctx.fillStyle = '#ff3e6c';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + R + 1);
+    ctx.quadraticCurveTo(cx - R - 2, cy, cx - R + 2, cy - 4);
+    ctx.quadraticCurveTo(cx, cy - R, cx + R - 2, cy - 4);
+    ctx.quadraticCurveTo(cx + R + 2, cy, cx, cy + R + 1);
+    ctx.fill();
+    ctx.fillStyle = '#2ed573';
+    for(let i = -1; i <= 1; i++){
+      ctx.beginPath(); ctx.ellipse(cx + i * 4.5, cy - R + 1, 3.4, 2, i * 0.5, 0, 7); ctx.fill();
+    }
+    ctx.fillStyle = '#ffe08a';
+    [[-4,-1],[4,0],[0,4],[-3,6],[3,7]].forEach(p => {
+      ctx.beginPath(); ctx.arc(cx + p[0], cy + p[1], 0.9, 0, 7); ctx.fill();
+    });
+  }else if(f.type === 'orange'){
+    ctx.fillStyle = '#ffa502';
+    ctx.beginPath(); ctx.arc(cx, cy + 1, R, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(220,120,0,.45)'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#2ed573';
+    ctx.beginPath(); ctx.ellipse(cx + 2, cy - R - 2, 4.6, 2.5, 0.35, 0, 7); ctx.fill();
+  }else if(f.type === 'grape'){
+    ctx.fillStyle = '#a55eff';
+    [[-4.5,-3],[4.5,-3],[0,-8],[-4.5,4],[4.5,4],[0,10]].forEach(p => {
+      ctx.beginPath(); ctx.arc(cx + p[0], cy + p[1] - 1, 5, 0, 7); ctx.fill();
+    });
+    ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 2, cy - 16); ctx.stroke();
+    ctx.fillStyle = '#2ed573';
+    ctx.beginPath(); ctx.ellipse(cx + 4.5, cy - 15, 4, 2.2, 0.4, 0, 7); ctx.fill();
+  }else if(f.type === 'watermelon'){
+    ctx.fillStyle = '#2ed573';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 1.5, 0.15, Math.PI - 0.15); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff5f6d';
+    ctx.beginPath(); ctx.arc(cx, cy, R - 2, 0.15, Math.PI - 0.15); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#33304a';
+    [[-4,4],[0,6],[4,4]].forEach(p => {
+      ctx.beginPath(); ctx.ellipse(cx + p[0], cy + p[1], 1, 1.5, 0, 0, 7); ctx.fill();
+    });
+  }else{ // peach
+    ctx.fillStyle = '#ff9ecb';
+    ctx.beginPath(); ctx.arc(cx, cy + 1, R, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(230,90,160,.5)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cx, cy - R + 2); ctx.quadraticCurveTo(cx + 3, cy, cx, cy + R); ctx.stroke();
+    ctx.fillStyle = '#2ed573';
+    ctx.beginPath(); ctx.ellipse(cx + 4, cy - R - 2, 4.4, 2.4, 0.45, 0, 7); ctx.fill();
+  }
+  gloss(cx - 3.5, cy - 4.5, 3.6, 2.4, 0.55);
+  cuteFace(cx, cy + 1.5, 0.72, 0, 0);
+  // 星光
+  const tw = (Math.sin(t / 180 + f.y) + 1) / 2;
+  sparkle(cx + 11, cy - 11, 3, 0.3 + 0.5 * tw);
+  sparkle(cx - 12, cy - 8, 2.2, 0.2 + 0.45 * (1 - tw));
+  ctx.restore();
+}
+
+/* ---------- 蛇 ---------- */
+const HUES = [186, 268, 322, 24, 150, 210];   // 高饱和循环色
+function segColor(i){
+  const h = HUES[i % HUES.length];
+  return {h, head: i === 0};
+}
+function drawSnake(t){
+  for(let i = snake.length - 1; i >= 0; i--){
+    const s = snake[i];
+    const px = s.x * CELL, py = s.y * CELL;
+    const {h, head} = segColor(i);
+    const grow = head && tickAnim ? 1 + 0.12 * Math.max(0, 1 - (t - tickAnim) / 240) : 1;
+    const pad = head ? 1 : 2.5;
+    const w = CELL - pad * 2;
+    ctx.save();
+    if(grow !== 1){ ctx.translate(px + CELL/2, py + CELL/2); ctx.scale(grow, grow); ctx.translate(-px - CELL/2, -py - CELL/2); }
+    // 水晶身体：纵向高饱和渐变 + 顶部高光
+    const g = ctx.createLinearGradient(px, py, px, py + CELL);
+    g.addColorStop(0, `hsl(${h}, 92%, ${head ? 68 : 62}%)`);
+    g.addColorStop(0.55, `hsl(${h}, 95%, ${head ? 55 : 48}%)`);
+    g.addColorStop(1, `hsl(${h}, 90%, ${head ? 44 : 38}%)`);
+    rr(px + pad, py + pad, w, w, head ? 9 : 7.5);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = `hsla(${h}, 90%, 30%, .55)`; ctx.lineWidth = 1.2; ctx.stroke();
+    gloss(px + CELL * 0.36, py + CELL * 0.3, head ? 6 : 5, head ? 3.4 : 2.8, head ? 0.6 : 0.45);
+    ctx.restore();
+  }
+  // 头部 Q 脸（朝运动方向看）
+  const hd = snake[0];
+  const cx = hd.x * CELL + CELL / 2, cy = hd.y * CELL + CELL / 2;
+  cuteFace(cx, cy, 1.05, dir.x, dir.y);
+}
+
+/* ---------- 棋盘 ---------- */
+function drawBoard(t){
+  // 水晶棋盘底
+  const g = ctx.createLinearGradient(0, 0, 560, 560);
+  g.addColorStop(0, 'rgba(255,255,255,.66)');
+  g.addColorStop(0.5, 'rgba(235,245,255,.5)');
+  g.addColorStop(1, 'rgba(255,235,250,.6)');
+  rr(0, 0, 560, 560, 16);
+  ctx.fillStyle = g; ctx.fill();
+  // 淡格点
+  ctx.fillStyle = 'rgba(123,92,255,.10)';
+  for(let x = 1; x < COLS; x++)
+    for(let y = 1; y < ROWS; y++){
+      ctx.beginPath(); ctx.arc(x * CELL, y * CELL, 1.4, 0, 7); ctx.fill();
+    }
+  // 边缘水晶描边
+  rr(1.5, 1.5, 557, 557, 15);
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2; ctx.stroke();
+}
+
+/* ---------- 主循环 ---------- */
+function frame(t){
+  requestAnimationFrame(frame);
+  if(running && !paused && !dead){
+    acc += t - lastT;
+    while(acc >= speed){ acc -= speed; step(); if(dead) break; }
+  }
+  lastT = t;
+  drawBoard(t);
+  if(food) drawFood(food, t);
+  if(snake) drawSnake(t);
+  if(paused && running){
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    rr(0, 0, 560, 560, 16); ctx.fill();
+    ctx.fillStyle = '#7b5cff'; ctx.font = '800 30px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('暂停中', 280, 285);
+    ctx.restore();
+  }
+}
+
+/* ---------- 背景气泡 ---------- */
+for(let i = 0; i < 14; i++){
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  const sz = 10 + Math.random() * 46;
+  b.style.width = b.style.height = sz + 'px';
+  b.style.left = Math.random() * 100 + 'vw';
+  b.style.animationDuration = 9 + Math.random() * 14 + 's';
+  b.style.animationDelay = -Math.random() * 18 + 's';
+  document.body.appendChild(b);
+}
+
+reset();
+requestAnimationFrame(frame);
+
+/* 供自动化测试 */
+window.__SNK = {
+  get snake(){ return snake; }, get food(){ return food; }, get score(){ return score; },
+  get dead(){ return dead; }, get running(){ return running; }, get paused(){ return paused; },
+  set foodPos(p){ food.x = p.x; food.y = p.y; },
+  start: startGame, reset, step
+};
+})();
+</script>
+</body>
+</html>

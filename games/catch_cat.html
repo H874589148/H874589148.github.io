@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>围住小猫 · Circle the Cat</title>
+<style>
+:root{
+  --bg:#fdf6ec; --bg-dot:rgba(222,199,164,.55);
+  --ink:#7a6752; --muted:#a8967f;
+  --cell:#fffdf8; --cell-edge:#d9c8a9;
+  --blocked:#f9cfa9; --blocked-edge:#e0a06b; --paw:#dd9a63;
+  --edge:#e8a79f;
+  --accent:#f2a65a;
+  --cat-fill:#ffdcb0; --cat-line:#8a6f56; --cat-ear-in:#f7a8a0;
+  --cat-eye:#6b4f3a; --cat-nose:#e07a6d; --cat-blush:#ffb3ab; --cat-stripe:#f2b071;
+  --whisker:#cbb79b;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family:"Comic Sans MS","Chalkboard SE","Segoe Print","Yuanti SC","YouYuan","幼圆",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);
+  background-color:var(--bg);
+  background-image:radial-gradient(var(--bg-dot) 1.2px, transparent 1.3px);
+  background-size:24px 24px;
+  display:flex; flex-direction:column; min-height:100vh; height:100vh; overflow:hidden;
+}
+header{
+  padding:12px 14px 6px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:center;
+}
+h1{font-size:21px; margin:0; letter-spacing:2px; color:var(--ink); transform:rotate(-1deg);}
+.controls{display:flex; gap:8px 14px; align-items:center; flex-wrap:wrap; justify-content:center; font-size:13px; user-select:none;}
+.seg{display:flex; border:2px solid #e0cfa8; border-radius:12px; overflow:hidden; background:#fff8ea;}
+.seg button{border:0; background:transparent; padding:6px 13px; font-size:13px; cursor:pointer; color:var(--muted); font-family:inherit;}
+.seg button.on{background:var(--accent); color:#fff; font-weight:600;}
+.slider-box{display:flex; align-items:center; gap:8px; background:#fff8ea; border:2px solid #e0cfa8; border-radius:12px; padding:5px 11px; color:var(--muted);}
+input[type=range]{width:100px; accent-color:var(--accent);}
+.btn{border:2px solid #e0cfa8; background:#fff8ea; color:var(--ink); padding:6px 15px; border-radius:12px; font-size:13px; cursor:pointer; font-family:inherit; transition:border-color .15s,color .15s;}
+.btn:hover{border-color:var(--accent); color:var(--accent);}
+.stats{display:flex; gap:16px; font-size:13px; color:var(--muted); align-items:center; flex-wrap:wrap; justify-content:center; padding:4px 0 2px; user-select:none;}
+.stats b{color:var(--ink); font-size:15px; margin-left:2px;}
+main{flex:1; display:flex; align-items:center; justify-content:center; padding:4px 8px 10px; min-height:0;}
+#board{position:relative; user-select:none;}
+
+/* ---- 圆盘（手绘不规则圆角） ---- */
+.cell{
+  position:absolute;
+  background:var(--cell);
+  border:.08em solid var(--cell-edge);
+  cursor:pointer; touch-action:manipulation;
+  box-shadow:0 2px 4px rgba(122,103,82,.10);
+  transition:transform .12s ease, background .18s ease, border-color .18s ease;
+}
+.cell:nth-child(3n+1){border-radius:48% 52% 55% 45%/52% 48% 50% 50%;}
+.cell:nth-child(3n+2){border-radius:50% 50% 46% 54%/48% 52% 52% 48%;}
+.cell:nth-child(3n){border-radius:52% 48% 50% 50%/50% 52% 48% 50%;}
+.cell:hover{transform:scale(1.08);}
+.cell.edge{border-style:dashed; border-color:var(--edge);}
+.cell.blocked{
+  background:var(--blocked);
+  border-style:solid; border-color:var(--blocked-edge);
+  cursor:default;
+  animation:pop .22s ease;
+}
+.cell.blocked:hover{transform:none;}
+@keyframes pop{0%{transform:scale(.7);}70%{transform:scale(1.12);}100%{transform:scale(1);}}
+/* 障碍上的猫爪印 */
+.cell.blocked::before{
+  content:''; position:absolute; left:50%; top:58%;
+  width:36%; height:30%; background:var(--paw);
+  border-radius:50% 50% 55% 55%/60% 60% 45% 45%;
+  transform:translate(-50%,-38%);
+}
+.cell.blocked::after{
+  content:''; position:absolute; left:26%; top:26%;
+  width:16%; height:16%; background:var(--paw); border-radius:50%;
+  box-shadow:.52em -.12em 0 0 var(--paw), 1.04em 0 0 0 var(--paw);
+}
+
+/* ---- 纯 CSS 手绘小猫 ---- */
+#cat{
+  position:absolute; z-index:5; pointer-events:none; user-select:none;
+  transition:left .34s cubic-bezier(.45,.05,.35,1), top .34s cubic-bezier(.45,.05,.35,1);
+}
+.cat-shadow{
+  position:absolute; left:16%; bottom:0; width:68%; height:.09em;
+  background:rgba(122,103,82,.20); border-radius:50%;
+}
+.cat-inner{position:absolute; left:0; top:0; width:100%; height:100%; animation:breathe 3.2s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:scale(1,1);}50%{transform:scale(1.03,.97) translateY(1%);}}
+.tail{
+  position:absolute; right:-8%; bottom:8%; width:.14em; height:.34em;
+  border:.05em solid var(--cat-line); border-left:none; border-bottom:none;
+  background:transparent; border-radius:0 90% 30% 0;
+  transform-origin:bottom left; z-index:1;
+  animation:wag 2.4s ease-in-out infinite alternate;
+}
+@keyframes wag{from{transform:rotate(6deg);}to{transform:rotate(24deg);}}
+.ear{
+  position:absolute; top:5%; width:.22em; height:.19em;
+  background:var(--cat-line); z-index:1;
+  clip-path:polygon(50% 0, 100% 100%, 0 100%);
+}
+.ear::before{
+  content:''; position:absolute; left:14%; top:22%; width:72%; height:78%;
+  background:var(--cat-fill);
+  clip-path:polygon(50% 0, 100% 100%, 0 100%);
+}
+.ear::after{
+  content:''; position:absolute; left:32%; top:48%; width:36%; height:44%;
+  background:var(--cat-ear-in);
+  clip-path:polygon(50% 0, 100% 100%, 0 100%);
+}
+.ear-l{left:12%; transform:rotate(-14deg);}
+.ear-r{right:12%; transform:rotate(14deg);}
+.head{
+  position:absolute; left:50%; top:15%; width:.8em; height:.66em; margin-left:-.4em;
+  background:var(--cat-fill); border:.045em solid var(--cat-line);
+  border-radius:47% 53% 50% 50%/60% 60% 40% 40%;
+  z-index:2;
+}
+.stripe{position:absolute; top:6%; width:.045em; height:.10em; background:var(--cat-stripe); border-radius:40%;}
+.st1{left:36%; transform:rotate(-10deg);}
+.st2{left:48%;}
+.st3{left:60%; transform:rotate(10deg);}
+.eye{
+  position:absolute; top:42%; width:.105em; height:.14em;
+  background:var(--cat-eye); border-radius:50%;
+  animation:blink 4.2s infinite;
+}
+.eye::after{
+  content:''; position:absolute; left:18%; top:14%; width:34%; height:34%;
+  background:#fff; border-radius:50%; opacity:.9;
+}
+.eye-l{left:29%;} .eye-r{right:29%;}
+@keyframes blink{0%,92%,100%{transform:scaleY(1);}95%{transform:scaleY(.08);}}
+.nose{
+  position:absolute; left:50%; top:56%; width:.11em; height:.085em;
+  background:var(--cat-nose); transform:translateX(-50%);
+  border-radius:35% 35% 60% 60%/30% 30% 80% 80%;
+}
+.mouth{position:absolute; left:50%; top:62%; width:.26em; height:.12em; transform:translateX(-50%);}
+.mouth::before,.mouth::after{
+  content:''; position:absolute; top:0; width:44%; height:70%;
+  border:.03em solid var(--cat-line);
+  border-top:none; border-left:none; border-right:none;
+  border-radius:0 0 50% 50%/0 0 100% 100%;
+}
+.mouth::before{left:4%;} .mouth::after{right:4%;}
+.blush{
+  position:absolute; top:57%; width:.17em; height:.11em;
+  background:var(--cat-blush); opacity:.8; border-radius:48% 52% 50% 50%;
+}
+.blush-l{left:12%; transform:rotate(6deg);}
+.blush-r{right:12%; transform:rotate(-6deg);}
+.whisker{position:absolute; height:.022em; background:var(--whisker); border-radius:.02em;}
+.w1{left:-24%; top:50%; width:.26em; transform:rotate(6deg);}
+.w2{left:-22%; top:60%; width:.24em; transform:rotate(-5deg);}
+.w3{right:-24%; top:50%; width:.26em; transform:rotate(-6deg);}
+.w4{right:-22%; top:60%; width:.24em; transform:rotate(5deg);}
+
+/* 跳跃：挤压-拉伸 + 朝运动方向倾斜，影子同步缩放 */
+#cat.jump{animation:catJump .38s cubic-bezier(.34,1.3,.5,1);}
+@keyframes catJump{
+  0%  {transform:scale(1.14,.84) translateY(4%);}
+  35% {transform:scale(.88,1.18) translateY(-30%) rotate(var(--jr,0deg));}
+  70% {transform:scale(1.08,.92) translateY(1%);}
+  100%{transform:scale(1,1);}
+}
+#cat.jump .cat-shadow{animation:shadowJump .38s ease;}
+@keyframes shadowJump{0%{transform:scale(1);opacity:.8;}40%{transform:scale(.6);opacity:.3;}100%{transform:scale(1);opacity:.8;}}
+#cat.wiggle{animation:wiggle .3s ease;}
+@keyframes wiggle{25%{transform:translateX(-3px);}75%{transform:translateX(3px);}}
+
+/* ---- 弹窗 ---- */
+.overlay{position:fixed; inset:0; background:rgba(122,103,82,.38); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
+.overlay.show{display:flex;}
+.panel{
+  background:#fffdf7; border:2px solid #e3d3b4; border-radius:20px;
+  padding:26px 28px; max-width:400px; width:100%;
+  text-align:center; box-shadow:0 14px 40px rgba(122,103,82,.25);
+  animation:rise .25s ease;
+}
+@keyframes rise{from{transform:translateY(14px); opacity:0;}to{transform:none; opacity:1;}}
+.panel .big{font-size:50px; line-height:1.1;}
+.panel h2{margin:10px 0 4px; font-size:22px; color:var(--ink);}
+.panel .sub{color:var(--muted); font-size:14px; margin:0 0 16px;}
+.panel .result{display:flex; justify-content:center; gap:22px; margin:0 0 18px; font-size:12px; color:var(--muted);}
+.panel .result b{display:block; font-size:17px; color:var(--ink); margin-bottom:2px;}
+.panel .btn{padding:9px 26px; font-size:15px; background:var(--accent); border-color:var(--accent); color:#fff;}
+.panel .btn:hover{color:#fff; filter:brightness(1.06);}
+.rules-list{text-align:left; font-size:14px; color:#8a755d; line-height:1.9; margin:0; padding-left:18px;}
+.rules-list b{color:var(--ink);}
+footer{text-align:center; font-size:11px; color:var(--muted); padding:0 0 8px; user-select:none;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐾 围住小猫</h1>
+  <div class="controls">
+    <div class="seg" id="diffSeg">
+      <button data-d="easy">简单</button>
+      <button data-d="normal" class="on">中等</button>
+      <button data-d="hard">困难</button>
+    </div>
+    <div class="slider-box">地图
+      <input type="range" id="sizeRange" min="7" max="15" step="1" value="11">
+      <span id="sizeLabel">11×11</span>
+    </div>
+    <button class="btn" id="newBtn">新一局</button>
+    <button class="btn" id="rulesBtn">规则</button>
+  </div>
+</header>
+<div class="stats">
+  <span>难度<b id="stDiff">中等</b></span>
+  <span>步数<b id="stSteps">0</b></span>
+  <span>用时<b id="stTime">00:00</b></span>
+</div>
+<main><div id="board"></div></main>
+<footer>点击圆盘放下猫爪障碍 · 别让小猫跑到边界</footer>
+
+<div class="overlay" id="endOverlay">
+  <div class="panel">
+    <div class="big" id="endIcon">🎉</div>
+    <h2 id="endTitle"></h2>
+    <p class="sub" id="endSub"></p>
+    <div class="result">
+      <span><b id="endSteps">0</b>步数</span>
+      <span><b id="endDiff">中等</b>难度</span>
+      <span><b id="endTime">00:00</b>用时</span>
+    </div>
+    <button class="btn" id="againBtn">再来一局</button>
+  </div>
+</div>
+
+<div class="overlay" id="rulesOverlay">
+  <div class="panel">
+    <div class="big">📖</div>
+    <h2>游戏规则</h2>
+    <ul class="rules-list">
+      <li>地图中央有一只手绘小猫，你的目标是把它<b>围住</b>。</li>
+      <li>点击任意圆盘可将其变成<b>猫爪障碍</b>（不可撤销，不能点小猫所在的圆盘）。</li>
+      <li>每放置一个障碍，小猫会立即向相邻 6 个圆盘之一跳动一步；它会沿<b>最短路径</b>智能逃向边界，且不会跳到障碍上。</li>
+      <li>带粉色虚线描边的是<b>边界</b>：小猫一旦跳上边界即逃跑成功，你输。</li>
+      <li>当小猫无法通过任何路径到达边界时，你获胜 🎉。</li>
+      <li>难度控制开局随机预置的障碍数：简单 10 / 中等 7 / 困难 4；地图大小 7~15 列可调（行数与列数相同）。</li>
+    </ul>
+    <p style="margin-top:16px;"><button class="btn" id="rulesClose">知道啦</button></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SQ3_2 = Math.sqrt(3) / 2;
+  var DIFF = {
+    easy:   { label: '简单', blocks: 10 },
+    normal: { label: '中等', blocks: 7 },
+    hard:   { label: '困难', blocks: 4 }
+  };
+
+  var boardEl = document.getElementById('board');
+  var catEl = document.createElement('div');
+  catEl.id = 'cat';
+  catEl.innerHTML =
+    '<div class="cat-shadow"></div>' +
+    '<div class="cat-inner">' +
+      '<div class="tail"></div>' +
+      '<div class="ear ear-l"></div><div class="ear ear-r"></div>' +
+      '<div class="head">' +
+        '<div class="stripe st1"></div><div class="stripe st2"></div><div class="stripe st3"></div>' +
+        '<div class="eye eye-l"></div><div class="eye eye-r"></div>' +
+        '<div class="blush blush-l"></div><div class="blush blush-r"></div>' +
+        '<div class="nose"></div><div class="mouth"></div>' +
+        '<div class="whisker w1"></div><div class="whisker w2"></div>' +
+        '<div class="whisker w3"></div><div class="whisker w4"></div>' +
+      '</div>' +
+    '</div>';
+
+  var cols = 11, rows = 11, diff = 'normal';
+  var blocks = {}, cat = null;
+  var steps = 0, playing = false, busy = false;
+  var startMs = null, timerId = null;
+  var cellEls = {};
+  var spacing = 48, radius = 20;
+
+  function $(id) { return document.getElementById(id); }
+  function key(c, r) { return c + ',' + r; }
+  function isBoundary(c, r) { return c === 0 || r === 0 || c === cols - 1 || r === rows - 1; }
+
+  /* 奇数行右移半格的错位蜂窝：内部每格恰好 6 个邻居 */
+  function neighbors(c, r) {
+    var list = (r % 2 === 0)
+      ? [[c - 1, r], [c + 1, r], [c, r - 1], [c - 1, r - 1], [c, r + 1], [c - 1, r + 1]]
+      : [[c - 1, r], [c + 1, r], [c, r - 1], [c + 1, r - 1], [c, r + 1], [c + 1, r + 1]];
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var x = list[i][0], y = list[i][1];
+      if (x >= 0 && x < cols && y >= 0 && y < rows) out.push([x, y]);
+    }
+    return out;
+  }
+
+  /* 多源 BFS：从所有未封锁的边界格向内扩散，返回每格到边界的最短步数 */
+  function computeDist() {
+    var dist = {}, q = [];
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        if (isBoundary(c, r) && !blocks[key(c, r)]) {
+          dist[key(c, r)] = 0;
+          q.push([c, r]);
+        }
+      }
+    }
+    var head = 0;
+    while (head < q.length) {
+      var cur = q[head++];
+      var d = dist[key(cur[0], cur[1])];
+      var ns = neighbors(cur[0], cur[1]);
+      for (var i = 0; i < ns.length; i++) {
+        var k = key(ns[i][0], ns[i][1]);
+        if (blocks[k] || dist[k] !== undefined) continue;
+        dist[k] = d + 1;
+        q.push(ns[i]);
+      }
+    }
+    return dist;
+  }
+
+  /* ---------- 布局与渲染 ---------- */
+  function layout() {
+    var main = document.querySelector('main');
+    var availW = main.clientWidth - 8;
+    var availH = main.clientHeight - 8;
+    var wPer = availW / (cols + 1);
+    var hPer = availH / (SQ3_2 * (rows - 1) + 1);
+    spacing = Math.max(26, Math.min(74, Math.min(wPer, hPer)));
+    radius = spacing * 0.44;
+  }
+  function posX(c, r) { return spacing * (0.5 + c + 0.5 * (r % 2)); }
+  function posY(r) { return spacing * (0.5 + r * SQ3_2); }
+
+  function renderBoard() {
+    layout();
+    boardEl.innerHTML = '';
+    cellEls = {};
+    boardEl.style.width = (spacing * (cols + 0.5)) + 'px';
+    boardEl.style.height = (spacing * (SQ3_2 * (rows - 1) + 1)) + 'px';
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var d = document.createElement('div');
+        d.className = 'cell' + (isBoundary(c, r) ? ' edge' : '') + (blocks[key(c, r)] ? ' blocked' : '');
+        var size = radius * 2;
+        d.style.width = size + 'px';
+        d.style.height = size + 'px';
+        d.style.left = (posX(c, r) - radius) + 'px';
+        d.style.top = (posY(r) - radius) + 'px';
+        d.style.fontSize = radius + 'px'; /* 供爪印 em 换算 */
+        (function (cc, rr) {
+          d.addEventListener('click', function () { onCell(cc, rr); });
+        })(c, r);
+        boardEl.appendChild(d);
+        cellEls[key(c, r)] = d;
+      }
+    }
+    catEl.style.fontSize = spacing + 'px'; /* 1em = 一格间距，整猫随棋盘缩放 */
+    catEl.style.width = spacing + 'px';
+    catEl.style.height = spacing + 'px';
+    boardEl.appendChild(catEl);
+    renderCat(false);
+  }
+
+  function renderCat(anim, dx, dy) {
+    if (!cat) return;
+    catEl.style.left = (posX(cat.c, cat.r) - spacing / 2) + 'px';
+    catEl.style.top = (posY(cat.r) - spacing / 2) + 'px';
+    if (anim) {
+      var ang = Math.max(-10, Math.min(10, (dx || 0) * 5 + (dy || 0) * 2));
+      catEl.style.setProperty('--jr', ang.toFixed(1) + 'deg');
+      catEl.classList.remove('jump');
+      void catEl.offsetWidth;
+      catEl.classList.add('jump');
+    }
+  }
+
+  /* ---------- 游戏流程 ---------- */
+  function newGame() {
+    cols = +$('sizeRange').value;
+    rows = cols;
+    cat = { c: Math.floor(cols / 2), r: Math.floor(rows / 2) };
+
+    /* 随机预置障碍，并校验小猫仍有路可达边界（否则重摆） */
+    var n = DIFF[diff].blocks, tries = 0;
+    do {
+      blocks = {};
+      var placed = 0, guard = 0;
+      while (placed < n && guard < 3000) {
+        guard++;
+        var c = Math.floor(Math.random() * cols);
+        var r = Math.floor(Math.random() * rows);
+        if ((c === cat.c && r === cat.r) || blocks[key(c, r)]) continue;
+        blocks[key(c, r)] = 1;
+        placed++;
+      }
+      tries++;
+    } while (computeDist()[key(cat.c, cat.r)] === undefined && tries < 500);
+
+    steps = 0; playing = true; busy = false; startMs = null;
+    stopTimer();
+    $('stTime').textContent = '00:00';
+    $('stSteps').textContent = '0';
+    $('stDiff').textContent = DIFF[diff].label;
+    $('sizeLabel').textContent = cols + '×' + rows;
+    hideOverlay('endOverlay');
+    renderBoard();
+  }
+
+  function onCell(c, r) {
+    if (!playing || busy) return;
+    if (c === cat.c && r === cat.r) {
+      catEl.classList.remove('wiggle');
+      void catEl.offsetWidth;
+      catEl.classList.add('wiggle');
+      return;
+    }
+    var k = key(c, r);
+    if (blocks[k]) return;
+
+    blocks[k] = 1;
+    steps++;
+    $('stSteps').textContent = steps;
+    cellEls[k].classList.add('blocked');
+    if (!startMs) startTimer();
+
+    var dist = computeDist();
+    /* 用户落子后小猫已无路可达边界 → 直接胜利 */
+    if (dist[key(cat.c, cat.r)] === undefined) {
+      endGame(true);
+      return;
+    }
+    busy = true;
+    setTimeout(function () {
+      busy = false;
+      if (!playing) return;
+      if (catStep(dist) === 'escaped') endGame(false);
+    }, 170);
+  }
+
+  function catStep(dist) {
+    var d = dist[key(cat.c, cat.r)];
+    if (d === undefined) return 'trapped';
+    var cands = [];
+    var ns = neighbors(cat.c, cat.r);
+    for (var i = 0; i < ns.length; i++) {
+      var k = key(ns[i][0], ns[i][1]);
+      if (!blocks[k] && dist[k] === d - 1) cands.push(ns[i]);
+    }
+    if (!cands.length) return 'trapped';
+    var pick = cands[Math.floor(Math.random() * cands.length)];
+    var dx = pick[0] - cat.c, dy = pick[1] - cat.r;
+    cat = { c: pick[0], r: pick[1] };
+    renderCat(true, dx, dy);
+    if (isBoundary(cat.c, cat.r)) return 'escaped';
+    return 'moved';
+  }
+
+  /* ---------- 计时 ---------- */
+  function startTimer() {
+    startMs = Date.now();
+    timerId = setInterval(function () {
+      $('stTime').textContent = fmt(Date.now() - startMs);
+    }, 500);
+  }
+  function stopTimer() {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+  }
+  function fmt(ms) {
+    var s = Math.floor(ms / 1000), m = Math.floor(s / 60);
+    s %= 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  /* ---------- 结算 ---------- */
+  function endGame(win) {
+    playing = false;
+    stopTimer();
+    $('endIcon').textContent = win ? '🎉' : '🐾';
+    $('endTitle').textContent = win ? '成功围住小猫！' : '小猫逃跑成功！';
+    $('endSub').textContent = win
+      ? '无路可走的小猫认输了，干得漂亮！'
+      : '小猫跑到了边界，下次早点堵住它的去路～';
+    $('endSteps').textContent = steps;
+    $('endDiff').textContent = DIFF[diff].label;
+    $('endTime').textContent = fmt(startMs ? Date.now() - startMs : 0);
+    showOverlay('endOverlay');
+  }
+
+  function showOverlay(id) { $(id).classList.add('show'); }
+  function hideOverlay(id) { $(id).classList.remove('show'); }
+
+  /* ---------- 控件 ---------- */
+  $('diffSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    diff = b.getAttribute('data-d');
+    var bs = this.querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i] === b);
+    newGame();
+  });
+  $('sizeRange').addEventListener('input', function () {
+    $('sizeLabel').textContent = this.value + '×' + this.value;
+  });
+  $('sizeRange').addEventListener('change', function () { newGame(); });
+  $('newBtn').addEventListener('click', newGame);
+  $('againBtn').addEventListener('click', newGame);
+  $('rulesBtn').addEventListener('click', function () { showOverlay('rulesOverlay'); });
+  $('rulesClose').addEventListener('click', function () { hideOverlay('rulesOverlay'); });
+  $('rulesOverlay').addEventListener('click', function (e) {
+    if (e.target === this) hideOverlay('rulesOverlay');
+  });
+
+  var resizeT = null;
+  window.addEventListener('resize', function () {
+    if (resizeT) clearTimeout(resizeT);
+    resizeT = setTimeout(function () { renderBoard(); }, 150);
+  });
+
+  newGame();
+})();
+</script>
+</body>
+</html>

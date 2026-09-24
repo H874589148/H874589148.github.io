@@ -31,10 +31,14 @@ function create(options) {
     var selection = { start: 0, end: 0, backward: false }, pending = R.runStyle({}, 13), explicitStyle = false;
     var painting = false, compositionTimer = 0, baselineCache = new Map();
     function active() { return !!session; }
-    function notify() { hint.textContent = 'Enter 确认，Esc 取消；Alt+Enter 换行'; }
+    function notify(message) {
+        if (session && typeof message === 'string') session.error = message;
+        hint.textContent = (session && (session.error || session.settings.hint)) || 'Enter 确认，Esc 取消；Alt+Enter 换行';
+    }
     function modelItem() { return Object.assign({}, session.item, { richText: session.model, text: R.richPlain(session.model) }); }
     function snapshot() { return { model: clone(session.model), selection: clone(selection), pending: clone(pending), explicitStyle: explicitStyle }; }
     function record() {
+        if (session.error) { session.error = ''; box.removeAttribute('aria-invalid'); notify(); }
         history.push(snapshot());
         if (history.length > 100) history.shift();
         future = [];
@@ -277,8 +281,17 @@ function create(options) {
     function finish(commit) {
         if (!session || composing) return;
         clearTimeout(compositionTimer);
+        if (commit && compositionTimer) { compositionTimer = 0; syncInput(); }
+        /* 校验失败保留两层会话和草稿，完成回调不得提前修改工程文档。 */
+        var error = commit && options.validate ? options.validate(session.model, session.item) : '';
+        if (error) {
+            box.setAttribute('aria-invalid', 'true');
+            notify(error); restoreSelection();
+            return;
+        }
         var result = session;
         session = null; history = []; future = [];
+        box.removeAttribute('aria-invalid');
         host.hidden = true; box.innerHTML = '';
         options.finish(commit ? result.model : null);
     }
@@ -329,7 +342,10 @@ function create(options) {
         if (e.key === 'Enter') {
             e.preventDefault();
             if (Date.now() - compositionEnd < 80) return;
-            if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) replaceSelection('\n');
+            if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                if (session.settings.singleLine) notify('信号名不能换行；Enter 确认，Esc 取消。');
+                else replaceSelection('\n');
+            }
             else if (!e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) finish(true);
         } else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
         else if (e.ctrlKey || e.metaKey) {
@@ -397,13 +413,16 @@ function create(options) {
         active: active, notify: notify, reposition: reposition,
         cancel: function () { finish(false); },
         refresh: function () { baselineCache.clear(); if (session && !composing) paint(document.activeElement === box); },
-        start: function (item) {
-            session = { item: clone(item), model: R.richForItem(item) };
+        start: function (item, settings) {
+            session = { item: clone(item), model: R.richForItem(item), settings: settings || {}, error: '' };
+            clearTimeout(compositionTimer); compositionTimer = 0;
             composing = false; compositionEnd = 0; history = []; future = [];
+            box.removeAttribute('aria-invalid');
+            box.setAttribute('aria-multiline', String(!session.settings.singleLine));
             var lastLine = session.model.lines[session.model.lines.length - 1];
             pending = R.runStyle(lastLine.runs[lastLine.runs.length - 1], 13); explicitStyle = false;
             var end = R.richPlain(session.model).length;
-            selection = { start: end, end: end, backward: false };
+            selection = { start: session.settings.selectAll ? 0 : end, end: end, backward: false };
             box.style.color = !item.stroke || item.stroke.toLowerCase() === '#1a1a1a' ? 'var(--ck-ink)' : item.stroke;
             host.hidden = false; notify(); paint();
         }

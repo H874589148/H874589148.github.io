@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="creative-medium" content="mini-game">
+<title>数字围攻 · 策略小游戏</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="game-wrap">
+    <!-- 顶部信息栏 -->
+    <header class="top-bar">
+      <div class="score-block player-score">
+        <span class="score-label">蓝方</span>
+        <span class="score-value" id="playerScore">0</span>
+        <span class="score-count" id="playerCount">0 格</span>
+      </div>
+      <div class="turn-indicator" id="turnIndicator">
+        <span class="turn-text" id="turnText">你的回合</span>
+        <span class="turn-sub" id="turnSub">选择一个空格占领</span>
+      </div>
+      <div class="score-block enemy-score">
+        <span class="score-label">红方</span>
+        <span class="score-value" id="enemyScore">0</span>
+        <span class="score-count" id="enemyCount">0 格</span>
+      </div>
+    </header>
+
+    <!-- 棋盘 -->
+    <main class="board-wrap">
+      <div class="board" id="board"></div>
+    </main>
+
+    <!-- 底部操作 -->
+    <footer class="bottom-bar">
+      <button class="btn-secondary" id="rulesBtn">玩法说明</button>
+      <div class="best-score">
+        <span>最高胜场</span>
+        <strong id="bestWins">0</strong>
+      </div>
+      <button class="btn-primary" id="restartBtn">重新开始</button>
+    </footer>
+  </div>
+
+  <!-- 玩法说明弹窗 -->
+  <div class="modal hidden" id="rulesModal">
+    <div class="modal-content">
+      <h2>玩法说明</h2>
+      <div class="rules-body">
+        <div class="rule-item">
+          <span class="rule-num">01</span>
+          <div class="rule-text">
+            <h3>轮流占领</h3>
+            <p>你（蓝方）与红方轮流在空格上放置棋子，每回合只能占领一格。</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-num">02</span>
+          <div class="rule-text">
+            <h3>数值碾压</h3>
+            <p>你新占领的格子，其<strong>数值大于</strong>上下左右相邻的敌方格子时，那些格子会被翻转成你的。</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-num">03</span>
+          <div class="rule-text">
+            <h3>连携翻转</h3>
+            <p>被翻转的格子会继续检查它们的邻居，引发连锁翻转。一步棋可能翻盘大片区域！</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-num">04</span>
+          <div class="rule-text">
+            <h3>胜负判定</h3>
+            <p>棋盘填满后，所有棋子数值之和更高的一方获胜。中心格子数值更高，是战略要地。</p>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary full" id="closeRulesBtn">知道了</button>
+    </div>
+  </div>
+
+  <!-- 结束弹窗 -->
+  <div class="modal hidden" id="endModal">
+    <div class="modal-content end-content">
+      <h2 id="endTitle">胜利！</h2>
+      <p class="end-subtitle" id="endSubtitle">你以微弱优势险胜</p>
+      <div class="end-stats">
+        <div class="end-stat">
+          <span class="end-stat-label">你的总分</span>
+          <span class="end-stat-value blue" id="endPlayerScore">0</span>
+        </div>
+        <div class="end-stat">
+          <span class="end-stat-label">红方总分</span>
+          <span class="end-stat-value red" id="endEnemyScore">0</span>
+        </div>
+      </div>
+      <div class="end-diff" id="endDiff">领先 3 分</div>
+      <button class="btn-primary full" id="playAgainBtn">再来一局</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
