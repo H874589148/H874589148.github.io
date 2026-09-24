@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "transconductance-4t",
+  "name": "Four-terminal transconductance",
+  "viewBox": { "x": -44, "y": -36, "width": 88, "height": 72 },
+  "pins": [
+    { "name": "cp", "role": "input", "at": { "x": -40, "y": -20 }, "direction": "west", "presentation": { "visibility": "visible", "leadLength": 16 } },
+    { "name": "cn", "role": "input", "at": { "x": -40, "y": 20 }, "direction": "west", "presentation": { "visibility": "visible", "leadLength": 16 } },
+    { "name": "op", "role": "output", "at": { "x": 40, "y": -20 }, "direction": "east", "presentation": { "visibility": "visible", "leadLength": 16 } },
+    { "name": "on", "role": "output", "at": { "x": 40, "y": 20 }, "direction": "east", "presentation": { "visibility": "visible", "leadLength": 16 } }
+  ],
+  "primitives": [
+    { "kind": "path", "part": "body", "data": "M-24,-30 H24 V30 H-24 Z", "style": { "strokeRole": "normal" } },
+    { "kind": "path", "part": "leads", "data": "M-40,-20 H-24 M-40,20 H-24 M24,-20 H40 M24,20 H40" },
+    { "kind": "path", "part": "control-polarity", "data": "M-18,-20 H-8 M-13,-25 V-15 M-18,20 H-8" },
+    { "kind": "path", "part": "current-direction", "data": "M12,-20 V20 M7,12 L12,20 L17,12" }
+  ],
+  "variants": []
+}

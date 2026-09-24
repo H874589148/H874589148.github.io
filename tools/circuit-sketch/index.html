@@ -262,6 +262,17 @@
         </div>
     </main>
 
+    <dialog id="ckParameterDialog" class="ck-parameter-dialog" aria-labelledby="ckParameterTitle">
+        <form>
+            <h2 id="ckParameterTitle">器件参数</h2>
+            <label>符号名 <input name="symbol" maxlength="64" required spellcheck="false"></label>
+            <label>数值（留空仅生成符号式） <input name="value" maxlength="64" inputmode="decimal" autocomplete="off"></label>
+            <label>数量级 <select name="prefix"><option>G</option><option>M</option><option>k</option><option value="">无前缀</option><option>m</option><option>u</option><option>n</option><option>p</option><option>f</option></select> <strong data-unit></strong></label>
+            <p class="hint">数量级是数值乘数；u = µ。gm 电流从 op 流向 on，控制电压为 V(cp) − V(cn)。</p>
+            <p role="alert"></p>
+            <div class="ck-parameter-actions"><button type="submit" class="btn btn-primary">确认</button><button type="button" class="btn" data-cancel>取消</button></div>
+        </form>
+    </dialog>
     <footer class="site-footer ck-footer-hidden"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
     <script async src="https://cn.vercount.one/js"></script>
 
@@ -270,6 +281,9 @@
     <script src="../../razavi/render.js"></script>
     <script src="../../razavi/figures.js"></script>
     <script src="text-editor.js"></script>
+    <script src="../../js/circuit-connectivity.js"></script>
+    <script src="../transfer-function/canvas-netlist.js"></script>
+    <script src="parameter-editor.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

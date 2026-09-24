@@ -1,4 +1,10 @@
 /* tools/circuit-sketch/style.css */
+.ck-parameter-dialog { max-width: min(440px, 90vw); border: 2px solid var(--color-border); border-radius: 8px; padding: 24px; color: var(--color-text); background: var(--color-surface, var(--color-bg)); }
+.ck-parameter-dialog::backdrop { background: color-mix(in srgb, var(--color-text) 35%, transparent); }
+.ck-parameter-dialog label { display: block; margin: 14px 0; }
+.ck-parameter-dialog input { display: block; width: 100%; margin-top: 6px; }
+.ck-parameter-dialog [role="alert"] { color: var(--color-accent); min-height: 1.5em; }
+.ck-parameter-actions { display: flex; gap: 12px; justify-content: flex-end; }
 
 /* 页面级：编辑器独占可视区，禁止整页滚动 */
 .ck-page, body.ck-page { height: 100vh; overflow: hidden; }

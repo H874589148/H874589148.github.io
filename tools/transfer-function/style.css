@@ -1,0 +1,47 @@
+.tf-page .container { max-width: 1500px; }
+.tf-header { margin: 12px 0 26px; }
+.tf-header h1 { margin: 0 0 8px; }
+.tf-header p { color: var(--color-text-secondary); }
+.tf-eyebrow { font: 12px var(--font-mono); letter-spacing: .15em; }
+.tf-section { margin-bottom: 24px; padding: 22px; min-width: 0; }
+.tf-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 14px; }
+.tf-toolbar h2 { margin: 0; margin-right: auto; }
+.tf-toolbar label { display: inline-flex; align-items: center; gap: 8px; font-size: .95rem; }
+.tf-page select, .tf-page input[type="number"] { border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-bg-paper); color: var(--color-text); padding: 7px 9px; font: inherit; max-width: 100%; }
+.tf-page input[type="number"] { width: 148px; font-family: var(--font-mono); font-size: 13px; }
+.tf-page input[type="checkbox"] { accent-color: var(--color-primary); }
+.tf-page button:disabled { opacity: .5; cursor: not-allowed; }
+.tf-page :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.tf-project-tools { border-top: 1px dashed var(--color-border); padding-top: 12px; }
+.tf-frame-wrap { border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; margin: 12px 0; }
+.tf-frame-wrap iframe { display: block; width: 100%; height: 640px; border: 0; background: var(--color-card-bg); }
+.tf-hint { color: var(--color-text-secondary); font-size: .88rem; line-height: 1.7; }
+.tf-status { padding: 8px 12px; border-left: 3px solid var(--color-primary); background: var(--color-bg-paper); }
+.tf-status[data-error="true"], #storageStatus[data-error="true"] { color: var(--color-accent); }
+.tf-badge { padding: 3px 10px; border: 1px solid var(--color-border); border-radius: 20px; font-size: .85rem; color: var(--color-primary); }
+.tf-diagnostics { padding-left: 24px; margin: 12px 0; color: var(--color-accent); overflow-wrap: anywhere; }
+.tf-formula-grid, .tf-root-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin: 22px 0; }
+.tf-page article { min-width: 0; }
+.tf-page h3 { font-size: 1.15rem; }
+.tf-page h3 small { font-size: .8rem; font-weight: normal; color: var(--color-text-secondary); }
+.tf-page pre { overflow: auto; max-height: 460px; padding: 12px; background: var(--color-bg-paper); border: 1px solid var(--color-border); border-radius: 5px; font: 12px/1.9 var(--font-mono); tab-size: 4; }
+.tf-formula { min-height: 85px; margin: 10px 0; }
+.tf-math { overflow-x: auto; margin: 10px 0; }
+.tf-scroll { max-width: 100%; overflow: auto; }
+.tf-page table { width: 100%; margin: 10px 0; font-size: .85rem; border-collapse: collapse; }
+.tf-page th, .tf-page td { text-align: left; padding: 8px; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.tf-page td { font-family: var(--font-mono); font-size: 12px; }
+.tf-page details { margin: 12px 0; }
+.tf-page summary { color: var(--color-primary); cursor: pointer; }
+.tf-chart { position: relative; height: 320px; margin: 12px 0; }
+.tf-bode { height: 300px; }
+.tf-page .info-box ul { padding-left: 24px; }
+.tf-page [hidden] { display: none !important; }
+@media (max-width: 800px) {
+    .tf-formula-grid, .tf-root-grid { grid-template-columns: minmax(0, 1fr); }
+    .tf-section { padding: 14px; }
+    .tf-frame-wrap iframe { height: 580px; }
+    .tf-toolbar { gap: 8px; }
+    .tf-toolbar label { flex-wrap: wrap; }
+    .tf-toolbar .btn { font-size: .85rem; }
+}

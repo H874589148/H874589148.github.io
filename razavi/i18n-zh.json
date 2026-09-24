@@ -66,6 +66,7 @@
     "adder": "加法器",
     "multiplier": "乘法器",
     "transconductance": "跨导 +gm",
+    "transconductance-4t": "四端跨导 gm",
     "integrator": "积分器 1/s",
     "discrete-time-integrator": "离散积分器",
     "unit-delay": "单位延迟 z^-1",

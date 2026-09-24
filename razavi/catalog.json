@@ -4,6 +4,17 @@
   "version": 1,
   "entries": [
     {
+      "symbolId": "transconductance-4t",
+      "name": "Four-terminal transconductance",
+      "category": "signal-flow",
+      "reviewStatus": "project-extension",
+      "pinOrder": ["cp", "cn", "op", "on"],
+      "palette": true,
+      "automaticMappings": [],
+      "assetPath": "transconductance-4t.symbol.json",
+      "generation": { "kind": "project-extension", "description": "I(op,on)=gm*(V(cp)-V(cn))" }
+    },
+    {
       "symbolId": "and-gate",
       "name": "AND Gate",
       "category": "logic",

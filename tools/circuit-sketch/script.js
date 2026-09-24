@@ -156,21 +156,27 @@ var SYMBOLS = Razavi.metaAll();
    ============================================ */
 var EMBED = (function () {
     var mq = /[?&]embed=([a-z]+)/i.exec(location.search || '');
-    if (!mq || mq[1].toLowerCase() !== 'tt') return null;
+    if (!mq || ['tt', 'tf'].indexOf(mq[1].toLowerCase()) < 0) return null;
+    var mode = mq[1].toLowerCase();
+    var allowed = mode === 'tf' ? TFNetlist.DEVICES : ['and-gate', 'or-gate', 'nand-gate', 'nor-gate', 'xor-gate', 'xnor-gate', 'inverter', 'buffer'].concat(Razavi.LOGIC_IO_ORDER, ['dot']);
     var md = /[?&]devices=([a-z0-9,-]+)/i.exec(location.search || '');
-    var devices = md ? md[1].split(',').filter(function (id) { return !!SYMBOLS[id]; }) : [];
-    return { mode: 'tt', devices: devices };
+    var devices = (md ? md[1].split(',') : allowed).filter(function (id) { return !!SYMBOLS[id] && allowed.indexOf(id) >= 0; });
+    return { mode: mode, devices: devices };
 })();
 
 /* 器件可见性：embed 模式按 devices 白名单；主编辑器过滤 ttOnly 专用符号 */
 function deviceVisible(id) {
     if (EMBED) return EMBED.devices.indexOf(id) >= 0;
     var m = SYMBOLS[id];
-    return !(m && m.ttOnly);
+    return !(m && (m.ttOnly || m.embedOnly));
 }
 
 /* embed 模式器件面板分组（设备白名单过滤后展示） */
-var EMBED_GROUPS = [
+var EMBED_GROUPS = EMBED && EMBED.mode === 'tf' ? [
+    { name: '输入输出', ids: ['tf-in', 'tf-out'] },
+    { name: 'gm 与无源器件', ids: ['transconductance-4t', 'resistor', 'capacitor'] },
+    { name: '连接', ids: ['ground', 'dot'] }
+] : [
     { name: '逻辑门', ids: ['and-gate', 'or-gate', 'nand-gate', 'nor-gate', 'xor-gate', 'xnor-gate', 'inverter', 'buffer'] },
     { name: '输入输出', ids: Razavi.LOGIC_IO_ORDER },
     { name: '连接', ids: ['dot'] }
@@ -197,7 +203,7 @@ var DEFAULT_TEXT = {
     integrator: 'U1', 'discrete-time-integrator': 'U1', 'unit-delay': 'U1', quantizer: 'U1',
     port: 'P1', 'port-filled': 'P1',
     'transformer-4t': 'T1', 'transformer-6t': 'T1', 'transformer-6t-ct': 'T1',
-    block: 'BLOCK', mux: 'MUX'
+    block: 'BLOCK', mux: 'MUX', 'transconductance-4t': 'gm1', 'tf-in': 'Vin', 'tf-out': 'Vout'
 };
 
 /* 旧版（v1）类型名 → razavi 符号 id，存档迁移用 */
@@ -228,6 +234,94 @@ var LS_KEY = 'ee-circuit-sketch-v2';
 var LS_KEY_V1 = 'ee-circuit-sketch-v1';
 var hintMsg = '';              // 状态栏常驻提示（如迁移/载入标准图）
 var suppressSave = false;      // ?fig= 载入后、首次编辑前不覆盖本地存档
+var parameterEditor = null, parameterItem = null;
+var tfInputKind = 'voltage', tfRevision = 0, tfSignature = '', tfChangeTimer = null;
+function isTF() { return EMBED && EMBED.mode === 'tf'; }
+function isParameter(it) { return isTF() && it && it.kind === 'comp' && !!TFNetlist.TYPES[it.type]; }
+function tfNameUsed(name, except) {
+    return doc.items.some(function (it) {
+        return it.id !== except && ((it.analysis && it.analysis.symbol === name) || ((it.type === 'tf-in' || it.type === 'tf-out') && it.text === name));
+    });
+}
+function tfUnique(base, except) { var i = 1; while (tfNameUsed(base + i, except)) i++; return base + i; }
+function tfDefaults(it) {
+    if (!isTF() || it.kind !== 'comp') return;
+    if (TFNetlist.TYPES[it.type] && !it.analysis) {
+        it.analysis = { version: 1, symbol: tfUnique(TFNetlist.TYPES[it.type], it.id), value: '', prefix: it.type === 'resistor' ? 'k' : it.type === 'capacitor' ? 'p' : 'm' };
+    }
+    if (TFNetlist.TYPES[it.type] && it.analysis) { it.text = TFNetlist.label(it.analysis, it.type); delete it.richText; }
+    if (it.type === 'tf-in') it.inputKind = tfInputKind;
+}
+function tfSend(type, extra) {
+    window.parent.postMessage(Object.assign({ type: type, revision: tfRevision }, extra || {}), location.origin);
+}
+function tfNotify() {
+    if (!isTF()) return;
+    if (doc.inputKind === 'voltage' || doc.inputKind === 'current') tfInputKind = doc.inputKind;
+    doc.inputKind = tfInputKind;
+    doc.items.forEach(function (it) { if (it.type === 'tf-in') it.inputKind = tfInputKind; });
+    var signature = JSON.stringify(doc);
+    if (signature === tfSignature) return;
+    tfSignature = signature; tfRevision++;
+    tfSend('tf-doc-changed', { inputKind: tfInputKind });
+    clearTimeout(tfChangeTimer);
+    tfChangeTimer = setTimeout(function () { tfSend('tf-doc-changed', { doc: JSON.parse(tfSignature), inputKind: tfInputKind }); }, 80);
+}
+function initParameters() {
+    if (!isTF()) return;
+    parameterEditor = CircuitParameterEditor.create({ duplicate: tfNameUsed, finish: function (data) {
+        var it = byId(parameterItem); parameterItem = null;
+        if (data && it && JSON.stringify(it.analysis) !== JSON.stringify(data)) {
+            pushUndo(); it.analysis = data; it.text = TFNetlist.label(data, it.type); delete it.richText; render();
+        } else renderProps();
+        svg.focus({ preventScroll: true });
+    } });
+}
+function initTFBridge() {
+    var theme = Theme.get();
+    new MutationObserver(function () {
+        var next = Theme.get();
+        if (next === theme) return;
+        theme = next; tfSend('tf-theme-changed', { theme: next });
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || e.origin !== location.origin) return;
+        var d = e.data;
+        if (!d || typeof d !== 'object' || typeof d.type !== 'string' || d.type.indexOf('tf-') !== 0) return;
+        if (!['tf-get-doc', 'tf-load-doc', 'tf-set-input-kind', 'tf-set-theme', 'tf-export'].includes(d.type) || typeof d.requestId !== 'string') return;
+        var editing = !!textSession || !!(parameterEditor && parameterEditor.active);
+        function reply(error) { tfSend('tf-ack', { requestId: d.requestId, editing: editing, error: error || '' }); }
+        if (d.type === 'tf-get-doc') {
+            tfSend('tf-doc', { requestId: d.requestId, doc: JSON.parse(JSON.stringify(doc)), inputKind: tfInputKind, editing: editing }); return;
+        }
+        if (d.type === 'tf-set-theme') {
+            if (!['light', 'dark'].includes(d.theme)) { reply('主题无效'); return; }
+            theme = d.theme;
+            if (Theme.get() !== theme) Theme.set(theme);
+            reply(); return;
+        }
+        if (editing) { reply('请先确认或取消画布中的编辑草稿'); return; }
+        try {
+            if (d.type === 'tf-load-doc') {
+                var next = JSON.parse(JSON.stringify(d.doc)); TFNetlist.validateDoc(next);
+                if (d.inputKind && ['voltage', 'current'].indexOf(d.inputKind) < 0) throw new Error('激励类型无效');
+                next = normalizeDoc(next); TFNetlist.validateDoc(next);
+                pushUndo(); setTool('select'); doc = next;
+                if (d.inputKind) tfInputKind = d.inputKind;
+                doc.inputKind = tfInputKind;
+                doc.items.forEach(tfDefaults); sel = []; render(); fitContent(); reply();
+            } else if (d.type === 'tf-set-input-kind') {
+                if (['voltage', 'current'].indexOf(d.inputKind) < 0) throw new Error('激励类型无效');
+                if (tfInputKind !== d.inputKind) pushUndo();
+                tfInputKind = d.inputKind; doc.inputKind = tfInputKind; render(); reply();
+            } else if (d.type === 'tf-export') {
+                if (!['svg', 'png'].includes(d.format)) throw new Error('导出格式无效');
+                Promise.resolve((d.format === 'svg' ? exportSVG : exportPNG)()).then(function () { reply(); }, function (err) { reply(err.message || '图片导出失败'); });
+            }
+        } catch (err) { reply(err.message); }
+    });
+    tfSend('tf-ready');
+}
 
 function byId(id) {
     for (var i = 0; i < doc.items.length; i++) if (doc.items[i].id === id) return doc.items[i];
@@ -368,6 +462,7 @@ function drawMain() {
     layerMain.innerHTML = doc.items.map(displayItemSvg).join('');
 }
 function render() {
+    tfNotify();
     if (transformPivot && transformPivot.key !== sel.slice().sort().join(',')) transformPivot = null;
     drawMain();
     renderOverlay();
@@ -415,11 +510,15 @@ function canEditText(it) {
     return it && (it.kind === 'label' || (it.kind === 'comp' && Razavi.textPos(it.type) !== 'none'));
 }
 function isLogicSignal(it) {
-    return it && it.kind === 'comp' && (it.type === 'tt-in' || it.type === 'tt-out');
+    return it && it.kind === 'comp' && (it.type === 'tt-in' || it.type === 'tt-out' || (isTF() && (it.type === 'tf-in' || it.type === 'tf-out')));
 }
 function validateSignalName(model, item) {
     if (!isLogicSignal(item)) return '';
     var text = Razavi.richPlain(model);
+    if (isTF()) {
+        if (!TFNetlist.validName(text)) return '输入输出名称须为合法且非空的标识符，不能使用保留字。';
+        return tfNameUsed(text, item.id) ? '名称已被其他输入输出或器件参数使用。' : '';
+    }
     if (text === '') return '';
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(text) || /[\r\n]/.test(text)) {
         return '信号名须以英文字母或下划线开头，仅含英文字母、数字、下划线；不能包含空格或换行。';
@@ -430,6 +529,7 @@ function validateSignalName(model, item) {
     return duplicate ? '信号名「' + text + '」已被其他输入或输出使用，请使用不同名称。' : '';
 }
 function editingBlocked() {
+    if (parameterEditor && parameterEditor.active) { parameterEditor.notify(); return true; }
     if (!textSession) return false;
     if (textEditor) textEditor.notify();
     return true;
@@ -437,12 +537,17 @@ function editingBlocked() {
 function startTextEdit(it) {
     if (editingBlocked() || !canEditText(it)) return;
     setTool('select'); closeMenus(false);
+    if (isParameter(it)) {
+        parameterItem = it.id;
+        var initial = it.analysis || { version: 1, symbol: tfUnique(TFNetlist.TYPES[it.type], it.id), value: '', prefix: '' };
+        parameterEditor.open(it, initial); renderProps(); return;
+    }
     spaceDown = false;
     textSession = { id: it.id || null, item: it, original: JSON.stringify(Razavi.richForItem(it)) };
     drawMain(); renderOverlay(); renderProps(); updateQuickstartVisibility(); syncMenuStatus();
     textEditor.start(it, isLogicSignal(it) ? {
         singleLine: true, selectAll: true,
-        hint: (it.type === 'tt-in' ? '输入' : '输出') + '信号名；Enter 确认，Esc 取消；仅限英文字母、数字、下划线，不以数字开头；留空时生成真值表自动命名'
+        hint: (it.type.endsWith('-in') ? '输入' : '输出') + '信号名；Enter 确认，Esc 取消；仅限英文字母、数字、下划线，不以数字开头' + (isTF() ? '；名称不能为空' : '；留空时生成真值表自动命名')
     } : {});
 }
 function finishTextEdit(model) {
@@ -501,7 +606,7 @@ function initTextEditing() {
         e.preventDefault(); e.stopImmediatePropagation(); textEditor.notify();
     }, true);
     window.addEventListener('beforeunload', function (e) {
-        if (textSession) { e.preventDefault(); e.returnValue = ''; }
+        if (textSession || (parameterEditor && parameterEditor.active)) { e.preventDefault(); e.returnValue = ''; }
     });
     function refreshFonts() {
         Razavi.clearTextCache(); previewKey = '';
@@ -584,8 +689,11 @@ function placementPoint(e) {
 /* 草稿不分配 id；预览和真正落下的器件共用全部默认属性 */
 function compDraft(type, x, y, direction) {
     direction = direction || {};
-    return { kind: 'comp', type: type, x: x, y: y, rot: direction.rot || 0, fh: !!direction.fh, fv: !!direction.fv,
+    var draft = { kind: 'comp', type: type, x: x, y: y, rot: direction.rot || 0, fh: !!direction.fh, fv: !!direction.fv,
         text: DEFAULT_TEXT[type] || '', stroke: '#1a1a1a', sw: 1.5, dash: '' };
+    tfDefaults(draft);
+    if (isTF() && (type === 'tf-in' || type === 'tf-out') && tfNameUsed(draft.text)) draft.text = tfUnique(type === 'tf-in' ? 'input' : 'output');
+    return draft;
 }
 
 function pendingDraft() { return paletteDrag && paletteDrag.moved ? paletteDrag : placement; }
@@ -1330,6 +1438,11 @@ function pasteClip() {
     clipboard.forEach(function (it) {
         var c = JSON.parse(JSON.stringify(it));
         c.id = uid();
+        if (isParameter(c) && c.analysis) {
+            c.analysis.symbol = tfUnique(TFNetlist.TYPES[c.type]); c.text = TFNetlist.label(c.analysis, c.type); delete c.richText;
+        } else if (isTF() && (c.type === 'tf-in' || c.type === 'tf-out')) {
+            c.text = tfUnique(c.type === 'tf-in' ? 'input' : 'output'); delete c.richText;
+        }
         moveItem(c, 20, 20);
         doc.items.push(c);
         sel.push(c.id);
@@ -1364,7 +1477,8 @@ var propVariant = document.getElementById('propVariant');
 function renderProps() {
     var items = selItems();
     selInfo.textContent = items.length ? '已选中 ' + items.length + ' 项' : '未选中任何对象';
-    propEditText.disabled = !!textSession || items.length !== 1 || !canEditText(items[0]);
+    propEditText.disabled = !!textSession || !!(parameterEditor && parameterEditor.active) || items.length !== 1 || !canEditText(items[0]);
+    propEditText.textContent = items.length === 1 && isParameter(items[0]) ? '编辑参数' : '编辑文字';
     propText.textContent = items.length === 1 && canEditText(items[0]) ? (items[0].text || '（空白标号）') :
         (items.length > 1 ? '多选时不编辑文字' : '未选中文字');
     if (!items.length) { propVariantRow.style.display = 'none'; return; }
@@ -1590,6 +1704,7 @@ function syncMenuState() {
 var menuActions = {
     'new': newDoc,
     'save-local': function () {
+        if (EMBED) { if (isTF()) tfSend('tf-save'); return; }
         try {
             localStorage.setItem(LS_KEY, JSON.stringify(doc));
             suppressSave = false;
@@ -1598,7 +1713,9 @@ var menuActions = {
         } catch (err) { alert('保存失败，请导出 JSON 备份：' + err.message); }
     },
     'import-json': function () { setTool('select'); impFile.click(); },
-    'export-svg': exportSVG, 'export-png': exportPNG, 'export-pdf': exportPDF, 'export-json': exportJSON,
+    'export-svg': function () { return exportSVG().catch(function (err) { setStatus('导出失败：' + err.message); }); },
+    'export-png': function () { return exportPNG().catch(function (err) { setStatus('导出失败：' + err.message); }); },
+    'export-pdf': exportPDF, 'export-json': exportJSON,
     'svg-transparent': function () { exportOptions.svgTransparent = !exportOptions.svgTransparent; },
     'png-transparent': function () { exportOptions.pngTransparent = !exportOptions.pngTransparent; },
     'close-editor': function () {
@@ -2027,30 +2144,59 @@ function download(name, blob) {
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
 }
 
+/* 等待字体或栅格化期间，TF 图纸变化、草稿与超时都不能产生迟到下载。 */
+function exportGuard() {
+    var revision = isTF() ? tfRevision : null, expires = Date.now() + 10000;
+    return function () {
+        if (editingBlocked()) throw new Error('请先确认或取消编辑草稿');
+        if (revision !== null && revision !== tfRevision) throw new Error('导出期间图纸已改变，请重新导出');
+        if (Date.now() > expires) throw new Error('图片导出超时，请重试');
+    };
+}
 async function exportSVG() {
-    if (editingBlocked()) return;
-    await readyTextFonts();
-    if (editingBlocked()) return;
+    var check = exportGuard(); check();
+    await readyTextFonts(); check();
     var r = exportSvgStr(!exportOptions.svgTransparent);
     download('circuit.svg', new Blob([r.str], { type: 'image/svg+xml' }));
 }
 
 async function exportPNG() {
-    if (editingBlocked()) return;
-    await readyTextFonts();
-    if (editingBlocked()) return;
+    var check = exportGuard(); check();
+    await readyTextFonts(); check();
     var trans = exportOptions.pngTransparent;
     var r = exportSvgStr(!trans);
-    var img = new Image();
-    img.onload = function () {
-        var cv = document.createElement('canvas');
-        cv.width = r.w * 2; cv.height = r.h * 2;
-        var ctx = cv.getContext('2d');
-        if (!trans) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height); }
-        ctx.drawImage(img, 0, 0, cv.width, cv.height);
-        cv.toBlob(function (bl) { if (bl) download('circuit.png', bl); });
-    };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+    if (!Number.isFinite(r.w * r.h) || r.w <= 0 || r.h <= 0 || r.w * 2 > 16384 || r.h * 2 > 16384 || r.w * r.h * 4 > 32000000) throw new Error('图片尺寸过大或无效，请缩小图纸或使用 SVG');
+    return new Promise(function (resolve, reject) {
+        var img = new Image(), done = false;
+        var timeout = setTimeout(function () { finish(new Error('PNG 栅格化超时')); }, 10000);
+        function finish(error) {
+            if (done) return;
+            done = true; clearTimeout(timeout); img.onload = img.onerror = null;
+            if (error) reject(error); else resolve();
+        }
+        img.onload = function () {
+            if (done) return;
+            try {
+                check();
+                var cv = document.createElement('canvas');
+                cv.width = Math.ceil(r.w * 2); cv.height = Math.ceil(r.h * 2);
+                var ctx = cv.getContext('2d');
+                if (!ctx) throw new Error('无法创建 PNG 绘图上下文');
+                if (!trans) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height); }
+                ctx.drawImage(img, 0, 0, cv.width, cv.height);
+                cv.toBlob(function (bl) {
+                    if (done) return;
+                    try {
+                        check();
+                        if (!bl) throw new Error('PNG 编码失败');
+                        download('circuit.png', bl); finish();
+                    } catch (err) { finish(err); }
+                }, 'image/png');
+            } catch (err) { finish(err); }
+        };
+        img.onerror = function () { finish(new Error('无法将电路 SVG 栅格化为 PNG')); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+    });
 }
 
 /* 导出 PDF：白底 2x 位图（JPEG 不支持透明），走 common.js 最小 PDF 生成器 */
@@ -2194,6 +2340,7 @@ function sampleDoc() {
     buildPalette();
     initMenus();
     initTextEditing();
+    initParameters();
     applyViewTransform();
     observeViewport();
     if (EMBED) {
@@ -2224,7 +2371,8 @@ function sampleDoc() {
 
     /* embed 模式：与宿主页面（真值表模块）的 postMessage 数据桥
        tt-get-doc → 回发 tt-doc；tt-load-doc → 校验后清空并载入（示例注入） */
-    if (EMBED) {
+    if (isTF()) initTFBridge();
+    if (EMBED && EMBED.mode === 'tt') {
         window.addEventListener('message', function (e) {
             if (e.source !== window.parent) return;
             var d = e.data;

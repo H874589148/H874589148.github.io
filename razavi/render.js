@@ -75,12 +75,16 @@ var AUX = {
         }
     }
 };
+AUX['tf-in'] = Object.assign({}, AUX['tt-in'], { name: '模拟输入', embedOnly: 'tf' });
+AUX['tf-out'] = Object.assign({}, AUX['tt-out'], { name: '模拟输出', embedOnly: 'tf' });
+var TF_IO_ORDER = ['tf-in', 'tf-out'];
 var LOGIC_IO_ORDER = ['tt-in', 'tt-out', 'tt-const0', 'tt-const1'];
+var PORT_LABEL_TYPES = LOGIC_IO_ORDER.concat(TF_IO_ORDER);
 var AUX_GROUPS = [
     { id: 'logic-io', name: '输入输出', ids: LOGIC_IO_ORDER },
     { id: 'aux', name: '绘图辅助', ids: ['dot', 'arrow', 'block', 'mux'] }
 ];
-var AUX_ORDER = AUX_GROUPS[1].ids.concat(LOGIC_IO_ORDER);
+var AUX_ORDER = AUX_GROUPS[1].ids.concat(LOGIC_IO_ORDER, TF_IO_ORDER);
 
 /* ============================================ 基础工具 ============================================ */
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -292,6 +296,14 @@ function ports(id, variant) {
         .map(function (p) { return { x: p.at.x, y: p.at.y, n: p.name }; });
 }
 
+function portsWorld(c) {
+    var t = (c.rot || 0) * Math.PI / 2, co = Math.round(Math.cos(t)), si = Math.round(Math.sin(t));
+    return ports(c.type, c.variant).map(function (p) {
+        var x = p.x * (c.fh ? -1 : 1), y = p.y * (c.fv ? -1 : 1);
+        return { x: c.x + co * x - si * y, y: c.y + si * x + co * y, n: p.n };
+    });
+}
+
 function bboxArr(id) {
     if (AUX[id]) return AUX[id].bbox;
     var s = SYMS[id];
@@ -314,8 +326,8 @@ function textPos(id) {
 
 function meta(id) {
     if (AUX[id]) {
-        var a = AUX[id], group = AUX_GROUPS[LOGIC_IO_ORDER.indexOf(id) >= 0 ? 0 : 1];
-        return { id: id, name: a.name, nameZh: a.name, cat: group.id, catName: group.name, bbox: a.bbox, textPos: a.textPos, razavi: false, hasVariants: false, ttOnly: a.ttOnly === true };
+        var a = AUX[id], group = TF_IO_ORDER.indexOf(id) >= 0 ? { id: 'analog-io', name: '模拟输入输出' } : AUX_GROUPS[LOGIC_IO_ORDER.indexOf(id) >= 0 ? 0 : 1];
+        return { id: id, name: a.name, nameZh: a.name, cat: group.id, catName: group.name, bbox: a.bbox, textPos: a.textPos, razavi: false, hasVariants: false, ttOnly: a.ttOnly === true, embedOnly: a.embedOnly };
     }
     var e = catEntry(id);
     return {
@@ -432,13 +444,13 @@ function itemBBox(it, opts) {
     }
     if (it.kind === 'label') return labelBBox(it, opts);
     var b = compWorldBBox(it);
-    return ((opts && opts.editorText) || LOGIC_IO_ORDER.indexOf(it.type) >= 0) && richPlain(richForItem(it)) ? unionBBox(b, textBBox(it)) : b;
+    return ((opts && opts.editorText) || PORT_LABEL_TYPES.indexOf(it.type) >= 0) && richPlain(richForItem(it)) ? unionBBox(b, textBBox(it)) : b;
 }
 
 /* 含文字标签的外扩包围盒（导出裁剪用） */
 function itemOuterBBox(it, opts) {
     var b = itemBBox(it, opts);
-    if ((opts && opts.editorText) || (it.kind === 'comp' && LOGIC_IO_ORDER.indexOf(it.type) >= 0)) return b;
+    if ((opts && opts.editorText) || (it.kind === 'comp' && PORT_LABEL_TYPES.indexOf(it.type) >= 0)) return b;
     if (it.kind === 'comp' && it.text) {
         var tp = textPos(it.type);
         if (tp === 'top') return { x0: b.x0 - 6, y0: b.y0 - 24, x1: b.x1 + 6, y1: b.y1 };
@@ -476,7 +488,7 @@ function itemSvg(it, opts) {
         pt = new Painter();
         pt.put('stroke', stroke);
         body = '<g' + pt.tag() + ' stroke-width="' + (it.sw || 1.5) + '" fill="none" stroke-linecap="' +
-            (m.cat === 'logic-io' ? 'butt' : 'round') + '" stroke-linejoin="' + (m.cat === 'logic-io' ? 'miter' : 'round') + '"' +
+            (PORT_LABEL_TYPES.indexOf(it.type) >= 0 ? 'butt' : 'round') + '" stroke-linejoin="' + (PORT_LABEL_TYPES.indexOf(it.type) >= 0 ? 'miter' : 'round') + '"' +
             (it.dash ? ' stroke-dasharray="' + it.dash + '"' : '') + '>' + AUX[it.type].body({ stroke: stroke }) + '</g>';
     }
     /* 符号体在 translate(x,y) 组内用局部坐标；文字标签用世界坐标，必须先闭合该组再追加 */
@@ -486,7 +498,8 @@ function itemSvg(it, opts) {
     if (AUX[it.type] && typeof AUX[it.type].fixedText === 'string') {
         s += richSvg({ kind: 'label', x: it.x, y: it.y + 4, text: AUX[it.type].fixedText, size: 13, anchor: 'middle' }, stroke);
     }
-    if (opts.editorText || LOGIC_IO_ORDER.indexOf(it.type) >= 0) return s + (opts.hideText ? '' : richSvg(it, stroke));
+    if (it.type === 'tf-in') s += richSvg({ kind: 'label', x: it.x, y: it.y + 4, text: it.inputKind === 'current' ? 'I' : 'V', size: 12, anchor: 'middle' }, stroke);
+    if (opts.editorText || PORT_LABEL_TYPES.indexOf(it.type) >= 0) return s + (opts.hideText ? '' : richSvg(it, stroke));
     if (!opts.hideText && it.text && m.textPos !== 'none') {
         var bb = compWorldBBox(it);
         var tx, ty, anchor = 'middle';
@@ -530,9 +543,9 @@ function docSvg(doc, opts) {
 
 return {
     CATS: CATS, CATALOG: CATALOG, AUX: AUX, AUX_ORDER: AUX_ORDER,
-    LOGIC_IO_ORDER: LOGIC_IO_ORDER, AUX_GROUPS: AUX_GROUPS,
+    LOGIC_IO_ORDER: LOGIC_IO_ORDER, TF_IO_ORDER: TF_IO_ORDER, AUX_GROUPS: AUX_GROUPS,
     isRazavi: isRazavi, meta: meta, metaAll: metaAll, resolve: resolve,
-    ports: ports, bboxArr: bboxArr, variantOptions: variantOptions, textPos: textPos,
+    ports: ports, portsWorld: portsWorld, bboxArr: bboxArr, variantOptions: variantOptions, textPos: textPos,
     symbolInner: symbolInner, itemSvg: itemSvg,
     itemBBox: itemBBox, itemOuterBBox: itemOuterBBox, compWorldBBox: compWorldBBox, labelBBox: labelBBox,
     docBBox: docBBox, docSvg: docSvg, esc: esc,

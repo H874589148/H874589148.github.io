@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>暖暖叠楼 · Tower Bloxx</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(160deg, #fff3dd 0%, #ffe3ec 55%, #e9e2ff 100%);
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 18px 12px 28px; color: #6b5a6e; user-select: none; overflow-x: hidden;
+  }
+  h1 {
+    font-size: 32px; letter-spacing: 4px; font-weight: 800;
+    background: linear-gradient(90deg, #ff9e7d, #ff7fa5, #b28dff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 2px;
+  }
+  .subtitle { font-size: 11px; letter-spacing: 6px; color: #c3a9bb; margin-bottom: 14px; }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+  .pill {
+    background: rgba(255,255,255,.85); border-radius: 999px; padding: 7px 16px;
+    box-shadow: 0 3px 10px rgba(200, 140, 170, .16);
+    font-size: 15px; font-weight: 600; color: #8a7390;
+  }
+  .pill b { font-size: 18px; margin-left: 4px; }
+  .pill.score b { color: #ff7fa5; }
+  .pill.best b { color: #b28dff; }
+  .pill .hearts { color: #ff8fa8; letter-spacing: 2px; font-size: 16px; }
+  .btn {
+    border: none; cursor: pointer; border-radius: 999px; padding: 8px 20px;
+    font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 2px;
+    box-shadow: 0 4px 12px rgba(220, 150, 170, .3); transition: transform .12s, box-shadow .12s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: translateY(0) scale(.96); }
+  .btn.primary { background: linear-gradient(135deg, #ffb27d, #ff7fa5); }
+  .btn.warn { background: linear-gradient(135deg, #b28dff, #8fa8ff); }
+
+  .board-wrap {
+    position: relative; background: rgba(255,255,255,.6); border-radius: 24px; padding: 10px;
+    box-shadow: 0 12px 32px rgba(200, 140, 170, .22);
+  }
+  canvas#game { display: block; border-radius: 16px; }
+
+  .overlay {
+    position: absolute; inset: 10px; border-radius: 16px; z-index: 5;
+    background: rgba(255, 252, 248, .85); backdrop-filter: blur(6px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  }
+  .overlay[hidden] { display: none; }
+  .overlay h2 {
+    font-size: 26px; letter-spacing: 3px;
+    background: linear-gradient(90deg, #ff9e7d, #ff7fa5, #b28dff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .overlay p { font-size: 14px; color: #ab93ad; line-height: 1.8; text-align: center; }
+  .overlay .big { font-size: 18px; font-weight: 700; color: #8a7390; }
+  .record { color: #ff7fa5; font-weight: 700; font-size: 15px; }
+
+  .hint { margin-top: 14px; font-size: 12px; color: #c3a9bb; letter-spacing: 1px; text-align: center; }
+  .hint kbd {
+    background: rgba(255,255,255,.9); border-radius: 6px; padding: 1px 7px; margin: 0 2px;
+    box-shadow: 0 2px 5px rgba(200,140,170,.18); font-family: inherit; color: #8a7390;
+  }
+</style>
+</head>
+<body>
+  <h1>暖暖叠楼</h1>
+  <div class="subtitle">T O W E R · B L O X X</div>
+
+  <div class="topbar">
+    <div class="pill score">得分<b id="score">0</b></div>
+    <div class="pill"><span class="hearts" id="lives">♥♥♥</span></div>
+    <button class="btn primary" id="btnStart">开始</button>
+    <button class="btn warn" id="btnRestart">重开</button>
+    <div class="pill best">最高<b id="best">0</b></div>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="game" width="440" height="620"></canvas>
+    <div class="overlay" id="ovStart">
+      <h2>暖暖叠楼</h2>
+      <p>看准时机，点击或按空格放下小楼块<br>对得越齐，楼越稳、分越高<br>掉落空 3 次就结束了哦</p>
+      <button class="btn primary" id="btnPlay">开始盖楼</button>
+    </div>
+    <div class="overlay" id="ovOver" hidden>
+      <h2>小楼竣工</h2>
+      <div class="big">盖了 <span id="finalFloors">0</span> 层 · 得分 <span id="finalScore">0</span></div>
+      <div class="record" id="newRecord" hidden>🌸 新纪录！</div>
+      <button class="btn primary" id="btnAgain">再盖一座</button>
+    </div>
+  </div>
+
+  <div class="hint"><kbd>空格</kbd> 或 <kbd>点击画面</kbd> 放下楼块 · <kbd>Enter</kbd> 开始</div>
+
+<script>
+'use strict';
+/* ---------- 常量 ---------- */
+const W = 440, H = 620;
+const BLOCK_H = 36;
+const BASE_W = 170;
+const GRAVITY = 2600;          // px/s^2
+const PERFECT_TOL = 6;         // 完美判定 px
+const MIN_W = 14;              // 剩余宽度小于此值判失败
+const PALETTE = ['#ffc4ad', '#ffd9a3', '#ffe9b0', '#c9ecc7', '#b5e0e8', '#c3cdf0', '#dcc8f0', '#ffc9d9'];
+
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+
+/* ---------- 状态 ---------- */
+let tower;            // [{x, w, wy, color, t0}]
+let swing;            // {x, wy, w, color, t}
+let falling = null;   // {x, wy, w, vy, color, miss, rot, vrot}
+let phase = 'swing';  // swing | fall
+let score, floors, lives, combo, best;
+let camY = 0, camTarget = 0;
+let popups = [];      // {x, wy, text, color, t0}
+let clouds = [];
+let running = false, dead = false;
+let lastT = 0;
+let overrideX = null; // 测试用
+
+best = +(localStorage.getItem('warmTowerBest') || 0);
+$('best').textContent = best;
+
+function towerTopWy(){ return tower.length ? tower[tower.length - 1].wy : 0; }
+
+/* ---------- 游戏流程 ---------- */
+function resetGame(){
+  tower = [];
+  score = 0; floors = 0; lives = 3; combo = 0;
+  popups = []; falling = null; phase = 'swing';
+  camY = H - 150; camTarget = camY;
+  clouds = [];
+  for(let i = 0; i < 6; i++){
+    clouds.push({ x: Math.random() * W, y: 40 + Math.random() * 260, s: .6 + Math.random() * .9, v: 6 + Math.random() * 10 });
+  }
+  spawnSwing();
+  updateHUD();
+}
+function spawnSwing(){
+  const w = tower.length ? tower[tower.length - 1].w : BASE_W;
+  swing = {
+    w, wy: towerTopWy() - 78 - BLOCK_H,
+    x: W / 2, t: 0,
+    color: PALETTE[tower.length % PALETTE.length],
+    speed: 1.7 + Math.min(floors * 0.02, 1.1),
+  };
+  phase = 'swing';
+}
+function drop(){
+  if(!running || dead || phase !== 'swing') return;
+  if(overrideX !== null) swing.x = overrideX;
+  falling = { x: swing.x, wy: swing.wy, w: swing.w, color: swing.color, vy: 0, miss: false, rot: 0, vrot: 0 };
+  overrideX = null;
+  phase = 'fall';
+}
+function resolveLand(){
+  const f = falling;
+  const topWy = towerTopWy();
+  const prevL = tower.length ? tower[tower.length - 1].x : W / 2 - BASE_W / 2;
+  const prevR = prevL + (tower.length ? tower[tower.length - 1].w : BASE_W);
+  const fL = f.x - f.w / 2, fR = f.x + f.w / 2;
+  const oL = Math.max(prevL, fL), oR = Math.min(prevR, fR);
+  const ow = oR - oL;
+
+  if(ow < MIN_W){
+    // 未接住：楼块滚落
+    f.miss = true;
+    f.vrot = (fR < prevL ? -1 : 1) * (2 + Math.random() * 2);
+    f.vy = -300;
+    lives--; combo = 0;
+    updateHUD();
+    if(lives <= 0){ setTimeout(gameOver, 900); }
+    else setTimeout(spawnSwing, 650);
+    return;
+  }
+  const prevCx = (prevL + prevR) / 2;
+  const perfect = Math.abs(f.x - prevCx) <= PERFECT_TOL;
+  let nw, nx;
+  if(perfect){
+    combo++;
+    nw = f.w; nx = prevCx;           // 完美：自动对齐不削边
+  }else{
+    combo = 0;
+    nw = ow; nx = (oL + oR) / 2;
+  }
+  const gained = 10 + (perfect ? 15 * combo : 0);
+  score += gained;
+  tower.push({ x: nx - nw / 2, w: nw, wy: topWy - BLOCK_H, color: f.color, t0: performance.now(), perfect });
+  floors = tower.length;
+  popups.push({ x: nx, wy: topWy - BLOCK_H - 10, text: perfect ? (combo > 1 ? `完美 ×${combo} +${gained}` : `完美！+${gained}`) : `+${gained}`, color: perfect ? '#ff7fa5' : '#b28d6f', t0: performance.now() });
+  // 尘土
+  for(let i = 0; i < 10; i++){
+    popups.push({ dust: true, x: nx - nw / 2 + Math.random() * nw, wy: topWy, vx: (Math.random() - .5) * 40, vy: -20 - Math.random() * 40, t0: performance.now() });
+  }
+  camTarget = 175 - towerTopWy();
+  falling = null;
+  updateHUD();
+  setTimeout(spawnSwing, 260);
+}
+function gameOver(){
+  dead = true; running = false;
+  $('finalFloors').textContent = floors;
+  $('finalScore').textContent = score;
+  const isNew = score > best;
+  if(isNew){ best = score; localStorage.setItem('warmTowerBest', best); $('best').textContent = best; }
+  $('newRecord').hidden = !isNew;
+  $('ovOver').hidden = false;
+  $('btnStart').textContent = '开始';
+}
+function startGame(){
+  if(running) return;
+  resetGame();
+  running = true; dead = false;
+  $('ovStart').hidden = true; $('ovOver').hidden = true;
+  $('btnStart').textContent = '盖楼中';
+  lastT = performance.now();
+}
+function updateHUD(){
+  $('score').textContent = score;
+  $('lives').textContent = '♥'.repeat(Math.max(lives, 0)) + '♡'.repeat(Math.max(3 - lives, 0));
+}
+
+/* ---------- 输入 ---------- */
+window.addEventListener('keydown', e => {
+  if(e.key === ' '){ e.preventDefault(); if(!running && !dead) startGame(); else drop(); }
+  if(e.key === 'Enter'){ startGame(); }
+});
+cv.addEventListener('pointerdown', () => { if(running) drop(); });
+$('btnPlay').onclick = startGame;
+$('btnAgain').onclick = startGame;
+$('btnStart').onclick = () => { if(!running) startGame(); };
+$('btnRestart').onclick = () => { startGame(); };
+
+/* ---------- 更新 ---------- */
+function update(dt, now){
+  // 相机缓动
+  camY += (camTarget - camY) * Math.min(1, dt * 4);
+  // 云
+  clouds.forEach(c => { c.x += c.v * dt; if(c.x > W + 80) c.x = -80; });
+  if(!running || dead) return;
+  if(phase === 'swing'){
+    swing.t += dt * swing.speed;
+    const amp = W / 2 - swing.w / 2 - 24;
+    swing.x = overrideX !== null ? overrideX : W / 2 + Math.sin(swing.t) * amp;
+    swing.wy = towerTopWy() - 78 - BLOCK_H;
+  }
+  if(falling){
+    const f = falling;
+    f.vy += GRAVITY * dt;
+    f.wy += f.vy * dt;
+    if(f.miss){
+      f.rot += f.vrot * dt;
+      if(f.wy + camY > H + 100) falling = null;
+    }else if(f.wy + BLOCK_H >= towerTopWy()){
+      f.wy = towerTopWy() - BLOCK_H;
+      resolveLand();
+    }
+  }
+}
+
+/* ---------- 绘制 ---------- */
+function rr(c, x, y, w, h, r){
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+function drawSky(){
+  const k = Math.min(1, floors / 45); // 越高越入夜
+  const lerp = (a, b) => Math.round(a + (b - a) * k);
+  const top = [lerp(255, 150), lerp(228, 160), lerp(190, 230)];
+  const bot = [lerp(255, 255), lerp(205, 214), lerp(226, 244)];
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, `rgb(${top[0]},${top[1]},${top[2]})`);
+  g.addColorStop(1, `rgb(${bot[0]},${bot[1]},${bot[2]})`);
+  ctx.fillStyle = g;
+  rr(ctx, 0, 0, W, H, 16); ctx.fill();
+  // 星星
+  if(k > 0.25){
+    ctx.save();
+    ctx.globalAlpha = (k - 0.25) * 1.1;
+    ctx.fillStyle = '#fff';
+    for(let i = 0; i < 28; i++){
+      const sx = (i * 97.3) % W, sy = (i * 61.7) % (H * .6);
+      const tw = .5 + .5 * Math.sin(performance.now() / 500 + i);
+      ctx.globalAlpha = (k - 0.25) * 1.1 * tw;
+      ctx.beginPath(); ctx.arc(sx, sy, 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  // 太阳（暖光）
+  const sg = ctx.createRadialGradient(W - 92, 96, 8, W - 92, 96, 70);
+  sg.addColorStop(0, 'rgba(255,236,180,.95)');
+  sg.addColorStop(1, 'rgba(255,236,180,0)');
+  ctx.fillStyle = sg;
+  ctx.beginPath(); ctx.arc(W - 92, 96, 70, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffdf9e';
+  ctx.beginPath(); ctx.arc(W - 92, 96, 26, 0, Math.PI * 2); ctx.fill();
+}
+function drawCloud(c){
+  ctx.save();
+  ctx.globalAlpha = .85;
+  ctx.fillStyle = '#ffffff';
+  const s = c.s;
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, 18 * s, 0, Math.PI * 2);
+  ctx.arc(c.x + 20 * s, c.y - 8 * s, 22 * s, 0, Math.PI * 2);
+  ctx.arc(c.x + 44 * s, c.y, 16 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+function drawGround(){
+  const gy = 0 + camY; // 地面世界 y=0
+  if(gy > H + 60) return;
+  ctx.fillStyle = '#bfe3bd';
+  ctx.fillRect(0, gy, W, H - gy + 40);
+  // 草地起伏
+  ctx.fillStyle = '#aedeab';
+  ctx.beginPath();
+  ctx.ellipse(W * .25, gy + 8, 120, 18, 0, Math.PI, 0);
+  ctx.ellipse(W * .78, gy + 10, 140, 20, 0, Math.PI, 0);
+  ctx.fill();
+  // 小花
+  const flowers = [[40, 26], [90, 44], [150, 22], [330, 34], [390, 20], [250, 48], [205, 30]];
+  flowers.forEach(([fx, fy], i) => {
+    const yy = gy + fy;
+    if(yy > H) return;
+    ctx.fillStyle = ['#ff9eb5', '#ffd27f', '#b28dff'][i % 3];
+    for(let p = 0; p < 5; p++){
+      const a = p / 5 * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(fx + Math.cos(a) * 4, yy + Math.sin(a) * 4, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = '#fff6c9';
+    ctx.beginPath(); ctx.arc(fx, yy, 2.6, 0, Math.PI * 2); ctx.fill();
+  });
+  // 地基平台
+  const bx = W / 2 - BASE_W / 2;
+  ctx.fillStyle = '#d9c9b8';
+  rr(ctx, bx - 8, gy - 10, BASE_W + 16, 14, 6); ctx.fill();
+}
+function drawBlockShape(x, wy, w, color, rot = 0, squashK = 0){
+  const sy = wy + camY;
+  ctx.save();
+  ctx.translate(x, sy + BLOCK_H / 2);
+  if(rot) ctx.rotate(rot);
+  if(squashK > 0){
+    const s = 1 + 0.18 * Math.sin(Math.min(squashK, 1) * Math.PI) * (1 - squashK);
+    ctx.scale(1 / Math.sqrt(s), s);
+  }
+  const h = BLOCK_H;
+  const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+  g.addColorStop(0, color);
+  g.addColorStop(1, shade(color, -.07));
+  rr(ctx, -w / 2, -h / 2, w, h, 7);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = shade(color, -.16); ctx.lineWidth = 1.5; ctx.stroke();
+  // 顶部高光
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  rr(ctx, -w / 2 + 3, -h / 2 + 2, w - 6, 6, 3); ctx.fill();
+  // 窗户
+  const cols = Math.max(1, Math.floor((w - 16) / 30));
+  for(let i = 0; i < cols; i++){
+    const wx = -w / 2 + (w - cols * 22) / 2 + 11 + i * 22;
+    const lit = ((tower.length + i * 7 + Math.round(w)) % 3) !== 0;
+    ctx.fillStyle = lit ? '#fff3bf' : 'rgba(255,255,255,.45)';
+    rr(ctx, wx - 7, -5, 14, 12, 3); ctx.fill();
+    ctx.strokeStyle = 'rgba(160,130,120,.35)'; ctx.lineWidth = 1;
+    rr(ctx, wx - 7, -5, 14, 12, 3); ctx.stroke();
+  }
+  ctx.restore();
+}
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const f = v => Math.max(0, Math.min(255, Math.round(v + 255 * amt)));
+  return `rgb(${f(r)},${f(g)},${f(b)})`;
+}
+function drawTower(now){
+  tower.forEach(b => {
+    const age = Math.min(1, (now - b.t0) / 450);
+    drawBlockShape(b.x + b.w / 2, b.wy, b.w, b.color, 0, 1 - age);
+  });
+}
+function drawSwing(){
+  if(phase !== 'swing' || !running || dead) return;
+  const px = W / 2, py = swing.wy + camY - 58;
+  // 吊绳
+  ctx.strokeStyle = 'rgba(140,110,120,.6)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(swing.x, swing.wy + camY); ctx.stroke();
+  // 滑轮
+  ctx.fillStyle = '#e8d9c9';
+  ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#c9b3a2'; ctx.lineWidth = 2; ctx.stroke();
+  drawBlockShape(swing.x, swing.wy, swing.w, swing.color);
+}
+function drawFalling(){
+  if(!falling) return;
+  drawBlockShape(falling.x, falling.wy, falling.w, falling.color, falling.rot);
+}
+function drawPopups(now){
+  popups = popups.filter(p => (now - p.t0) < (p.dust ? 600 : 900));
+  popups.forEach(p => {
+    const age = (now - p.t0) / (p.dust ? 600 : 900);
+    if(p.dust){
+      ctx.save();
+      ctx.globalAlpha = .5 * (1 - age);
+      ctx.fillStyle = '#e8dccf';
+      ctx.beginPath();
+      ctx.arc(p.x + p.vx * age, p.wy + camY + p.vy * age, 4 + age * 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }else{
+      ctx.save();
+      ctx.globalAlpha = 1 - age;
+      ctx.fillStyle = p.color;
+      ctx.font = '700 17px "PingFang SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.text, p.x, p.wy + camY - age * 34);
+      ctx.restore();
+    }
+  });
+}
+function render(now){
+  ctx.clearRect(0, 0, W, H);
+  drawSky();
+  clouds.forEach(drawCloud);
+  drawGround();
+  drawTower(now);
+  drawFalling();
+  drawSwing();
+  drawPopups(now);
+  // 楼层数（画面中上部）
+  if(running && floors > 0){
+    ctx.save();
+    ctx.globalAlpha = .55;
+    ctx.fillStyle = '#8a7390';
+    ctx.font = '700 14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${floors} 层`, 14, 28);
+    ctx.restore();
+  }
+}
+
+/* ---------- 主循环 ---------- */
+function frame(now){
+  const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
+  update(dt, now);
+  render(now);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- 启动 ---------- */
+resetGame();
+lastT = performance.now();
+requestAnimationFrame(frame);
+
+/* ---------- 测试钩子 ---------- */
+window.__TWR = {
+  get floors(){ return floors; }, get score(){ return score; },
+  get lives(){ return lives; }, get combo(){ return combo; },
+  get running(){ return running; }, get dead(){ return dead; }, get phase(){ return phase; },
+  get blockX(){ return swing ? swing.x : null; },
+  topCenter(){
+    if(!tower.length) return W / 2;
+    const b = tower[tower.length - 1];
+    return b.x + b.w / 2;
+  },
+  start: startGame, drop, reset: resetGame,
+  setX(x){ overrideX = x; },
+};
+</script>
+</body>
+</html>

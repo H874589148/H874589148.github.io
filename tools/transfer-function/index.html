@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="绘制四端 gm、电阻、电容小信号网络，本地计算符号传递函数、电压增益或跨阻、零极点和 Bode 图。">
+    <title>传递函数计算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="tf-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">← <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">常用工具 / 传递函数计算</span>
+    </nav>
+    <main class="container">
+        <header class="tf-header">
+            <p class="tf-eyebrow">SMALL-SIGNAL · gm / R / C</p>
+            <h1>传递函数计算</h1>
+            <p>在画布上连接小信号电路，求取精确传递函数与频率响应。所有计算在本地完成，电路数据不上传。</p>
+        </header>
+        <section class="paper-card tf-section" aria-label="电路与工程">
+            <div class="tf-toolbar">
+                <label>输入类型 <select id="inputKind" data-editor-action disabled><option value="voltage">电压 · Vout / Vin</option><option value="current">电流 · Vout / Iin（Ω）</option></select></label>
+                <label>示例 <select id="example" data-editor-action disabled><option value="">选择示例…</option></select></label>
+                <button type="button" class="btn btn-primary" id="generate" data-editor-action disabled>生成传递函数 →</button>
+                <button type="button" class="btn" id="cancel" disabled>取消计算</button>
+                <button type="button" class="btn" id="clear" data-editor-action disabled>清空</button>
+            </div>
+            <div class="tf-toolbar tf-project-tools">
+                <button type="button" class="btn" id="importProject" data-editor-action disabled>导入工程 JSON</button>
+                <button type="button" class="btn" id="exportProject" data-editor-action disabled>导出工程 JSON</button>
+                <input id="projectFile" type="file" accept="application/json,.json" hidden>
+                <button type="button" class="btn" id="exportSvg" data-editor-action disabled>电路 SVG</button>
+                <button type="button" class="btn" id="exportPng" data-editor-action disabled>电路 PNG</button>
+                <span class="tf-hint" id="storageStatus" role="status">使用独立 TF 工程存档</span>
+            </div>
+            <div id="status" class="tf-status" role="status" aria-live="polite">正在连接画布…</div>
+            <div class="tf-frame-wrap"><iframe id="ckFrame" title="传递函数小信号电路画布"></iframe></div>
+            <p class="tf-hint">拖放器件；<kbd>W</kbd> 连线，<kbd>Esc</kbd> 返回选择，滚轮缩放。双击 gm/R/C 本体或标签编辑参数，双击输入输出修改名称；<kbd>Ctrl+Z</kbd> 可撤销替换图纸。最多 8 个非地节点、24 个器件（电容 ≤ 8）。</p>
+        </section>
+        <section class="paper-card tf-section" id="results" aria-label="计算结果" aria-busy="false">
+            <div class="tf-toolbar"><h2>分析结果</h2><span id="resultState" class="tf-badge">尚未生成</span></div>
+            <div id="stale" class="warn-box" hidden>已过期，请重新生成。下方保留的是旧图纸或旧频率设置的结果，导出已禁用。</div>
+            <p id="resultIdentity" class="tf-hint">默认单级 gm-RC 示例已准备；点击生成后计算。</p>
+            <ul id="diagnostics" class="tf-diagnostics" aria-label="诊断与警告"></ul>
+            <details><summary>参数汇总</summary><div class="tf-scroll"><table class="sketch-table" id="parameters"><thead><tr><th>符号</th><th>类型</th><th>设定值</th><th>SI 值</th></tr></thead><tbody></tbody></table></div></details>
+            <div class="tf-formula-grid">
+                <article><h3>符号表达式 <small id="symbolicState"></small></h3><pre id="symbolicText" class="tf-formula">等待生成</pre><div id="symbolicMath" class="tf-math"></div><div class="tf-toolbar"><button type="button" class="btn" id="copySymbolic" disabled>复制纯文本</button><button type="button" class="btn" id="copySymbolicTex" disabled>复制 LaTeX</button></div></article>
+                <article><h3>数值表达式 <small>（s：rad/s）</small></h3><pre id="numericText" class="tf-formula">等待生成</pre><div id="numericMath" class="tf-math"></div><div class="tf-toolbar"><button type="button" class="btn" id="copyNumeric" disabled>复制纯文本</button><button type="button" class="btn" id="copyNumericTex" disabled>复制 LaTeX</button></div><details><summary>数值系数（s 降幂）</summary><pre id="coefficients">—</pre></details></article>
+            </div>
+            <p id="mathStatus" class="tf-hint">公式可直接复制；MathJax 排版按需联网加载，离线不影响计算。</p>
+            <div class="tf-root-grid">
+                <article><h3>零极点列表</h3><div id="roots" class="tf-scroll">等待数值结果</div><p class="tf-hint">位置单位 rad/s；频率为 |s|/(2π)。精确相消的内部模态单独列出；可见极点不能保证整个电路稳定。</p></article>
+                <article><h3>s 平面</h3><div class="tf-chart"><canvas id="poleChart" role="img" aria-label="复数零极点图，横轴实部、纵轴虚部"></canvas></div></article>
+            </div>
+            <details id="matrixDetails"><summary>精确矩阵方程与节点映射</summary><p class="tf-hint">A(s)x=b·u，A(s)=G+sE；Aout 将输出电压对应列替换为 b。n0 是公共地；电压输入的最后一个未知量为输入源电流。</p><pre id="matrix">等待生成</pre><div id="mapping" class="tf-scroll"></div></details>
+        </section>
+        <section class="paper-card tf-section" aria-label="频率响应">
+            <div class="tf-toolbar"><h2>Bode 图</h2><button type="button" class="btn" id="exportCsv" disabled>导出频响 CSV</button></div>
+            <div class="tf-toolbar">
+                <label><input id="autoFrequency" type="checkbox" checked> 自动频段</label>
+                <label>起始 / Hz <input id="frequencyMin" type="number" value="1" min="1e-150" max="1e150" step="any" disabled></label>
+                <label>终止 / Hz <input id="frequencyMax" type="number" value="1000000000" min="1e-150" max="1e150" step="any" disabled></label>
+                <span class="tf-hint">修改频段后重新生成；光标悬停读取频率、幅值及相位。</span>
+            </div>
+            <p id="sweepStatus" class="tf-hint">800 个对数频点，零极点附近自适应加密；直接求解复数 MNA，不依赖求根结果。</p>
+            <div class="tf-chart tf-bode"><canvas id="magnitudeChart" role="img" aria-label="幅频响应"></canvas></div>
+            <div class="tf-chart tf-bode"><canvas id="phaseChart" role="img" aria-label="相频响应"></canvas></div>
+        </section>
+        <aside class="info-box">
+            <h3>模型与使用约定</h3>
+            <ul>
+                <li>线性、时不变、零初始条件的小信号模型；不求偏置、瞬态、噪声或非线性，也不自动推导环路裕度。</li>
+                <li>四端 gm：I(op→on)=gm×[V(cp)−V(cn)]，单位 S；控制端不吸取电流，输出无隐含阻抗。gm 可正、负或零，R &gt; 0，C ≥ 0。</li>
+                <li>恰好一个模拟输入和输出，均相对公共地。电压激励为理想 1 V；电流激励从地注入 1 A。输出探针不增加负载。</li>
+                <li>所有地相连；端点和 T 接相连，无连接点的内部十字交叉不相连。任意两节点之间的 C 都按完整跨节点支路求解，不作 Miller 近似。</li>
+                <li>数量级是乘数：2 mS 改选 u 即 2 µS，数值框保持 2。新器件默认空值，填值不全时仍可求符号式。</li>
+                <li>数值计算限时 15 秒，符号展开限时 5 秒；超出展开预算保留明确标记「未展开」的精确矩阵表达。奇异网络或不可靠数据会明确提示。</li>
+            </ul>
+        </aside>
+    </main>
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> · 总浏览 <span id="busuanzi_value_site_pv">-</span> · 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../lib/chart.min.js"></script>
+    <script src="../../razavi/razavi-symbols.js"></script>
+    <script src="../../razavi/render.js"></script>
+    <script src="../../js/circuit-connectivity.js"></script>
+    <script src="canvas-netlist.js"></script>
+    <script src="examples.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

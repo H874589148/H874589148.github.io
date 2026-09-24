@@ -10,10 +10,10 @@
    - T 接：点落在导线线段内部（容差 0.5）→ 连接
    - 十字交叉不连接，除非交叉点是某 wire 端点或有 dot 连接点（dot 引脚参与上述点规则自然成立） */
 (function (root, factory) {
-    var api = factory();
+    var api = factory(typeof module !== 'undefined' && module.exports ? require('../../js/circuit-connectivity.js') : root.CircuitConnectivity, root);
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (root) root.TTNetlist = api;
-})(typeof self !== 'undefined' ? self : globalThis, function () {
+})(typeof self !== 'undefined' ? self : globalThis, function (Connectivity, root) {
 'use strict';
 
 /* 支持的组合逻辑门：编辑器符号 id → 引擎运算名 */
@@ -23,29 +23,6 @@ var GATE_MAP = {
 };
 var IO_TYPES = ['tt-in', 'tt-out', 'tt-const0', 'tt-const1', 'dot'];
 var VALID_NAME = /^[A-Za-z_]\w*$/;
-var TOL2 = 0.25;   // T 接容差 0.5 的平方
-
-/* 引脚世界坐标：局部坐标 + comp 的 fh/fv 镜像、rot×90° 旋转、平移（与 render.js / circuit-sketch 同款变换） */
-function pinWorld(c, p) {
-    var sx = c.fh ? -1 : 1, sy = c.fv ? -1 : 1;
-    var px = p.x * sx, py = p.y * sy;
-    var th = (c.rot || 0) * Math.PI / 2;
-    var cos = Math.round(Math.cos(th)), sin = Math.round(Math.sin(th));
-    return { x: c.x + cos * px - sin * py, y: c.y + sin * px + cos * py };
-}
-
-function ptKey(x, y) { return Math.round(x * 1e6) + ',' + Math.round(y * 1e6); }
-
-/* 点是否落在线段内部（不含端点附近；端点连接由坐标重合规则处理） */
-function onSegInterior(px, py, s) {
-    if (px < Math.min(s.ax, s.bx) - 0.5 || px > Math.max(s.ax, s.bx) + 0.5 ||
-        py < Math.min(s.ay, s.by) - 0.5 || py > Math.max(s.ay, s.by) + 0.5) return false;
-    var dx = s.bx - s.ax, dy = s.by - s.ay;
-    var t = ((px - s.ax) * dx + (py - s.ay) * dy) / (dx * dx + dy * dy);
-    if (t <= 0.001 || t >= 0.999) return false;
-    var qx = s.ax + t * dx, qy = s.ay + t * dy;
-    return (px - qx) * (px - qx) + (py - qy) * (py - qy) <= TOL2;
-}
 
 function buildIRFromDoc(doc, portsOf) {
     if (!doc || !Array.isArray(doc.items)) throw new Error('画布数据格式不正确');
@@ -67,66 +44,15 @@ function buildIRFromDoc(doc, portsOf) {
             '。仅支持 8 种组合逻辑门（与/或/与非/或非/异或/同或/非/缓冲）、逻辑输入、逻辑输出、常量与连接点；触发器等时序器件请移除');
     }
 
-    /* ---- 收集点（引脚 + 折线顶点）与线段 ---- */
-    var points = [];       // {x, y, comp|null, pin|null}
-    var pinIdx = [];       // 引脚点在 points 中的下标
-    comps.forEach(function (c) {
-        portsOf(c.type, c.variant).forEach(function (p) {
-            var w = pinWorld(c, p);
-            pinIdx.push(points.length);
-            points.push({ x: w.x, y: w.y, comp: c, pin: p.n });
-        });
-    });
-    var segments = [];     // {ax, ay, bx, by}
-    wires.forEach(function (wr) {
-        var pts = (wr.pts || []).filter(function (p) { return p && isFinite(p.x) && isFinite(p.y); });
-        for (var i = 0; i + 1 < pts.length; i++) {
-            if (pts[i].x === pts[i + 1].x && pts[i].y === pts[i + 1].y) continue;
-            segments.push({ ax: pts[i].x, ay: pts[i].y, bx: pts[i + 1].x, by: pts[i + 1].y });
-        }
-        pts.forEach(function (p) { points.push({ x: p.x, y: p.y, comp: null, pin: null }); });
-    });
-
-    /* ---- 并查集求连通域 ---- */
-    var parent = points.map(function (_, i) { return i; });
-    function find(i) { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; }
-    function union(i, j) { var a = find(i), b = find(j); if (a !== b) parent[b] = a; }
-
-    /* 规则 0：坐标分桶（供重合与端点查找复用） */
-    var buckets = new Map();
-    points.forEach(function (p, i) {
-        var k = ptKey(p.x, p.y);
-        if (!buckets.has(k)) buckets.set(k, []);
-        buckets.get(k).push(i);
-    });
-
-    /* 规则 1：导线本身连通——每段折线的两个端点属于同一网络 */
-    segments.forEach(function (s) {
-        var a = buckets.get(ptKey(s.ax, s.ay)), b = buckets.get(ptKey(s.bx, s.by));
-        if (a && b) union(a[0], b[0]);
-    });
-
-    /* 规则 2：坐标重合的点（引脚-引脚、引脚-顶点、顶点-顶点） */
-    buckets.forEach(function (ids) { for (var i = 1; i < ids.length; i++) union(ids[0], ids[i]); });
-
-    /* 规则 3：点落在线段内部（T 接 / dot 压线） */
-    points.forEach(function (p, i) {
-        segments.forEach(function (s) {
-            if (onSegInterior(p.x, p.y, s)) {
-                var end = buckets.get(ptKey(s.ax, s.ay));
-                if (end) union(i, end[0]);
-            }
-        });
+    var graph = Connectivity.build(doc, function (c) {
+        if (root.Razavi && portsOf === root.Razavi.ports) return root.Razavi.portsWorld(c);
+        return portsOf(c.type, c.variant).map(function (p) { return Connectivity.world(c, p); });
     });
 
     /* ---- 每个网络的驱动者 / 负载 ---- */
     function isGate(c) { return !!GATE_MAP[c.type]; }
     function netOfPin(comp, pin) {
-        for (var i = 0; i < pinIdx.length; i++) {
-            var p = points[pinIdx[i]];
-            if (p.comp === comp && p.pin === pin) return find(pinIdx[i]);
-        }
-        return -1;
+        return graph.netOf(comp.id, pin);
     }
     var netInfo = new Map();   // root → {drivers:[], loads:[]}
     function net(root) {
