@@ -3,7 +3,7 @@
 
 .pe-layout {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 290px minmax(0, 1fr);
     gap: var(--space-xl);
     align-items: start;
 }
@@ -12,11 +12,10 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-md);
-    position: sticky;
-    top: 72px;
+    position: static;
 }
 
-.pe-ctrl h3 { color: var(--color-primary); font-size: 1.1rem; }
+.pe-ctrl h2, .pe-ctrl h3 { color: var(--color-primary); font-size: 1.1rem; }
 
 .topo-grid {
     display: grid;
@@ -32,6 +31,7 @@
     border: 2px solid var(--color-border-sketch);
     border-radius: var(--radius-sm);
     background: var(--color-card-bg);
+    color: var(--color-text);
     cursor: pointer;
     transition: all 0.15s;
 }
@@ -67,9 +67,10 @@ input[type="range"] {
 }
 
 .dc-row:last-child { border-bottom: none; }
-.dc-row .dc-val { font-family: var(--font-mono); font-weight: 600; color: var(--color-primary); }
+.dc-row .dc-val { font-family: var(--font-mono); font-weight: 600; color: var(--color-primary); text-align: right; overflow-wrap: anywhere; max-width: 68%; }
+.dc-row { gap: 10px; }
 
-.pe-charts { display: flex; flex-direction: column; gap: var(--space-md); }
+.pe-charts { display: flex; flex-direction: column; gap: var(--space-md); min-width: 0; }
 
 .topo-desc {
     padding: var(--space-md) var(--space-lg);
@@ -85,10 +86,42 @@ input[type="range"] {
 
 /* 拓扑示意图（手绘 SVG，风格同 filter-design） */
 .topo-fig { text-align: center; margin-bottom: var(--space-sm); }
-.topo-svg { width: 100%; max-width: 430px; height: auto; }
-.topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.topo-svg .td { fill: #4a4a4a; }
-.topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }
+.topo-svg { width: 100%; max-width: 1000px; height: auto; }
+.topo-fig { overflow-x: auto; }
+.topo-fig svg { min-width: 480px; }
+.topo-fig[data-topo="llc"] svg { min-width: 840px; }
+.topo-fig[data-topo="dsd"] svg { min-width: 720px; }
+.topo-fig[data-topo="flyback"] svg { min-width: 620px; }
+.pe-input-line { display: flex; align-items: center; gap: 8px; }
+.pe-input-line input { width: 100%; min-width: 0; }
+.pe-input-line span, .pe-input-line select { flex-shrink: 0; font-family: var(--font-mono); }
+.pe-input-line select { width: auto; padding-left: 8px; padding-right: 8px; }
+#parameterFields .field { margin-bottom: 14px; }
+.pe-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pe-display { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; }
+.pe-display .field { flex: 1 1 150px; }
+.pe-full { flex-basis: 100%; }
+.pe-status { padding: 12px 16px; border-left: 4px solid var(--color-primary); background: var(--color-card-bg); }
+.pe-status.error { border-color: var(--color-accent); color: var(--color-accent); }
+.pe-wave-area { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pe-channel { min-width: 0; padding: 16px; }
+.pe-channel h3 { color: var(--color-primary); margin-bottom: 8px; }
+.pe-channel canvas { display: block; width: 100%; height: 200px; touch-action: pan-y; }
+.pe-channel canvas:focus { outline: 2px solid var(--color-primary); }
+.pe-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0 0 10px; }
+.pe-metrics dt { color: var(--color-text-muted); font-size: 0.8rem; }
+.pe-metrics dd { font-family: var(--font-mono); margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
+.pe-cursor { min-height: 2.6em; font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-text-secondary); }
+.is-stale { opacity: 0.48; }
+#diagnostics { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8rem; max-height: 450px; overflow-y: auto; }
+#modeField[hidden] { display: none; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 520px) {
+    .pe-ctrl { padding: 16px; }
+    .pe-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .pe-channel { padding: 8px; }
+    .pe-display { padding: 12px; }
+}
 
 @media (max-width: 900px) {
     .pe-layout { grid-template-columns: 1fr; }

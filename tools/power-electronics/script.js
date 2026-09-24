@@ -1,730 +1,256 @@
-/* tools/power-electronics/script.js - 电力电子拓扑波形绘制 */
-
-var currentTopo = 'buck';
-
-/* ========== 拓扑描述 ========== */
-var topoDesc = {
-    buck: 'Buck（降压）变换器：V<sub>out</sub> = D × V<sub>in</sub>，电感电流连续（CCM）模式。显示开关管驱动信号、电感电流、输出电压纹波。',
-    boost: 'Boost（升压）变换器：V<sub>out</sub> = V<sub>in</sub> / (1-D)，CCM 模式。显示开关管驱动信号、电感电流、输出节点电压。',
-    buckboost: 'Buck-Boost（升降压）变换器：V<sub>out</sub> = -D/(1-D) × V<sub>in</sub>（反相），CCM 模式。',
-    flyback: 'Flyback（反激）变换器：V<sub>out</sub> = D/(1-D) × V<sub>in</sub>/n，CCM 模式。显示原副边电流与磁化电流。',
-    llc: 'LLC 谐振变换器：半桥 50% 占空比（含死区）驱动，变频调节增益。f<sub>r</sub> = 1/(2π√(L<sub>r</sub>C<sub>r</sub>)) 为谐振频率，f<sub>m</sub> = 1/(2π√((L<sub>r</sub>+L<sub>m</sub>)C<sub>r</sub>)) 为第二谐振点。波形为分段工程近似：f<sub>s</sub>&gt;f<sub>r</sub> 时 i<sub>r</sub> 为准正弦；f<sub>m</sub>&lt;f<sub>s</sub>&lt;f<sub>r</sub> 时出现励磁平台（i<sub>r</sub>=i<sub>m</sub>，副边截止）；f<sub>s</sub>≈f<sub>r</sub> 时 i<sub>r</sub> 为半周期正弦、与 i<sub>m</sub> 端点相接。',
-    dsd: 'DSD（Double Step-Down，串联电容两相交错 Buck）：V<sub>out</sub> = D×V<sub>in</sub>/2。两相交错 180° 驱动，飞跨电容稳压 V<sub>in</sub>/2，开关节点摆幅 V<sub>in</sub>/2、等效频率 2×f<sub>sw</sub>；电感纹波按 (V<sub>in</sub>/2−V<sub>out</sub>)·D/(L·f<sub>sw</sub>) 估算。'
-};
-
-/* ========== 拓扑示意图（手绘 SVG helper，风格同 filter-design） ========== */
-function _w(x1, y1, x2, y2) { return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="tw"/>'; }
-function _d(x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="3" class="td"/>'; }
-function _t(x, y, s, anchor) { return '<text x="' + x + '" y="' + y + '" class="tl"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'; }
-function _p(d) { return '<path d="' + d + '" class="tw"/>'; }
-function _res(x1, y1, x2, y2) {
-    var dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy);
-    var ux = dx / len, uy = dy / len, px = -uy, py = ux;
-    var lead = 8, amp = 7, n = 6, seg = (len - 2 * lead) / n;
-    var d = 'M' + x1 + ',' + y1 + ' L' + (x1 + ux * lead).toFixed(1) + ',' + (y1 + uy * lead).toFixed(1);
-    for (var i = 1; i < n; i++) {
-        var t = lead + seg * i, off = (i % 2 ? amp : -amp);
-        d += ' L' + (x1 + ux * t + px * off).toFixed(1) + ',' + (y1 + uy * t + py * off).toFixed(1);
-    }
-    d += ' L' + (x2 - ux * lead).toFixed(1) + ',' + (y2 - uy * lead).toFixed(1) + ' L' + x2 + ',' + y2;
-    return _p(d);
-}
-/* 电感：沿线段均布 4 个半圆（水平凸向上 / 垂直凸向右） */
-function _ind(x1, y1, x2, y2) {
-    var dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy);
-    var ux = dx / len, uy = dy / len, n = 4, seg = len / n;
-    var d = 'M' + x1 + ',' + y1;
-    for (var i = 1; i <= n; i++) {
-        d += ' A ' + (seg / 2).toFixed(1) + ' ' + (seg / 2).toFixed(1) + ' 0 0 1 ' +
-             (x1 + ux * seg * i).toFixed(1) + ',' + (y1 + uy * seg * i).toFixed(1);
-    }
-    return _p(d);
-}
-/* 电容：_capV 垂直引线（上下）、_capH 水平引线（左右），自带 14px 引线 */
-function _capV(x, y) {
-    return _p('M' + x + ',' + (y - 14) + ' L' + x + ',' + (y - 4) + ' M' + (x - 9) + ',' + (y - 4) + ' L' + (x + 9) + ',' + (y - 4) +
-              ' M' + (x - 9) + ',' + (y + 4) + ' L' + (x + 9) + ',' + (y + 4) + ' M' + x + ',' + (y + 4) + ' L' + x + ',' + (y + 14));
-}
-function _capH(x, y) {
-    return _p('M' + (x - 14) + ',' + y + ' L' + (x - 4) + ',' + y + ' M' + (x - 4) + ',' + (y - 9) + ' L' + (x - 4) + ',' + (y + 9) +
-              ' M' + (x + 4) + ',' + (y - 9) + ' L' + (x + 4) + ',' + (y + 9) + ' M' + (x + 4) + ',' + y + ' L' + (x + 14) + ',' + y);
-}
-/* 开关（刀闸形）：_swH 水平端点 x±14、_swV 垂直端点 y±14 */
-function _swH(x, y) { return _d(x - 14, y) + _d(x + 14, y) + _w(x - 14, y, x + 10, y - 11); }
-function _swV(x, y) { return _d(x, y - 14) + _d(x, y + 14) + _w(x, y + 14, x + 11, y - 3); }
-/* 二极管：_diodeR 阴极在右（自带引线至 x-20 / x+22），_diodeL 阴极在左，_diodeU 阴极在上（引线至 y-20 / y+20） */
-function _diodeR(x, y) {
-    return _p('M' + (x - 20) + ',' + y + ' L' + (x - 8) + ',' + y + ' M' + (x - 8) + ',' + (y - 8) + ' L' + (x - 8) + ',' + (y + 8) +
-              ' L' + (x + 8) + ',' + y + ' Z M' + (x + 10) + ',' + (y - 8) + ' L' + (x + 10) + ',' + (y + 8) + ' M' + (x + 10) + ',' + y + ' L' + (x + 22) + ',' + y);
-}
-function _diodeL(x, y) {
-    return _p('M' + (x - 22) + ',' + y + ' L' + (x - 10) + ',' + y + ' M' + (x - 10) + ',' + (y - 8) + ' L' + (x - 10) + ',' + (y + 8) +
-              ' M' + (x + 8) + ',' + (y - 8) + ' L' + (x + 8) + ',' + (y + 8) + ' L' + (x - 8) + ',' + y + ' Z M' + (x + 8) + ',' + y + ' L' + (x + 20) + ',' + y);
-}
-function _diodeU(x, y) {
-    return _p('M' + x + ',' + (y - 20) + ' L' + x + ',' + (y - 10) + ' M' + (x - 8) + ',' + (y - 10) + ' L' + (x + 8) + ',' + (y - 10) +
-              ' M' + (x - 8) + ',' + (y + 8) + ' L' + (x + 8) + ',' + (y + 8) + ' L' + x + ',' + (y - 6) + ' Z M' + x + ',' + (y + 8) + ' L' + x + ',' + (y + 20));
-}
-/* 直流源（垂直，上 + 下 −） */
-function _src(x, y) {
-    return '<circle cx="' + x + '" cy="' + y + '" r="12" class="tw"/>' +
-           _t(x, y - 1, '+', 'middle') + _t(x, y + 10, '−', 'middle');
-}
-/* 变压器：中心 x，原边左列（凸向右）、副边右列（凸向左），磁芯两竖线；dot2low=true 时副边同名端打下端（反激） */
-function _xfmr(x, y, dot2low) {
-    var x0 = x - 14, x1 = x + 14, y0 = y - 25, seg = 50 / 3;
-    var d1 = 'M' + x0 + ',' + y0, d2 = 'M' + x1 + ',' + y0, i;
-    for (i = 1; i <= 3; i++) {
-        d1 += ' A 7 ' + (seg / 2).toFixed(1) + ' 0 0 1 ' + x0 + ',' + (y0 + seg * i).toFixed(1);
-        d2 += ' A 7 ' + (seg / 2).toFixed(1) + ' 0 0 0 ' + x1 + ',' + (y0 + seg * i).toFixed(1);
-    }
-    return _p(d1) + _p(d2) +
-           _w(x - 4, y - 28, x - 4, y + 28) + _w(x + 4, y - 28, x + 4, y + 28) +
-           '<circle cx="' + (x0 - 6) + '" cy="' + (y0 - 4) + '" r="2" class="td"/>' +
-           '<circle cx="' + (x1 + 6) + '" cy="' + (dot2low ? y + 29 : y0 - 4) + '" r="2" class="td"/>';
-}
-function _gnd(x, y) {
-    return _p('M' + x + ',' + y + ' L' + x + ',' + (y + 8) + ' M' + (x - 10) + ',' + (y + 8) + ' L' + (x + 10) + ',' + (y + 8) +
-              ' M' + (x - 6) + ',' + (y + 13) + ' L' + (x + 6) + ',' + (y + 13) + ' M' + (x - 2.5) + ',' + (y + 18) + ' L' + (x + 2.5) + ',' + (y + 18));
-}
-function _svg(w, h, body) {
-    return '<svg viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg" class="topo-svg">' + body + '</svg>';
-}
-
-/* 各拓扑结构示意图（静态，不随参数变化） */
-var TOPO_FIGS = {
-    buck: _svg(380, 200,
-        _t(20, 96, 'Vin', 'end') + _src(35, 100) + _w(35, 88, 35, 50) + _w(35, 112, 35, 150) +
-        _w(35, 50, 81, 50) + _swH(95, 50) + _t(95, 32, 'SW', 'middle') +
-        _w(109, 50, 150, 50) + _d(150, 50) + _t(150, 28, 'Vsw', 'middle') +
-        _w(150, 50, 150, 56) + _diodeU(150, 76) + _w(150, 96, 150, 150) + _t(164, 82, 'D') +
-        _w(150, 50, 160, 50) + _ind(160, 50, 240, 50) + _t(200, 34, 'L', 'middle') +
-        _w(240, 50, 260, 50) + _d(260, 50) +
-        _w(260, 50, 260, 76) + _capV(260, 90) + _w(260, 104, 260, 150) + _t(275, 92, 'Cout') +
-        _w(260, 50, 330, 50) + _res(330, 50, 330, 110) + _w(330, 110, 330, 150) + _t(344, 82, 'R') +
-        _t(340, 40, 'Vout', 'end') +
-        _w(35, 150, 340, 150) + _gnd(200, 150)),
-    boost: _svg(380, 200,
-        _t(20, 96, 'Vin', 'end') + _src(35, 100) + _w(35, 88, 35, 50) + _w(35, 112, 35, 150) +
-        _w(35, 50, 60, 50) + _ind(60, 50, 140, 50) + _t(100, 34, 'L', 'middle') +
-        _w(140, 50, 170, 50) + _d(170, 50) +
-        _w(170, 50, 170, 68) + _swV(170, 82) + _w(170, 96, 170, 150) + _t(186, 88, 'SW') +
-        _diodeR(190, 50) + _t(190, 32, 'D', 'middle') +
-        _w(212, 50, 260, 50) + _d(260, 50) +
-        _w(260, 50, 260, 76) + _capV(260, 90) + _w(260, 104, 260, 150) + _t(275, 92, 'Cout') +
-        _w(260, 50, 330, 50) + _res(330, 50, 330, 110) + _w(330, 110, 330, 150) + _t(344, 82, 'R') +
-        _t(340, 40, 'Vout', 'end') +
-        _w(35, 150, 340, 150) + _gnd(200, 150)),
-    buckboost: _svg(380, 200,
-        _t(20, 96, 'Vin', 'end') + _src(35, 100) + _w(35, 88, 35, 50) + _w(35, 112, 35, 150) +
-        _w(35, 50, 81, 50) + _swH(95, 50) + _t(95, 32, 'SW', 'middle') +
-        _w(109, 50, 130, 50) + _d(130, 50) +
-        _w(130, 50, 130, 70) + _ind(130, 70, 130, 130) + _w(130, 130, 130, 150) + _t(146, 103, 'L') +
-        _w(130, 50, 170, 50) + _diodeL(192, 50) + _t(192, 32, 'D', 'middle') +
-        _w(212, 50, 260, 50) + _d(260, 50) +
-        _w(260, 50, 260, 76) + _capV(260, 90) + _w(260, 104, 260, 150) + _t(275, 92, 'Cout') +
-        _w(260, 50, 330, 50) + _res(330, 50, 330, 110) + _w(330, 110, 330, 150) + _t(344, 82, 'R') +
-        _t(340, 40, 'Vout (−)', 'end') +
-        _w(35, 150, 340, 150) + _gnd(200, 150)),
-    flyback: _svg(380, 200,
-        _t(20, 96, 'Vin', 'end') + _src(35, 100) + _w(35, 88, 35, 50) + _w(35, 112, 35, 150) +
-        _w(35, 50, 76, 50) + _swH(90, 50) + _t(90, 32, 'SW', 'middle') +
-        _w(104, 50, 171, 50) + _w(171, 50, 171, 52) +
-        _xfmr(185, 77, true) + _t(185, 124, 'n : 1', 'middle') +
-        _w(171, 102, 171, 150) + _gnd(171, 150) +
-        _w(199, 52, 199, 50) + _w(199, 50, 240, 50) +
-        _diodeR(260, 50) + _t(255, 32, 'D', 'middle') +
-        _w(282, 50, 290, 50) + _d(290, 50) +
-        _w(290, 50, 290, 76) + _capV(290, 90) + _w(290, 104, 290, 150) + _t(305, 92, 'Cout') +
-        _w(290, 50, 345, 50) + _res(345, 50, 345, 110) + _w(345, 110, 345, 150) + _t(359, 82, 'R') +
-        _t(352, 40, 'Vout', 'end') +
-        _w(199, 102, 199, 150) + _w(199, 150, 345, 150) + _gnd(272, 150)),
-    llc: _svg(420, 200,
-        _t(20, 96, 'Vin', 'end') + _src(35, 100) + _w(35, 88, 35, 45) + _w(35, 112, 35, 155) +
-        _w(35, 45, 85, 45) + _w(85, 45, 85, 54) +
-        _swV(85, 68) + _t(101, 62, 'Q1') +
-        _w(85, 82, 85, 96) + _d(85, 96) +
-        _w(85, 96, 85, 110) + _swV(85, 124) + _t(101, 138, 'Q2') +
-        _w(85, 138, 85, 155) +
-        _w(85, 96, 100, 96) + _ind(100, 96, 164, 96) + _t(132, 80, 'Lr', 'middle') +
-        _w(164, 96, 176, 96) + _capH(190, 96) + _t(190, 80, 'Cr', 'middle') + _w(204, 96, 216, 96) +
-        _w(216, 96, 216, 71) + _w(216, 71, 241, 71) +
-        _xfmr(255, 96, false) + _t(255, 140, 'Lm', 'middle') +
-        _w(241, 121, 241, 155) +
-        _w(269, 71, 296, 71) + _diodeR(316, 71) + _t(311, 56, 'D', 'middle') + _w(338, 71, 350, 71) + _d(350, 71) +
-        _w(350, 71, 350, 86) + _capV(350, 100) + _w(350, 114, 350, 155) + _t(365, 102, 'Cout') +
-        _w(350, 71, 395, 71) + _res(395, 71, 395, 131) + _w(395, 131, 395, 155) + _t(409, 103, 'R') +
-        _t(404, 62, 'Vout', 'end') +
-        _w(269, 121, 269, 155) + _w(269, 155, 395, 155) + _gnd(330, 155) +
-        _w(35, 155, 241, 155) + _gnd(150, 155)),
-    dsd: _svg(380, 200,
-        _t(20, 96, 'Vin', 'end') + _src(35, 100) + _w(35, 88, 35, 50) + _w(35, 112, 35, 150) +
-        _w(35, 50, 81, 50) + _swH(95, 50) + _t(95, 32, 'Q1', 'middle') +
-        _w(109, 50, 151, 50) + _capH(165, 50) + _t(165, 32, 'Cf', 'middle') +
-        _w(179, 50, 205, 50) + _d(205, 50) +
-        _w(205, 50, 205, 68) + _swV(205, 82) + _w(205, 96, 205, 150) + _t(221, 88, 'Q2') +
-        _w(205, 50, 215, 50) + _ind(215, 50, 285, 50) + _t(250, 34, 'L', 'middle') +
-        _w(285, 50, 305, 50) + _d(305, 50) +
-        _w(305, 50, 305, 76) + _capV(305, 90) + _w(305, 104, 305, 150) + _t(320, 92, 'Cout') +
-        _w(305, 50, 350, 50) + _res(350, 50, 350, 110) + _w(350, 110, 350, 150) + _t(364, 82, 'R') +
-        _t(356, 40, 'Vout', 'end') +
-        _w(35, 150, 355, 150) + _gnd(200, 150))
-};
-
-/* ========== 初始化 ========== */
-document.getElementById('vin').addEventListener('input', drawWave);
-document.getElementById('iLoad').addEventListener('input', drawWave);
-document.getElementById('modeSel').addEventListener('change', drawWave);
-/* 负载电流单位切换：保持物理值不变（A ↔ mA） */
-document.getElementById('iLoadUnit').addEventListener('change', function () {
-    var inp = document.getElementById('iLoad');
-    var v = parseFloat(inp.value);
-    if (isFinite(v)) {
-        var nv = (this.value === 'mA') ? v * 1000 : v / 1000;
-        inp.value = parseFloat(nv.toPrecision(6));
-    }
-    drawWave();
-});
-document.getElementById('fsw').addEventListener('input', drawWave);
-document.getElementById('lval').addEventListener('input', drawWave);
-document.getElementById('cout').addEventListener('input', drawWave);
-document.getElementById('ncycle').addEventListener('change', drawWave);
-document.getElementById('lrval').addEventListener('input', drawWave);
-document.getElementById('crval').addEventListener('input', drawWave);
-document.getElementById('lmval').addEventListener('input', drawWave);
-selectTopo('buck');
-
-/* ========== 拓扑切换 ========== */
-function selectTopo(name) {
-    currentTopo = name;
-    document.querySelectorAll('.topo-btn').forEach(function(btn) {
-        btn.classList.toggle('active', btn.dataset.topo === name);
-    });
-    document.getElementById('topoFig').innerHTML = TOPO_FIGS[name] || '';
-    document.getElementById('topoDescText').innerHTML = topoDesc[name] || '';
-    /* LLC：50% 固定占空比 + 谐振参数；隐藏占空比/L/Cout */
-    var isLlc = (name === 'llc');
-    document.getElementById('dutyField').style.display = isLlc ? 'none' : '';
-    document.getElementById('modeField').style.display = (name === 'buck') ? '' : 'none';
-    document.getElementById('lField').style.display = isLlc ? 'none' : '';
-    document.getElementById('coutField').style.display = isLlc ? 'none' : '';
-    document.getElementById('lrField').style.display = isLlc ? '' : 'none';
-    document.getElementById('crField').style.display = isLlc ? '' : 'none';
-    document.getElementById('lmField').style.display = isLlc ? '' : 'none';
-    drawWave();
-}
-
-function updateDuty(val) {
-    document.getElementById('dutyVal').textContent = val + '%';
-    drawWave();
-}
-
-/* ========== 获取参数 ========== */
-function getParams() {
-    return {
-        D: parseFloat(document.getElementById('dutySlider').value) / 100,
-        Vin: parseFloat(document.getElementById('vin').value) || 12,
-        IL: (parseFloat(document.getElementById('iLoad').value) || 2) *
-            (document.getElementById('iLoadUnit').value === 'mA' ? 1e-3 : 1),   // A（支持 mA 输入）
-        mode: document.getElementById('modeSel').value,   // buck: auto / ccm / dcm
-        fsw: (parseFloat(document.getElementById('fsw').value) || 500) * 1e3,   // kHz -> Hz
-        L: (parseFloat(document.getElementById('lval').value) || 10) * 1e-6,     // µH -> H
-        Cout: (parseFloat(document.getElementById('cout').value) || 100) * 1e-6, // µF -> F
-        Lr: (parseFloat(document.getElementById('lrval').value) || 10) * 1e-6,   // µH -> H
-        Cr: (parseFloat(document.getElementById('crval').value) || 47) * 1e-9,   // nF -> F
-        Lm: (parseFloat(document.getElementById('lmval').value) || 47) * 1e-6,   // µH -> H
-        Ncycle: parseInt(document.getElementById('ncycle').value, 10) || 2
-    };
-}
-
-/* ========== 纹波 / CCM-DCM 计算 ==========
-   统一用电感导通压降 Von 与导通时间 D·T 求 ΔI_L：ΔI_L = Von·D/(L·fsw)
-   Buck: Von = Vin·(1-D)，I_L均值 = IL(负载)；其余拓扑 Von = Vin，I_L均值 = IL/(1-D) */
-function calcRipple(topo, D, Vin, IL, L, fsw) {
-    var Von, ILavg;
-    switch (topo) {
-        case 'buck':
-            Von = Vin * (1 - D); ILavg = IL; break;
-        case 'dsd':
-            Von = (Vin / 2) * (1 - D); ILavg = IL; break;
-        case 'boost':
-        case 'buckboost':
-        case 'flyback':
-        default:
-            Von = Vin; ILavg = IL / Math.max(1 - D, 1e-6); break;
-    }
-    var deltaI = Von * D / Math.max(L * fsw, 1e-12);
-    var ripplePct = deltaI / Math.max(ILavg, 1e-9);
-    // 临界电感：ΔI_L/2 = I_L均值 时的 L
-    var Lcrit = Von * D / (2 * fsw * Math.max(ILavg, 1e-9));
-    var ccm = (deltaI / 2) < ILavg;  // 最小电流 > 0 为 CCM
-    return { deltaI: deltaI, ILavg: ILavg, ripplePct: ripplePct, Lcrit: Lcrit, ccm: ccm };
-}
-
-/* ========== 直流工作点计算 ========== */
-function calcDC(topo, D, Vin, IL) {
-    switch(topo) {
-        case 'buck':
-            return { Vout: D * Vin, gain: 'V_out = D×V_in' };
-        case 'boost':
-            return { Vout: Vin / (1 - D), gain: 'V_out = V_in/(1-D)' };
-        case 'buckboost':
-            return { Vout: D / (1 - D) * Vin, gain: 'V_out = D/(1-D)×V_in' };
-        case 'flyback':
-            var n = 1; // 默认匝比 1:1
-            return { Vout: D / (1 - D) * Vin / n, gain: 'V_out = D/(1-D)×V_in/n' };
-        case 'dsd':
-            return { Vout: D * Vin / 2, gain: 'V_out = D×V_in/2' };
-        default:
-            return { Vout: 0, gain: '-' };
-    }
-}
-
-/* ========== 波形数据生成（单周期，t ∈ [0,1]） ==========
-   dcm/L：仅 buck 使用；dcm=true 时按断续模式（三段 Vsw / 三角断续 iL） */
-function getWaveforms(topo, D, Vin, IL, deltaI, Cout, fsw, dcm, L) {
-    var pts = 200;
-    var waveforms = [];
-    var dtR = (1 / fsw) / pts;  // 每步对应的真实时间 (s)
-
-    switch(topo) {
-        case 'buck': {
-            var Vout = D * Vin;
-            var Vsw_data = [], IL_data = [], iLarr = [];
-            var D2 = 1 - D, Ipk = 0;
-            if (dcm) {
-                /* DCM 直流增益闭式解（CCM 边界处退化为 D·V_in，连续） */
-                Vout = D * D * Vin * Vin / (D * D * Vin + 2 * L * fsw * IL);
-                Ipk = (Vin - Vout) * D / (L * fsw);
-                D2 = (Vin - Vout) * D / Vout;              // 续流段占比
-                if (D2 > 1 - D) D2 = 1 - D;                // 防护
-            }
-            for (var i = 0; i <= pts; i++) {
-                var t = i / pts;
-                var vsw, iL;
-                if (dcm) {
-                    /* 断流期开关节点被电感拉至 V_out（忽略寄生振铃） */
-                    vsw = (t < D) ? Vin : (t < D + D2 ? 0 : Vout);
-                    iL = (t < D) ? Ipk * t / D
-                       : (t < D + D2) ? Ipk * (1 - (t - D) / D2) : 0;
-                } else {
-                    vsw = t < D ? Vin : 0;
-                    iL = (t < D)
-                        ? (IL - deltaI/2) + (t / D) * deltaI
-                        : (IL + deltaI/2) - ((t - D) / (1 - D)) * deltaI;
-                }
-                Vsw_data.push({ t: t, v: vsw });
-                iLarr.push(iL);
-                IL_data.push({ t: t, v: iL });
-            }
-            // 输出电压纹波：对电容电流 (i_L - I_out) 积分（抛物线型）
-            var Vo_data = buildCapIntegral(iLarr, IL, dtR, Cout, Vout, pts);
-            waveforms = [
-                { label: 'V_SW (开关节点电压)', data: Vsw_data, color: '#3a5a8c', unit: 'V', ymax: Math.max(Vin, Vout) * 1.2, ymin: -1 },
-                { label: 'I_L (电感电流)', data: IL_data, color: '#c0583a', unit: 'A', ymax: dcm ? Ipk * 1.2 : IL + deltaI, ymin: dcm ? 0 : Math.min(IL - deltaI * 1.2, 0) },
-                Vo_data
-            ];
-            break;
+/* 参数、任务生命周期及 Canvas 展示；物理计算只调用独立引擎。 */
+(function (root, factory) {
+    'use strict';
+    if (typeof module === 'object' && module.exports) module.exports = factory(require('./engine.js'));
+    else { root.PEUI = factory(root.PowerElectronics); root.PEUI.mount(root); }
+}(typeof window !== 'undefined' ? window : globalThis, function (E) {
+    'use strict';
+    function format(x, unit) {
+        if (!Number.isFinite(x)) return '—';
+        var a = Math.abs(x), f = 1, prefix = '';
+        var levels = [[1e12, 'T'], [1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+        if (unit !== '逻辑' && a) {
+            for (var j = 0; j < levels.length; j++) if (a >= levels[j][0]) { f = levels[j][0]; prefix = levels[j][1]; break; }
         }
-        case 'boost': {
-            var Vout = Vin / (1 - D);
-            var VD_data = [], IL_data2 = [], iDarr = [];
-            var ILavg = IL / Math.max(1 - D, 1e-6);
-            for (var i = 0; i <= pts; i++) {
-                var t = i / pts;
-                VD_data.push({ t: t, v: t < D ? 0 : Vout });
-                var iL = (t < D)
-                    ? (ILavg - deltaI/2) + (t / D) * deltaI
-                    : (ILavg + deltaI/2) - ((t - D) / (1 - D)) * deltaI;
-                IL_data2.push({ t: t, v: iL });
-                iDarr.push(t < D ? 0 : iL);   // 输出侧 = 二极管电流（仅关断期）
-            }
-            // 输出纹波：对 (i_D − I_out) 积分——导通期 −I_out 线性下降，关断期抛物线上升
-            var Vo2 = buildCapIntegral(iDarr, IL, dtR, Cout, Vout, pts);
-            waveforms = [
-                { label: 'V_D (二极管阳极电压)', data: VD_data, color: '#3a5a8c', unit: 'V', ymax: Vout * 1.2, ymin: -2 },
-                { label: 'I_L (电感电流)', data: IL_data2, color: '#c0583a', unit: 'A', ymax: ILavg + deltaI, ymin: Math.max(0, ILavg - deltaI * 1.2) },
-                Vo2
-            ];
-            break;
-        }
-        case 'buckboost': {
-            var Vout = D / (1 - D) * Vin;
-            var Vsw_bb = [], IL_bb = [], iDarr3 = [];
-            var ILavg = IL / Math.max(1 - D, 1e-6);
-            for (var i = 0; i <= pts; i++) {
-                var t = i / pts;
-                Vsw_bb.push({ t: t, v: t < D ? Vin + Vout : 0 });
-                var iL = (t < D)
-                    ? (ILavg - deltaI/2) + (t / D) * deltaI
-                    : (ILavg + deltaI/2) - ((t - D) / (1 - D)) * deltaI;
-                var iLc = Math.max(0, iL);
-                IL_bb.push({ t: t, v: iLc });
-                iDarr3.push(t < D ? 0 : iLc);   // 输出侧 = 二极管电流（仅关断期）
-            }
-            // 输出纹波：对 (i_D − I_out) 积分
-            var Vo3 = buildCapIntegral(iDarr3, IL, dtR, Cout, Vout, pts);
-            waveforms = [
-                { label: 'V_SW (开关节点)', data: Vsw_bb, color: '#3a5a8c', unit: 'V', ymax: (Vin+Vout)*1.15, ymin: -1 },
-                { label: 'I_L (电感电流)', data: IL_bb, color: '#c0583a', unit: 'A', ymax: ILavg + deltaI, ymin: 0 },
-                Vo3
-            ];
-            break;
-        }
-        case 'flyback': {
-            var n = 1;
-            var Vout = D / (1 - D) * Vin / n;
-            var Ipri = [], Isec = [], iSarr = [];
-            var Ipk = IL / (1-D);
-            var magRipple = Ipk * 0.4;
-            for (var i = 0; i <= pts; i++) {
-                var t = i / pts;
-                var ip, is;
-                if (t < D) {
-                    ip = (t / D) * (Ipk + magRipple/2) - magRipple/2;
-                    ip = Math.max(0, ip);
-                    is = 0;
-                } else {
-                    ip = 0;
-                    is = Ipk * (1 - (t - D) / (1 - D));
-                    is = Math.max(0, is);
-                }
-                Ipri.push({ t: t, v: ip });
-                Isec.push({ t: t, v: is });
-                iSarr.push(is);   // 输出侧 = 二次侧电流
-            }
-            // 输出纹波：对 (i_sec − I_out) 积分
-            var Vo4 = buildCapIntegral(iSarr, IL, dtR, Cout, Vout, pts);
-            waveforms = [
-                { label: 'I_pri (一次侧电流)', data: Ipri, color: '#3a5a8c', unit: 'A', ymax: (Ipk + magRipple) * 1.2, ymin: 0 },
-                { label: 'I_sec (二次侧电流)', data: Isec, color: '#c0583a', unit: 'A', ymax: Ipk * 1.2, ymin: 0 },
-                Vo4
-            ];
-            break;
-        }
-        case 'dsd': {
-            /* 串联电容两相交错 Buck：Q1/Q2 交错 180°，Vsw 摆幅 Vin/2、等效 2 倍频 */
-            var Vout = D * Vin / 2;
-            var Vhalf = Vin / 2;
-            var Dc = Math.min(D, 0.5);   // 交错不重叠约束（D>0.5 时 Vsw 恒为高）
-            var Q1d = [], Q2d = [], Vsw_d = [], ILd = [], Vcf_d = [];
-            var iLarr2 = [];
-            var dVcf = Math.max(Vhalf * 0.02, 0.05);   // 飞跨电容小纹波（示意）
-            for (var i = 0; i <= pts; i++) {
-                var t = i / pts;
-                var q1 = t < D;
-                var q2 = ((t + 0.5) % 1) < D;
-                Q1d.push({ t: t, v: q1 ? 1 : 0 });
-                Q2d.push({ t: t, v: q2 ? 1 : 0 });
-                Vsw_d.push({ t: t, v: (q1 || q2) ? Vhalf : 0 });
-                // 电感电流：2 倍频三角纹波（每半周期前 Dc 段上升）
-                var s = t % 0.5;
-                var iL;
-                if (s < Dc) iL = (IL - deltaI / 2) + (s / Dc) * deltaI;
-                else iL = (IL + deltaI / 2) - ((s - Dc) / Math.max(0.5 - Dc, 1e-6)) * deltaI;
-                iLarr2.push(iL);
-                ILd.push({ t: t, v: iL });
-                // 飞跨电容电压 ≈ Vin/2 + 小三角纹波
-                var vc = (s < Dc) ? (-dVcf / 2 + (s / Dc) * dVcf) : (dVcf / 2 - ((s - Dc) / Math.max(0.5 - Dc, 1e-6)) * dVcf);
-                Vcf_d.push({ t: t, v: Vhalf + vc });
-            }
-            var Vo_d = buildCapIntegral(iLarr2, IL, dtR, Cout, Vout, pts);
-            waveforms = [
-                { label: 'V_GS Q1 (主开关驱动)', data: Q1d, color: '#3a5a8c', unit: 'V', ymax: 1.4, ymin: -0.2 },
-                { label: 'V_GS Q2 (交错 180°)', data: Q2d, color: '#7a5a8c', unit: 'V', ymax: 1.4, ymin: -0.2 },
-                { label: 'V_SW (开关节点, 0~V_in/2)', data: Vsw_d, color: '#3a5a8c', unit: 'V', ymax: Vhalf * 1.35, ymin: -Vhalf * 0.1 },
-                { label: 'I_L (电感电流, 2×f_sw)', data: ILd, color: '#c0583a', unit: 'A', ymax: IL + deltaI, ymin: Math.max(0, IL - deltaI * 1.2) },
-                { label: 'V_CF (飞跨电容 ≈ V_in/2)', data: Vcf_d, color: '#4a7a4a', unit: 'V', ymax: Vhalf + dVcf * 2, ymin: Vhalf - dVcf * 2 },
-                Vo_d
-            ];
-            break;
-        }
+        var value = a < 1e-15 && a ? x.toExponential(3) : Number((x / f).toPrecision(5)).toString();
+        return value + (unit && unit !== '逻辑' ? ' ' + prefix + unit : '');
     }
-    return waveforms;
-}
-
-/* 对电容电流 (i_L - I_out) 积分得输出电压纹波（Buck 型，抛物线） */
-function buildCapIntegral(iLarr, Iout, dtR, Cout, Vout, pts) {
-    var vArr = [], v = 0, sum = 0;
-    for (var i = 0; i <= pts; i++) {
-        v += (iLarr[i] - Iout) * dtR / Math.max(Cout, 1e-12);
-        vArr.push(v);
-        sum += v;
-    }
-    var mean = sum / (pts + 1);
-    var data = [], vmin = Infinity, vmax = -Infinity;
-    for (var j = 0; j <= pts; j++) {
-        var vv = Vout + (vArr[j] - mean);
-        data.push({ t: j / pts, v: vv });
-        if (vv < vmin) vmin = vv;
-        if (vv > vmax) vmax = vv;
-    }
-    var pad = Math.max((vmax - vmin) * 0.3, 1e-6);
-    return { label: 'V_out (输出电压纹波)', data: data, color: '#4a7a4a', unit: 'V', ymax: vmax + pad, ymin: vmin - pad, pp: vmax - vmin };
-}
-
-/* ========== 主绘制函数 ========== */
-function drawWave() {
-    var p = getParams();
-    if (currentTopo === 'llc') { drawWaveLlc(p); return; }
-    var dc = calcDC(currentTopo, p.D, p.Vin, p.IL);
-    var rip = calcRipple(currentTopo, p.D, p.Vin, p.IL, p.L, p.fsw);
-
-    /* ---- buck CCM/DCM 模式判定（auto 按负载判定，可强制） ---- */
-    var dcm = false, ipkDcm = 0, physDcm = false;
-    if (currentTopo === 'buck') {
-        physDcm = !rip.ccm;   // 物理判定：I_out < I_crit = ΔI_L/2
-        var hintEl = document.getElementById('modeHint');
-        hintEl.textContent = '';
-        if (p.mode === 'ccm') {
-            dcm = false;
-            if (physDcm) hintEl.textContent = '强制 CCM：电感电流出现负值段（假设同步整流；二极管续流实际会进入 DCM）';
-        } else if (p.mode === 'dcm') {
-            dcm = physDcm;
-            if (!physDcm) hintEl.textContent = '当前负载不满足 DCM 条件，已按 CCM 绘制';
-        } else {
-            dcm = physDcm;
-        }
-        if (dcm) {
-            /* DCM 直流增益闭式解（CCM 边界处退化为 D·V_in，连续） */
-            var VoDcm = p.D * p.D * p.Vin * p.Vin / (p.D * p.D * p.Vin + 2 * p.L * p.fsw * p.IL);
-            ipkDcm = (p.Vin - VoDcm) * p.D / (p.L * p.fsw);
-            dc = { Vout: VoDcm, gain: 'V_out = D²V_in²/(D²V_in + 2·L·f_sw·I_out)（DCM）' };
-        }
-    }
-
-    var waveforms = getWaveforms(currentTopo, p.D, p.Vin, p.IL, rip.deltaI, p.Cout, p.fsw, dcm, p.L);
-
-    // 输出电压纹波（供显示）：取 V_out 波形积分结果的实测峰峰值
-    var dVo;
-    waveforms.forEach(function (wf) { if (wf.pp !== undefined) dVo = wf.pp; });
-
-    // 更新直流显示
-    var dIshow = dcm ? ipkDcm : rip.deltaI;
-    var pctShow = dcm ? ipkDcm / Math.max(p.IL, 1e-9) : rip.ripplePct;
-    var modeTxt, modeColor;
-    if (currentTopo === 'buck') {
-        if (p.mode === 'ccm' && physDcm) modeTxt = 'CCM（强制）';
-        else if (p.mode === 'dcm' && physDcm) modeTxt = 'DCM（强制）';
-        else modeTxt = dcm ? 'DCM' : 'CCM';
-        modeColor = dcm ? 'var(--color-accent)' : 'var(--color-primary)';
-    } else {
-        modeTxt = rip.ccm ? 'CCM' : 'DCM';
-        modeColor = rip.ccm ? 'var(--color-primary)' : 'var(--color-accent)';
-    }
-    var dcEl = document.getElementById('dcParams');
-    dcEl.innerHTML =
-        '<div class="dc-row"><span>V_out</span><span class="dc-val">' + dc.Vout.toFixed(2) + ' V</span></div>' +
-        '<div class="dc-row"><span>公式</span><span class="dc-val" style="font-size:0.8rem;">' + dc.gain + '</span></div>' +
-        '<div class="dc-row"><span>D</span><span class="dc-val">' + (p.D*100).toFixed(0) + '%</span></div>' +
-        '<div class="dc-row"><span>ΔI_L</span><span class="dc-val">' + fmtSI(dIshow, 'A') + '</span></div>' +
-        '<div class="dc-row"><span>纹波率</span><span class="dc-val">' + (pctShow*100).toFixed(1) + '%</span></div>' +
-        '<div class="dc-row"><span>工作模式</span><span class="dc-val" style="color:' + modeColor + ';">' + modeTxt + '</span></div>' +
-        '<div class="dc-row"><span>L<sub>crit</sub></span><span class="dc-val">' + fmtSI(rip.Lcrit, 'H') + '</span></div>' +
-        '<div class="dc-row"><span>ΔV_out</span><span class="dc-val">' + fmtSI(dVo, 'V') + '</span></div>';
-
-    // 绘制波形（按显示周期数重复）
-    drawWaveCanvas('waveCanvas', waveforms, p.D, p.Ncycle, p.fsw);
-}
-
-/* ========== LLC 谐振变换器（分段工程近似，归一化波形） ========== */
-function drawWaveLlc(p) {
-    var fr = 1 / (2 * Math.PI * Math.sqrt(Math.max(p.Lr * p.Cr, 1e-24)));
-    var fm = 1 / (2 * Math.PI * Math.sqrt(Math.max((p.Lr + p.Lm) * p.Cr, 1e-24)));
-    var fs = p.fsw;
-    var region, rColor;
-    if (fs > fr * 1.02) { region = '高于谐振（fs > fr）'; rColor = 'var(--color-primary)'; }
-    else if (fs >= fr * 0.98) { region = '谐振点附近（fs ≈ fr）'; rColor = 'var(--color-primary)'; }
-    else if (fs > fm) { region = '欠谐振（fm < fs < fr）'; rColor = 'var(--color-accent)'; }
-    else { region = '低于 fm（增益异常区）'; rColor = 'var(--color-accent)'; }
-
-    var dcEl = document.getElementById('dcParams');
-    dcEl.innerHTML =
-        '<div class="dc-row"><span>f_r = 1/(2π√(L_r·C_r))</span><span class="dc-val">' + fmtSI(fr, 'Hz') + '</span></div>' +
-        '<div class="dc-row"><span>f_m = 1/(2π√((L_r+L_m)C_r))</span><span class="dc-val">' + fmtSI(fm, 'Hz') + '</span></div>' +
-        '<div class="dc-row"><span>f_s（当前开关频率）</span><span class="dc-val">' + fmtSI(fs, 'Hz') + '</span></div>' +
-        '<div class="dc-row"><span>L_n = L_m/L_r</span><span class="dc-val">' + (p.Lm / Math.max(p.Lr, 1e-12)).toFixed(1) + '</span></div>' +
-        '<div class="dc-row"><span>工作区</span><span class="dc-val" style="color:' + rColor + ';">' + region + '</span></div>';
-
-    drawWaveCanvas('waveCanvas', genLlcWaveforms(fs / fr, p.Vin), 0.5, p.Ncycle, p.fsw);
-}
-
-/* 归一化波形模型：im 幅值 0.8，谐振附加环流幅值 1.2；
-   半周期相位 θ∈[0,π]，θR=π·fs/fr 内谐振（ic≠0），其后为励磁平台（ic=0，ir=im，副边截止）；
-   fs≥fr 时 θR=π：全谐振无平台，fs=fr 时 ir 恰为半周期正弦、与 im 端点相接 */
-function genLlcWaveforms(rr, Vin) {
-    var pts = 200;
-    var Im = 0.8, Iadd = 1.2;
-    var thR = rr >= 1 ? Math.PI : Math.PI * rr;
-    var Q1 = [], Q2 = [], Vsw = [], ir = [], im = [], vcr = [], isec = [];
-    var i, t, te, ph, th, sgn, ic, imv;
-    var vRaw = [], v = 0, vSum = 0;
-    for (i = 0; i <= pts; i++) {
-        t = i / pts;
-        Q1.push({ t: t, v: t < 0.47 ? 1 : 0 });
-        Q2.push({ t: t, v: (t >= 0.53 && t < 0.97) ? 1 : 0 });
-        Vsw.push({ t: t, v: t < 0.5 ? Vin : 0 });
-        te = (t >= 1) ? 0 : t;               // 末端取周期闭合值
-        ph = (te % 0.5) / 0.5;               // 半周期相位 ∈ [0,1)
-        th = Math.PI * ph;
-        sgn = te < 0.5 ? 1 : -1;
-        imv = sgn * (2 * ph - 1) * Im;       // 分段三角：−Im→+Im→−Im
-        if (th < thR) ic = sgn * Iadd * Math.sin(Math.PI * th / thR);
-        else ic = 0;
-        ir.push({ t: t, v: imv + ic });
-        im.push({ t: t, v: imv });
-        isec.push({ t: t, v: Math.abs(ic) });
-        v += ic / pts;                       // v_Cr = ∫(ir−im)dt（归一化）
-        vRaw.push(v);
-        vSum += v;
-    }
-    var vMean = vSum / (pts + 1), vMax = 1e-9;
-    for (i = 0; i <= pts; i++) {
-        vRaw[i] -= vMean;
-        if (Math.abs(vRaw[i]) > vMax) vMax = Math.abs(vRaw[i]);
-    }
-    for (i = 0; i <= pts; i++) {
-        vcr.push({ t: i / pts, v: vRaw[i] / vMax });   // 归一化到 ±1
-    }
-    var iMax = (Im + Iadd) * 1.15;
-    return [
-        { label: 'V_GS Q1 (50% − 死区)', data: Q1, color: '#3a5a8c', unit: 'V', ymax: 1.4, ymin: -0.2 },
-        { label: 'V_GS Q2', data: Q2, color: '#7a5a8c', unit: 'V', ymax: 1.4, ymin: -0.2 },
-        { label: 'V_SW (半桥节点)', data: Vsw, color: '#3a5a8c', unit: 'V', ymax: Vin * 1.15, ymin: -Vin * 0.08 },
-        { label: 'i_r (谐振电流, 归一化)', data: ir, color: '#c0583a', unit: 'pu', ymax: iMax, ymin: -iMax },
-        { label: 'i_m (励磁电流, 归一化)', data: im, color: '#c0893a', unit: 'pu', ymax: Im * 1.5, ymin: -Im * 1.5 },
-        { label: 'v_Cr (谐振电容电压, 归一化)', data: vcr, color: '#4a7a4a', unit: 'pu', ymax: 1.35, ymin: -1.35 },
-        { label: 'i_sec (副边整流 |i_r−i_m|)', data: isec, color: '#7a5a8c', unit: 'pu', ymax: Iadd * 1.3, ymin: -0.12 }
-    ];
-}
-
-/* 工程记号格式化 */
-function fmtSI(x, unit) {
-    var ax = Math.abs(x);
-    var pfx = '', v = x;
-    if (ax === 0) { return '0 ' + unit; }
-    if (ax >= 1e3) { v = x/1e3; pfx = 'k'; }
-    else if (ax >= 1) { v = x; pfx = ''; }
-    else if (ax >= 1e-3) { v = x*1e3; pfx = 'm'; }
-    else if (ax >= 1e-6) { v = x*1e6; pfx = 'µ'; }
-    else if (ax >= 1e-9) { v = x*1e9; pfx = 'n'; }
-    else { v = x*1e12; pfx = 'p'; }
-    return v.toFixed(2) + ' ' + pfx + unit;
-}
-
-/* ========== Canvas 绘制 ========== */
-function drawWaveCanvas(canvasId, waveforms, D, Ncycle, fsw) {
-    Ncycle = Ncycle || 1;
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-
-    var dpr = window.devicePixelRatio || 1;
-    var w = canvas.clientWidth || 700;
-    var rowH = 160;  // 每行波形高度
-    var totalH = waveforms.length * rowH + 20;
-    canvas.width = w * dpr;
-    canvas.height = totalH * dpr;
-    canvas.style.height = totalH + 'px';
-    var ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.fillStyle = '#fffcf7';
-    ctx.fillRect(0, 0, w, totalH);
-
-    var PAD = { top: 12, right: 20, bottom: 30, left: 78 };
-
-    waveforms.forEach(function(wave, idx) {
-        var offsetY = idx * rowH;
-        var cw = w - PAD.left - PAD.right;
-        var ch = rowH - PAD.top - PAD.bottom;
-
-        var yMin = wave.ymin;
-        var yMax = wave.ymax;
-        if (yMax === yMin) { yMax += 1; yMin -= 1; }
-
-        function xPos(gt) { return PAD.left + (gt / Ncycle) * cw; }  // gt ∈ [0, Ncycle]
-        function yPos(v) { return offsetY + PAD.top + (1 - (v - yMin) / (yMax - yMin)) * ch; }
-
-        // 背景
-        ctx.fillStyle = 'rgba(248,244,236,0.5)';
-        ctx.fillRect(PAD.left, offsetY + PAD.top, cw, ch);
-
-        // 占空比阴影（每个周期）
-        ctx.fillStyle = 'rgba(58,90,140,0.08)';
-        for (var c = 0; c < Ncycle; c++) {
-            ctx.fillRect(xPos(c), offsetY + PAD.top, xPos(c + D) - xPos(c), ch);
-        }
-
-        // 网格线
-        ctx.strokeStyle = '#e8e2d8';
-        ctx.lineWidth = 1;
-        // Y 轴3条线
-        [0.25, 0.5, 0.75].forEach(function(r) {
-            var y = offsetY + PAD.top + r * ch;
-            ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left+cw, y); ctx.stroke();
+    function parseInputs(topo, raw, unit, mode) {
+        var p = { topo: topo, mode: mode }, spec = E.specs[topo];
+        if (!spec) throw new Error('未知拓扑');
+        spec.fields.forEach(function (key) {
+            var text = raw[key], factor = key === 'Iout' && unit === 'mA' ? 1e-3 : E.fields[key].factor;
+            if (typeof text !== 'string' || !text.trim() || !/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(text.trim())) throw new Error(E.fields[key].label + ' 请输入有效数值');
+            p[key] = Number(text) * factor;
         });
-        // X轴 每周期的 D 分界与周期分界
-        for (var c = 0; c < Ncycle; c++) {
-            var xD = xPos(c + D);
-            ctx.setLineDash([4, 3]);
-            ctx.strokeStyle = '#aaa';
-            ctx.beginPath(); ctx.moveTo(xD, offsetY+PAD.top); ctx.lineTo(xD, offsetY+PAD.top+ch); ctx.stroke();
-            ctx.setLineDash([]);
-            if (c > 0) {
-                var xC = xPos(c);
-                ctx.strokeStyle = '#d0c8b8';
-                ctx.beginPath(); ctx.moveTo(xC, offsetY+PAD.top); ctx.lineTo(xC, offsetY+PAD.top+ch); ctx.stroke();
+        return E.validate(p);
+    }
+    function convertCurrent(value, from, to) {
+        if (from === to || !String(value).trim()) return value;
+        var number = Number(value);
+        return Number.isFinite(number) ? String(number * (from === 'A' ? 1000 : 0.001)) : value;
+    }
+    function sample(data, t) {
+        var lo = 0, hi = data.length;
+        while (lo < hi) { var m = (lo + hi) >>> 1; if (data[m].t <= t) lo = m + 1; else hi = m; }
+        var a = data[Math.max(0, lo - 1)], b = data[Math.min(lo, data.length - 1)];
+        return b.t > a.t ? a.v + (b.v - a.v) * (t - a.t) / (b.t - a.t) : a.v;
+    }
+    function createRunner(factory, notify, timers) {
+        timers = timers || { set: setTimeout, clear: clearTimeout };
+        var revision = 0, worker = null, timeout = null;
+        function invalidate() {
+            revision++;
+            if (worker) worker.terminate(); worker = null;
+            if (timeout !== null) timers.clear(timeout); timeout = null;
+        }
+        function start(params) {
+            invalidate(); var id = revision, w;
+            function finish(state, value) {
+                if (id !== revision || worker !== w) return;
+                invalidate(); notify(state, value);
             }
+            try {
+                w = factory(); worker = w;
+                w.onmessage = function (event) {
+                    var d = event.data;
+                    if (!d || d.id !== id) return;
+                    if (d.ok) finish('ready', d.result); else finish('error', (d.code ? '[' + d.code + '] ' : '') + d.error);
+                };
+                w.onerror = function () { finish('error', '计算 Worker 加载或执行失败，请通过 HTTP(S) 打开页面并检查脚本。'); };
+                w.onmessageerror = function () { finish('error', '计算结果传输失败，请重试。'); };
+                timeout = timers.set(function () { finish('error', '计算超时，任务已停止。'); }, 11000);
+                notify('running'); w.postMessage({ id: id, params: params });
+            } catch (err) { invalidate(); notify('error', err.message || '无法创建 Worker'); }
         }
-
-        // 坐标轴框
-        ctx.strokeStyle = '#4a4a4a';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(PAD.left, offsetY+PAD.top, cw, ch);
-
-        // Y 轴标签
-        ctx.fillStyle = '#8a8a8a';
-        ctx.font = '11px Fira Code, monospace';
-        ctx.textAlign = 'right';
-        ctx.fillText(fmtSI(yMax, wave.unit), PAD.left - 4, offsetY + PAD.top + 8);
-        ctx.fillText(fmtSI(yMin, wave.unit), PAD.left - 4, offsetY + PAD.top + ch);
-        var ymid = (yMax + yMin) / 2;
-        ctx.fillText(fmtSI(ymid, wave.unit), PAD.left - 4, offsetY + PAD.top + ch/2 + 4);
-
-        // X 轴标签
-        ctx.textAlign = 'center';
-        ctx.fillText('0', PAD.left, offsetY+PAD.top+ch+16);
-        for (var c = 0; c < Ncycle; c++) {
-            ctx.fillText(currentTopo === 'llc' ? 'T/2' : 'D', xPos(c + D), offsetY+PAD.top+ch+16);
-            ctx.fillText(Ncycle > 1 ? (c+1) + 'T' : 'T', xPos(c + 1), offsetY+PAD.top+ch+16);
+        return { start: start, invalidate: invalidate };
+    }
+    function mount(window) {
+        var document = window.document, $ = function (id) { return document.getElementById(id); };
+        var topo = 'buck', stores = {}, result = null, stale = true, debounce = null, cards = [], locks = {};
+        var timerApi = { set: window.setTimeout.bind(window), clear: window.clearTimeout.bind(window) };
+        function status(text, error) { $('calculationStatus').textContent = text; $('calculationStatus').classList.toggle('error', !!error); }
+        function markStale() {
+            stale = true; $('exportCsv').disabled = true; $('waveArea').classList.add('is-stale');
+            $('dcParams').classList.add('is-stale'); $('diagnostics').classList.add('is-stale');
+            cards.forEach(function (item) { if (!item.cursor.textContent.startsWith('旧结果')) item.cursor.textContent = '旧结果（已过期） · ' + item.cursor.textContent; });
         }
-
-        // 波形标签
-        ctx.fillStyle = wave.color;
-        ctx.font = 'bold 12px Patrick Hand, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(wave.label, PAD.left+4, offsetY+PAD.top+14);
-
-        // 绘制波形（按周期重复）
-        ctx.beginPath();
-        ctx.strokeStyle = wave.color;
-        ctx.lineWidth = 2.5;
-        ctx.lineJoin = 'round';
-        var first = true;
-        for (var c = 0; c < Ncycle; c++) {
-            wave.data.forEach(function(pt) {
-                var px = xPos(c + pt.t);
-                var py = yPos(pt.v);
-                py = Math.max(offsetY+PAD.top, Math.min(offsetY+PAD.top+ch, py));
-                if (first) { ctx.moveTo(px, py); first = false; }
-                else ctx.lineTo(px, py);
+        var runner = createRunner(function () { return new window.Worker('worker.js'); }, function (state, value) {
+            $('cancelCalculation').disabled = state !== 'running'; $('waveArea').setAttribute('aria-busy', String(state === 'running'));
+            if (state === 'running') status('正在求周期稳态；旧结果已过期，不可导出。');
+            if (state === 'error') { markStale(); status(value + ' 旧结果已过期，不代表当前输入。', true); }
+            if (state === 'ready') {
+                result = value; stale = false; $('exportCsv').disabled = false;
+                ['waveArea', 'dcParams', 'diagnostics'].forEach(function (id) { $(id).classList.remove('is-stale'); });
+                status('周期稳态已求得 · ' + result.mode + ' · 已通过周期闭合、守恒及采样加密检查。');
+                showResult();
+            }
+        }, timerApi);
+        function initStore(name) {
+            if (stores[name]) return stores[name];
+            var p = E.defaults(name), raw = {};
+            E.specs[name].fields.forEach(function (key) { raw[key] = String(Number((p[key] / E.fields[key].factor).toPrecision(14))); });
+            return (stores[name] = { raw: raw, unit: 'A', mode: 'auto' });
+        }
+        function schematic() {
+            $('topoFig').dataset.topo = topo;
+            try { $('topoFig').innerHTML = window.PEFigures.render(topo, stores[topo].mode); }
+            catch (err) { $('topoFig').textContent = '电路图加载失败：' + err.message; }
+        }
+        function cancelPending() { if (debounce !== null) window.clearTimeout(debounce); debounce = null; runner.invalidate(); }
+        function start() {
+            debounce = null;
+            try { var s = stores[topo]; runner.start(parseInputs(topo, s.raw, s.unit, s.mode)); }
+            catch (err) { $('cancelCalculation').disabled = true; $('waveArea').setAttribute('aria-busy', 'false'); status(err.message + '；未生成当前输入的结果。', true); }
+        }
+        function changed() {
+            cancelPending(); markStale(); $('cancelCalculation').disabled = false; $('waveArea').setAttribute('aria-busy', 'true');
+            status('参数已改变；旧结果已过期，等待重新计算。'); debounce = window.setTimeout(start, 150);
+        }
+        function select(name) {
+            cancelPending(); topo = name; var s = initStore(name); locks = {}; result = null; cards = [];
+            $('waveArea').replaceChildren(); $('dcParams').textContent = '等待当前拓扑计算'; $('diagnostics').textContent = '尚无当前拓扑结果';
+            document.querySelectorAll('.topo-btn[data-topo]').forEach(function (btn) {
+                var active = btn.dataset.topo === name; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', String(active));
             });
+            $('parameterFields').replaceChildren();
+            E.specs[name].fields.forEach(function (key) {
+                var def = E.fields[key], field = document.createElement('div'); field.className = 'field';
+                var label = document.createElement('label'); label.htmlFor = 'param-' + key; label.textContent = def.label;
+                var line = document.createElement('div'); line.className = 'pe-input-line';
+                var input = document.createElement('input'); input.type = 'number'; input.id = 'param-' + key; input.step = 'any'; input.min = key === 'D' ? '1' : '0';
+                if (key === 'D') input.max = topo === 'dsd' ? '50' : '99';
+                input.value = s.raw[key]; input.required = true;
+                input.addEventListener('input', function () { s.raw[key] = input.value; changed(); });
+                line.appendChild(input);
+                if (key === 'Iout') {
+                    var selectUnit = document.createElement('select'); selectUnit.id = 'iLoadUnit'; selectUnit.setAttribute('aria-label', '负载电流单位');
+                    ['A', 'mA'].forEach(function (u) { var opt = document.createElement('option'); opt.value = opt.textContent = u; selectUnit.appendChild(opt); });
+                    selectUnit.value = s.unit;
+                    selectUnit.addEventListener('change', function () {
+                        s.raw.Iout = convertCurrent(s.raw.Iout, s.unit, selectUnit.value); s.unit = selectUnit.value; input.value = s.raw.Iout; changed();
+                    }); line.appendChild(selectUnit);
+                } else { var unit = document.createElement('span'); unit.textContent = def.unit; line.appendChild(unit); }
+                field.append(label, line); $('parameterFields').appendChild(field);
+            });
+            $('modeField').hidden = name !== 'buck'; $('modeSel').value = s.mode;
+            $('topoDescText').textContent = E.specs[name].description; schematic(); changed();
         }
-        ctx.stroke();
-    });
-
-    // 底部 X 轴说明
-    ctx.fillStyle = '#8a8a8a';
-    ctx.font = '12px Patrick Hand, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('← 时间 (' + Ncycle + ' 个开关周期' + (fsw ? '，T = ' + fmtSI(1 / fsw, 's') : '') + ') →', w / 2, totalH - 6);
-}
+        function row(label, value) {
+            var el = document.createElement('div'); el.className = 'dc-row';
+            var name = document.createElement('span'); name.textContent = label;
+            var data = document.createElement('span'); data.className = 'dc-val'; data.textContent = value; el.append(name, data); return el;
+        }
+        function showResult() {
+            $('dcParams').replaceChildren();
+            var vo = result.channels.find(function (ch) { return ch.id === 'Vout'; });
+            [['平均 Vout', format(vo.stats.mean, 'V')], ['ΔVout 峰峰值', format(vo.stats.pp, 'V')], ['工作模式', result.mode],
+                ['开关周期 T', format(result.period, 's')], ['输入功率', format(result.diagnostics.Pin, 'W')], ['输出功率', format(result.diagnostics.Pout, 'W')]]
+                .forEach(function (r) { $('dcParams').appendChild(row(r[0], r[1])); });
+            result.channels.filter(function (ch) { return ['iL', 'im', 'i1', 'i2', 'iSum', 'vCf'].includes(ch.id); }).forEach(function (ch) {
+                $('dcParams').appendChild(row('Δ' + ch.id, format(ch.stats.pp, ch.unit)));
+            });
+            Object.keys(result.reference).forEach(function (key) { $('dcParams').appendChild(row(key, format(result.reference[key], 'Hz'))); });
+            $('diagnostics').textContent = JSON.stringify({ 模型: result.assumptions, 输入_SI: result.params, 模式: result.mode,
+                周期闭合归一化残差: result.diagnostics.closure, 电荷及伏秒归一化残差: result.diagnostics.balances,
+                功率归一化误差: result.diagnostics.powerError, 采样加密最大变化: result.diagnostics.refinement,
+                计算次数: result.diagnostics.evaluations, 边界提示: result.warnings, 切换事件_t除以T: result.events }, null, 2);
+            $('waveArea').replaceChildren(); cards = [];
+            result.channels.forEach(function (ch) {
+                var card = document.createElement('section'); card.className = 'paper-card pe-channel'; card.dataset.channel = ch.id;
+                var title = document.createElement('h3'); title.textContent = ch.label;
+                var metrics = document.createElement('dl'); metrics.className = 'pe-metrics';
+                [['最小', 'min'], ['最大', 'max'], ['平均', 'mean'], ['RMS', 'rms'], ['峰峰值', 'pp']].forEach(function (pair) {
+                    var box = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd');
+                    dt.textContent = pair[0]; dd.textContent = format(ch.stats[pair[1]], ch.unit); box.append(dt, dd); metrics.appendChild(box);
+                });
+                var canvas = document.createElement('canvas'); canvas.setAttribute('aria-label', ch.label + '；数值见上方统计');
+                canvas.setAttribute('role', 'img'); canvas.tabIndex = 0;
+                var cursor = document.createElement('p'); cursor.className = 'pe-cursor'; cursor.textContent = '移动指针查看读数；聚焦图形后按 ←/→ 移动光标。';
+                card.append(title, metrics, canvas, cursor); $('waveArea').appendChild(card);
+                var item = { channel: ch, canvas: canvas, cursor: cursor, position: null }; cards.push(item);
+                canvas.addEventListener('pointermove', function (event) {
+                    var rect = canvas.getBoundingClientRect(); item.position = Math.max(0, Math.min(1, (event.clientX - rect.left - 92) / Math.max(1, rect.width - 108))); draw(item);
+                });
+                canvas.addEventListener('pointerleave', function () { item.position = null; draw(item); });
+                canvas.addEventListener('keydown', function (event) {
+                    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+                    event.preventDefault(); item.position = Math.max(0, Math.min(1, (item.position || 0) + (event.key === 'ArrowRight' ? 0.005 : -0.005))); draw(item);
+                });
+            });
+            redraw();
+        }
+        function draw(item) {
+            if (!result) return;
+            var ch = item.channel, canvas = item.canvas, ctx = canvas.getContext('2d'); if (!ctx) return;
+            var w = Math.max(160, canvas.clientWidth || 600), h = 200, dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); canvas.style.height = h + 'px'; ctx.scale(dpr, dpr);
+            var css = window.getComputedStyle(document.documentElement);
+            var ink = css.getPropertyValue('--color-text').trim() || '#444', grid = css.getPropertyValue('--color-border').trim() || '#ccc';
+            var accent = css.getPropertyValue('--color-primary').trim() || '#3a5a8c', bg = css.getPropertyValue('--color-card-bg').trim() || '#fff';
+            var top = 24, left = 92, right = w - 16, bottom = 160, count = Number($('ncycle').value);
+            var ac = ch.id === 'Vout' && $('voltageView').value === 'ac', offset = ac ? ch.stats.mean : 0;
+            var lo = ch.stats.min - offset, hi = ch.stats.max - offset, pad = Math.max((hi - lo) * 0.15, Math.abs(hi) * 1e-6, 1e-12);
+            var key = result.params.topo + ':' + ch.id + ':' + (ac ? 'ac' : 'dc'), locked = $('axisMode').value === 'locked';
+            var range = locked && locks[key] ? locks[key] : [lo - pad, hi + pad];
+            if (locked && !locks[key]) locks[key] = range.slice();
+            var clipped = lo < range[0] || hi > range[1];
+            function X(t) { return left + t / count * (right - left); }
+            function Y(v) { return bottom - (v - range[0]) / (range[1] - range[0]) * (bottom - top); }
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h); ctx.font = '11px monospace'; ctx.fillStyle = ink;
+            ctx.textAlign = 'left';
+            var hint = ac ? 'Δvo；平均 ' + format(ch.stats.mean, 'V') : ch.unit === '逻辑' ? '逻辑 0/1，非 VGS' : ch.unit;
+            ctx.fillText(hint + (clipped ? ' · 超出锁定范围' : ''), left, 14, right - left);
+            for (var r = 0; r <= 4; r++) {
+                var value = range[0] + (range[1] - range[0]) * r / 4, y = Y(value);
+                ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+                ctx.fillStyle = ink; ctx.textAlign = 'right'; ctx.fillText(format(value, ch.unit), left - 8, y + 4);
+            }
+            for (var c = 0; c < count; c++) {
+                result.phases.forEach(function (phase, i) {
+                    var startTime = i ? result.phases[i - 1].end : 0;
+                    if (phase.g) { ctx.globalAlpha = 0.065; ctx.fillStyle = accent; ctx.fillRect(X(c + startTime), top, X(c + phase.end) - X(c + startTime), bottom - top); ctx.globalAlpha = 1; }
+                    ctx.setLineDash([4, 4]); ctx.strokeStyle = grid; ctx.beginPath(); ctx.moveTo(X(c + phase.end), top); ctx.lineTo(X(c + phase.end), bottom); ctx.stroke();
+                });
+                result.events.forEach(function (event) {
+                    ctx.setLineDash([2, 3]); ctx.strokeStyle = accent; ctx.beginPath(); ctx.moveTo(X(c + event.t), top); ctx.lineTo(X(c + event.t), bottom); ctx.stroke();
+                });
+                ctx.setLineDash([]); ctx.textAlign = 'center'; ctx.fillStyle = ink;
+                ctx.fillText(format((c + 1) * result.period, 's'), X(c + 1), bottom + 18);
+            }
+            ctx.textAlign = 'center'; ctx.fillText('0', left, bottom + 18); ctx.fillText('阴影：主开关导通；虚线：开关/二极管事件', w / 2, 196, w - 8);
+            ctx.save(); ctx.beginPath(); ctx.rect(left, top, right - left, bottom - top); ctx.clip();
+            ctx.beginPath(); ctx.strokeStyle = accent; ctx.lineWidth = 1.8;
+            for (c = 0; c < count; c++) {
+                ch.data.forEach(function (pt, j) { var x = X(c + pt.t), y = Y(pt.v - offset); if (!c && !j) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+            }
+            ctx.stroke(); ctx.restore();
+            if (item.position !== null) {
+                var time = item.position * count, local = time === count ? 1 : time % 1, reading = sample(ch.data, local);
+                ctx.strokeStyle = ink; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(X(time), top); ctx.lineTo(X(time), bottom); ctx.stroke(); ctx.setLineDash([]);
+                item.cursor.textContent = (stale ? '旧结果（已过期） · ' : '') + 't=' + format(time * result.period, 's') + ' · ' + ch.id + '=' + format(reading, ch.unit) + (ac ? ' · Δvo=' + format(reading - offset, 'V') : '');
+            } else item.cursor.textContent = (stale ? '旧结果（已过期） · ' : '') + '移动指针查看读数；聚焦图形后按 ←/→ 移动光标。';
+        }
+        function redraw() {
+            cards.forEach(draw);
+            $('scaleHint').textContent = $('axisMode').value === 'locked' ? '纵轴已锁定：参数改变后保留范围；超范围会在对应图上提示。' : '自动缩放：曲线高度相近不代表纹波相同，请比较峰峰值和刻度。';
+        }
+        document.querySelectorAll('.topo-btn[data-topo]').forEach(function (btn) { btn.addEventListener('click', function () { select(btn.dataset.topo); }); });
+        $('modeSel').addEventListener('change', function () { stores[topo].mode = $('modeSel').value; schematic(); changed(); });
+        $('recalculate').addEventListener('click', function () { cancelPending(); markStale(); start(); });
+        $('cancelCalculation').addEventListener('click', function () {
+            cancelPending(); markStale(); $('cancelCalculation').disabled = true; $('waveArea').setAttribute('aria-busy', 'false'); status('计算已取消；旧结果已过期，不可导出。');
+        });
+        ['ncycle', 'voltageView', 'axisMode'].forEach(function (id) { $(id).addEventListener('change', function () { if (id === 'axisMode') locks = {}; redraw(); }); });
+        $('exportCsv').addEventListener('click', function () {
+            if (stale || !result) return;
+            var blob = new window.Blob([E.csv(result)], { type: 'text/csv;charset=utf-8' }), url = window.URL.createObjectURL(blob);
+            var link = document.createElement('a'); link.href = url; link.download = result.params.topo + '-steady-state.csv'; document.body.appendChild(link); link.click(); link.remove();
+            window.setTimeout(function () { window.URL.revokeObjectURL(url); }, 1000);
+        });
+        new window.MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        if (window.ResizeObserver) new window.ResizeObserver(redraw).observe($('waveArea')); else window.addEventListener('resize', redraw);
+        window.addEventListener('beforeunload', cancelPending); select('buck');
+    }
+    return { format: format, parseInputs: parseInputs, convertCurrent: convertCurrent, sample: sample, createRunner: createRunner, mount: mount };
+}));

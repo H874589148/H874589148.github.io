@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-        <script>(function(){var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function(){var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>电力电子波形 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,141 +19,81 @@
         <a href="../../index.html">EE工具箱</a>
         <span class="breadcrumb">计算工具 / 电力电子波形</span>
     </nav>
-
     <main class="container-wide">
         <h1>电力电子拓扑工作波形</h1>
-        <p class="tool-desc">选择拓扑结构，调整占空比与参数，实时绘制关键节点的稳态工作波形。</p>
-
-        <!-- 控制区 -->
+        <p class="tool-desc">由输入参数求解理想电路的周期稳态；波形、电气读数与守恒诊断来自同一次计算。</p>
         <div class="pe-layout">
             <aside class="pe-ctrl paper-card">
-                <h3>拓扑选择</h3>
-                <div class="topo-grid">
-                    <button class="topo-btn active" data-topo="buck" onclick="selectTopo('buck')">Buck</button>
-                    <button class="topo-btn" data-topo="boost" onclick="selectTopo('boost')">Boost</button>
-                    <button class="topo-btn" data-topo="buckboost" onclick="selectTopo('buckboost')">Buck-Boost</button>
-                    <button class="topo-btn" data-topo="flyback" onclick="selectTopo('flyback')">Flyback</button>
-                    <button class="topo-btn" data-topo="llc" onclick="selectTopo('llc')">LLC</button>
-                    <button class="topo-btn" data-topo="dsd" onclick="selectTopo('dsd')">DSD</button>
+                <h2>拓扑选择</h2>
+                <div class="topo-grid" id="topologyButtons">
+                    <button class="topo-btn active" data-topo="buck" aria-pressed="true">Buck</button>
+                    <button class="topo-btn" data-topo="boost" aria-pressed="false">Boost</button>
+                    <button class="topo-btn" data-topo="buckboost" aria-pressed="false">Buck-Boost</button>
+                    <button class="topo-btn" data-topo="flyback" aria-pressed="false">Flyback</button>
+                    <button class="topo-btn" data-topo="llc" aria-pressed="false">LLC</button>
+                    <button class="topo-btn" data-topo="dsd" aria-pressed="false">DSD</button>
                 </div>
-
-                <h3 style="margin-top:var(--space-lg);">参数</h3>
-                <div class="field" id="dutyField">
-                    <label>占空比 D</label>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <input type="range" id="dutySlider" min="5" max="95" value="50" step="1" oninput="updateDuty(this.value)">
-                        <span class="duty-val" id="dutyVal">50%</span>
-                    </div>
-                </div>
+                <h2>计算参数</h2>
+                <p class="hint">Iout 是恒流负载，不是电感纹波电流。切换拓扑会恢复该拓扑上次输入。</p>
+                <div id="parameterFields"></div>
                 <div class="field" id="modeField">
-                    <label for="modeSel">工作模式（Buck）</label>
+                    <label for="modeSel">Buck 续流方式</label>
                     <select id="modeSel">
-                        <option value="auto" selected>自动（按负载判定）</option>
-                        <option value="ccm">强制 CCM</option>
-                        <option value="dcm">强制 DCM</option>
-                    </select>
-                    <p class="hint" id="modeHint"></p>
-                </div>
-                <div class="field">
-                    <label for="vin">输入电压 V<sub>in</sub></label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="vin" value="12" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">V</span>
-                    </div>
-                </div>
-                <div class="field">
-                    <label for="iLoad">负载电流 I<sub>L</sub></label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="iLoad" value="2" step="any" min="0">
-                        <select id="iLoadUnit">
-                            <option value="A" selected>A</option>
-                            <option value="mA">mA</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="field">
-                    <label for="fsw">开关频率 f<sub>sw</sub></label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="fsw" value="500" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">kHz</span>
-                    </div>
-                </div>
-                <div class="field" id="lField">
-                    <label for="lval">电感 L</label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="lval" value="10" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µH</span>
-                    </div>
-                </div>
-                <div class="field" id="coutField">
-                    <label for="cout">输出电容 C<sub>out</sub></label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="cout" value="100" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µF</span>
-                    </div>
-                </div>
-                <div class="field" id="lrField" style="display:none;">
-                    <label for="lrval">谐振电感 L<sub>r</sub></label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="lrval" value="10" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µH</span>
-                    </div>
-                </div>
-                <div class="field" id="crField" style="display:none;">
-                    <label for="crval">谐振电容 C<sub>r</sub></label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="crval" value="47" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">nF</span>
-                    </div>
-                </div>
-                <div class="field" id="lmField" style="display:none;">
-                    <label for="lmval">励磁电感 L<sub>m</sub></label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <input type="number" id="lmval" value="47" step="any" min="0">
-                        <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">µH</span>
-                    </div>
-                </div>
-                <div class="field">
-                    <label for="ncycle">显示周期数</label>
-                    <select id="ncycle">
-                        <option value="1">1</option>
-                        <option value="2" selected>2</option>
-                        <option value="3">3</option>
-                        <option value="5">5</option>
+                        <option value="auto">二极管续流，自动 CCM/DCM</option>
+                        <option value="sync">同步 PWM，允许反向电流</option>
                     </select>
                 </div>
-
-                <!-- 直流参数显示 -->
-                <div class="dc-results">
-                    <h3>直流工作点</h3>
-                    <div id="dcParams"></div>
+                <div class="pe-actions">
+                    <button id="recalculate" type="button" class="btn">重新计算</button>
+                    <button id="cancelCalculation" type="button" class="btn" disabled>取消</button>
                 </div>
+                <section class="dc-results" aria-label="周期工作点">
+                    <h2>周期工作点</h2>
+                    <div id="dcParams">等待计算</div>
+                </section>
             </aside>
-
-            <!-- 波形图区 -->
             <div class="pe-charts">
-                <div class="topo-desc paper-card">
-                    <div class="topo-fig" id="topoFig"></div>
-                    <div id="topoDescText"></div>
-                </div>
-
-                <!-- 波形 Canvas -->
-                <div class="chart-container" id="waveArea">
-                    <div class="chart-label" id="waveTitle">波形</div>
-                    <canvas id="waveCanvas" width="700" height="480"></canvas>
-                </div>
-
-                <div class="info-box" style="margin-top:var(--space-md);">
-                    <p><strong>模型说明：</strong>V<sub>out</sub> 纹波由输出侧电流（Buck/DSD 为电感电流，Boost/Buck-Boost 为二极管电流，Flyback 为二次侧电流）对输出电容实时积分得到，属纯电容纹波模型，忽略电容 ESR/ESL；Buck 断流期（DCM）开关节点画为 V<sub>out</sub> 平台，忽略寄生振铃；强制 CCM 假设同步整流；拓扑图为静态示意，不随参数变化。</p>
+                <section class="topo-desc paper-card">
+                    <div class="topo-fig" id="topoFig" aria-label="当前拓扑电路图"></div>
+                    <p id="topoDescText"></p>
+                </section>
+                <div id="calculationStatus" class="pe-status" role="status" aria-live="polite">正在初始化</div>
+                <section class="paper-card pe-display" aria-label="波形显示设置">
+                    <div class="field">
+                        <label for="ncycle">显示周期数</label>
+                        <select id="ncycle"><option>1</option><option selected>2</option><option>3</option><option>5</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="voltageView">输出电压视图</label>
+                        <select id="voltageView"><option value="ac">纹波 Δvo（去直流）</option><option value="dc">完整 Vout</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="axisMode">纵轴范围</label>
+                        <select id="axisMode"><option value="auto">自动缩放</option><option value="locked">锁定当前范围</option></select>
+                    </div>
+                    <button id="exportCsv" type="button" class="btn" disabled>导出波形 CSV</button>
+                    <p class="hint pe-full" id="scaleHint">自动缩放：曲线高度相近不代表纹波幅值相同，请比较峰峰值和刻度。</p>
+                </section>
+                <section id="waveArea" class="pe-wave-area" aria-label="计算波形" aria-busy="true"></section>
+                <details class="paper-card" id="diagnosticDetails">
+                    <summary>守恒诊断、输入快照与模型边界</summary>
+                    <pre id="diagnostics">尚无有效结果</pre>
+                </details>
+                <div class="info-box">
+                    <p><strong>模型边界：</strong>理想恒流负载、有限电感和电容、周期稳态。忽略 ESR/ESL、损耗、死区、寄生振铃、磁饱和、启动与控制环路。周期解不保证启动收敛或闭环稳定。门极信号仅为逻辑 0/1。</p>
+                    <p>仅支持正输入电压和带载工作点（Iout&gt;0）；无法可靠求解时明确报错，不生成示意幅值。LLC 初值使用由 Lr、Cr 算出的谐振频率；其运行区间不代表 ZVS 保证。</p>
                 </div>
             </div>
         </div>
+        <noscript>此计算工具需要 JavaScript 和 Web Worker，请启用后重新加载。</noscript>
     </main>
-
     <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
-        <script async src="https://cn.vercount.one/js"></script>
-
+    <script async src="https://cn.vercount.one/js"></script>
     <script src="../../js/common.js"></script>
+    <script src="../../razavi/razavi-symbols.js"></script>
+    <script src="../../razavi/render.js"></script>
+    <script src="engine.js"></script>
+    <script src="topologies.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="creative-medium" content="mini-game">
+<title>卡通狂飙 · 三车道躲避赛</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ink:#2B2138;
+  --cream:#FFF6E3;
+  --paper:#FFEDCB;
+  --accent:#FF5A3C;
+  --coin:#FFC53D;
+  --good:#3ECF8E;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;overflow:hidden;background:#6FC7E8;
+  font-family:'Noto Sans SC',sans-serif;color:var(--ink);
+  user-select:none;-webkit-user-select:none;touch-action:none;
+}
+#app{position:fixed;inset:0;}
+#game{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.hidden{display:none !important;}
+
+/* ---------- 通用控件 ---------- */
+.btn{
+  font-family:'ZCOOL KuaiLe','Noto Sans SC',sans-serif;
+  font-size:20px;line-height:1;padding:15px 34px;
+  color:var(--ink);background:var(--cream);
+  border:3px solid var(--ink);border-radius:18px;
+  box-shadow:0 5px 0 var(--ink);cursor:pointer;
+  transition:transform .08s,box-shadow .08s;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink);}
+.btn.primary{background:var(--accent);color:#fff;}
+.btn.ghost{background:rgba(255,246,227,.9);}
+.btn.xl{font-size:28px;padding:19px 58px;border-radius:22px;}
+.icon-btn{
+  width:52px;height:52px;border-radius:16px;background:var(--cream);
+  border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  pointer-events:auto;
+}
+.icon-btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink);}
+.icon-btn svg{width:20px;height:20px;fill:var(--ink);}
+.chip{
+  display:inline-flex;align-items:center;gap:8px;background:var(--cream);
+  border:3px solid var(--ink);border-radius:999px;padding:7px 15px;
+  box-shadow:0 4px 0 rgba(43,33,56,.85);font-weight:700;white-space:nowrap;
+}
+.chip .label{font-size:12px;opacity:.6;}
+.chip b{font-family:'ZCOOL KuaiLe';font-size:19px;font-weight:400;line-height:1;}
+.chip svg{width:18px;height:18px;flex:none;}
+
+/* ---------- 屏幕 ---------- */
+.screen{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:18px;z-index:10;overflow:auto;
+}
+.veil{background:rgba(43,33,56,.4);}
+.panel{
+  background:var(--cream);border:4px solid var(--ink);border-radius:26px;
+  box-shadow:10px 10px 0 rgba(43,33,56,.5);
+  padding:26px 30px;max-width:560px;width:100%;text-align:center;
+}
+.panel h2{font-family:'ZCOOL KuaiLe';font-weight:400;font-size:32px;margin:0 0 16px;}
+
+/* ---------- 主菜单 ---------- */
+#menu{
+  flex-direction:column;background:linear-gradient(180deg,rgba(43,33,56,0) 0%,rgba(43,33,56,.14) 50%,rgba(43,33,56,.44) 100%);
+}
+.title-wrap{transform:rotate(-2.5deg);text-align:center;}
+.checker{
+  height:16px;width:min(430px,72vw);margin:0 auto 12px;
+  background:repeating-conic-gradient(var(--ink) 0% 25%,#fff 0% 50%);
+  background-size:16px 16px;border-radius:9px;border:3px solid var(--ink);
+  box-shadow:0 4px 0 rgba(43,33,56,.5);
+}
+.game-title{
+  font-family:'ZCOOL KuaiLe';font-weight:400;
+  font-size:clamp(62px,15vw,138px);line-height:1.02;margin:0;
+  color:var(--cream);-webkit-text-stroke:2.5px var(--ink);
+  text-shadow:0 7px 0 var(--ink);
+}
+.game-title em{font-style:normal;color:var(--coin);}
+.tagline{
+  font-family:'ZCOOL KuaiLe';color:#fff;font-size:clamp(15px,3.4vw,23px);
+  text-shadow:0 2px 0 var(--ink);margin:12px 0 20px;
+}
+.menu-badges{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;justify-content:center;}
+.menu-btns{display:flex;flex-direction:column;gap:16px;align-items:center;}
+.hint{color:#fff;text-shadow:0 2px 0 rgba(43,33,56,.85);font-size:14px;margin:20px 0 0;text-align:center;}
+.hint.sub2{opacity:.85;font-size:13px;margin-top:8px;}
+
+/* ---------- HUD ---------- */
+#hud{
+  position:absolute;inset:0;z-index:5;pointer-events:none;
+  padding:calc(12px + env(safe-area-inset-top)) 16px 12px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.hud-col{display:flex;flex-direction:column;gap:8px;align-items:flex-start;}
+.hud-col.right{flex-direction:row;align-items:flex-start;gap:10px;}
+.hud-center{
+  position:absolute;left:50%;top:calc(12px + env(safe-area-inset-top));
+  transform:translateX(-50%);
+}
+.chip.speed b{font-size:26px;}
+.chip .kmh{font-size:11px;font-weight:700;opacity:.55;}
+
+/* ---------- 结算 ---------- */
+.rank-badge{
+  display:inline-block;font-family:'ZCOOL KuaiLe';font-size:42px;line-height:1.1;
+  background:var(--coin);border:4px solid var(--ink);border-radius:18px;
+  padding:8px 32px;transform:rotate(-2deg);box-shadow:0 6px 0 rgba(43,33,56,.5);
+  margin:2px 0 8px;
+}
+.rank-sub{font-size:13px;opacity:.65;margin:0 0 6px;}
+.stats-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px;}
+.stat{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:8px 18px;font-size:12px;box-shadow:0 3px 0 rgba(43,33,56,.35);}
+.stat b{display:block;font-family:'ZCOOL KuaiLe';font-size:22px;font-weight:400;margin-top:2px;}
+.coin-tally{
+  font-family:'ZCOOL KuaiLe';font-size:26px;color:#C87F1A;margin:10px 0 2px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.coin-tally svg{width:24px;height:24px;}
+.board{list-style:none;margin:12px 0 2px;padding:0;text-align:left;max-height:172px;overflow:auto;font-size:14px;}
+.board li{display:flex;justify-content:space-between;padding:5px 14px;border-radius:10px;}
+.board li.me{background:var(--accent);color:#fff;font-weight:700;}
+.board li:nth-child(odd):not(.me){background:rgba(43,33,56,.06);}
+.btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+
+/* ---------- 车库 ---------- */
+.garage-panel{max-width:740px;}
+.garage-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;}
+.garage-head h2{margin:0;text-align:left;}
+.garage-body{display:flex;gap:18px;align-items:stretch;}
+.preview-wrap{
+  flex:0 0 235px;background:linear-gradient(180deg,#BFE9F2 0%,#E4F7E6 70%,#D3EFC9 100%);
+  border:3px solid var(--ink);border-radius:18px;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 -14px 0 rgba(43,33,56,.08);
+}
+#previewCanvas{width:100%;max-width:235px;height:auto;}
+.opts{flex:1;min-width:0;text-align:left;}
+.opts h3{font-family:'ZCOOL KuaiLe';font-weight:400;margin:4px 0 10px;font-size:18px;}
+.body-cards{display:flex;gap:10px;flex-wrap:wrap;}
+.body-card{
+  flex:1 1 140px;background:#fff;border:3px solid var(--ink);border-radius:14px;
+  padding:8px 8px 10px;cursor:pointer;box-shadow:0 4px 0 rgba(43,33,56,.4);
+  text-align:center;font-family:inherit;color:var(--ink);transition:transform .08s;
+}
+.body-card:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(43,33,56,.4);}
+.body-card.sel{border-color:var(--accent);box-shadow:0 4px 0 var(--accent);}
+.body-card canvas{width:100%;height:auto;}
+.body-card .nm{font-family:'ZCOOL KuaiLe';font-size:15px;display:block;}
+.body-card .pr{font-size:12px;color:#8A7F9C;display:flex;align-items:center;justify-content:center;gap:4px;margin-top:3px;}
+.body-card .pr svg{width:13px;height:13px;}
+.body-card .pr.own{color:var(--good);}
+.body-card .pr.armed{color:var(--accent);font-weight:700;}
+.color-dots{display:flex;gap:10px;flex-wrap:wrap;padding:4px 0;}
+.dot{
+  width:38px;height:38px;border-radius:50%;border:3px solid var(--ink);
+  cursor:pointer;box-shadow:0 3px 0 rgba(43,33,56,.4);position:relative;padding:0;
+}
+.dot.sel::after{content:'';position:absolute;inset:-9px;border:3px dashed var(--ink);border-radius:50%;}
+.garage-note{font-size:12px;opacity:.6;margin:10px 0 0;}
+
+/* ---------- 提示条 ---------- */
+#toast{
+  position:absolute;left:50%;bottom:16%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:11px 24px;border-radius:14px;font-size:15px;
+  opacity:0;transition:.25s;z-index:40;pointer-events:none;
+  font-family:'ZCOOL KuaiLe','Noto Sans SC',sans-serif;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media (max-width:640px){
+  .garage-body{flex-direction:column;}
+  .preview-wrap{flex:none;height:250px;}
+  .panel{padding:20px 18px;}
+  .btn.xl{font-size:24px;padding:16px 42px;}
+  .board{max-height:130px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <!-- 比赛 HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-col">
+      <div class="chip"><span class="label">分数</span><b id="hudScore">0</b></div>
+      <div class="chip"><span class="label">距离</span><b id="hudDist">0 m</b></div>
+    </div>
+    <div class="hud-center">
+      <div class="chip speed"><b id="hudSpeed">0</b><span class="kmh">km/h</span></div>
+    </div>
+    <div class="hud-col right">
+      <div class="chip">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#FFC53D" stroke="#2B2138" stroke-width="2.4"/><circle cx="12" cy="12" r="5" fill="none" stroke="#B87A12" stroke-width="2"/></svg>
+        <b id="hudCoins">0</b>
+      </div>
+      <button id="btnPause" class="icon-btn" aria-label="暂停">
+        <svg viewBox="0 0 24 24"><rect x="5" y="4" width="5" height="16" rx="2"/><rect x="14" y="4" width="5" height="16" rx="2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 主菜单 -->
+  <div id="menu" class="screen" data-screen-label="菜单">
+    <div class="title-wrap">
+      <div class="checker"></div>
+      <h1 class="game-title">卡通<em>狂飙</em></h1>
+      <p class="tagline">三车道极速躲避 · 卡通狂飙大赛</p>
+    </div>
+    <div class="menu-badges">
+      <div class="chip"><span class="label">最佳分数</span><b id="menuBest">0</b></div>
+      <div class="chip">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#FFC53D" stroke="#2B2138" stroke-width="2.4"/><circle cx="12" cy="12" r="5" fill="none" stroke="#B87A12" stroke-width="2"/></svg>
+        <b id="menuCoins">0</b>
+      </div>
+    </div>
+    <div class="menu-btns">
+      <button id="btnStart" class="btn primary xl">开始比赛</button>
+      <button id="btnGarage" class="btn xl">我的车库</button>
+    </div>
+    <p class="hint">长按屏幕左右两侧移动赛车 · 电脑用 ← → 或 A D 键</p>
+    <p class="hint sub2">躲开油桶、轮胎、大锤和其他车手 · 弯道与上下坡自动行驶，专注躲避就好</p>
+  </div>
+
+  <!-- 车库 -->
+  <div id="garage" class="screen veil hidden" data-screen-label="车库">
+    <div class="panel garage-panel">
+      <div class="garage-head">
+        <h2>我的车库</h2>
+        <div class="chip">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#FFC53D" stroke="#2B2138" stroke-width="2.4"/><circle cx="12" cy="12" r="5" fill="none" stroke="#B87A12" stroke-width="2"/></svg>
+          <b id="garageCoins">0</b>
+        </div>
+      </div>
+      <div class="garage-body">
+        <div class="preview-wrap"><canvas id="previewCanvas" width="360" height="420"></canvas></div>
+        <div class="opts">
+          <h3>车型</h3>
+          <div id="bodyCards" class="body-cards"></div>
+          <h3>车漆</h3>
+          <div id="colorDots" class="color-dots"></div>
+          <p class="garage-note">选择立即保存，下一场比赛马上生效。金币靠比赛排名赚取。</p>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="btnGarageBack" class="btn ghost">返回</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 暂停 -->
+  <div id="pause" class="screen veil hidden" data-screen-label="暂停">
+    <div class="panel">
+      <h2>暂停中</h2>
+      <div class="btn-row">
+        <button id="btnResume" class="btn primary xl">继续比赛</button>
+      </div>
+      <div class="btn-row">
+        <button id="btnQuit" class="btn ghost">放弃比赛</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结算 -->
+  <div id="gameover" class="screen veil hidden" data-screen-label="结算">
+    <div class="panel">
+      <div class="rank-badge" id="goRank">第 1 名</div>
+      <p class="rank-sub" id="goRankSub">8 名车手同场竞技</p>
+      <div class="stats-row">
+        <div class="stat">分数<b id="goScore">0</b></div>
+        <div class="stat">距离<b id="goDist">0 m</b></div>
+        <div class="stat">躲避<b id="goDodge">0 次</b></div>
+      </div>
+      <div class="coin-tally">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#FFC53D" stroke="#2B2138" stroke-width="2.4"/><circle cx="12" cy="12" r="5" fill="none" stroke="#B87A12" stroke-width="2"/></svg>
+        <span id="goCoins">+0 金币</span>
+      </div>
+      <ol id="goBoard" class="board"></ol>
+      <div class="btn-row">
+        <button id="btnRetry" class="btn primary">再来一局</button>
+        <button id="btnGoGarage" class="btn">车库</button>
+        <button id="btnGoMenu" class="btn ghost">菜单</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script src="js/road.js"></script>
+<script src="js/render.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
