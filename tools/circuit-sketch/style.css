@@ -37,7 +37,7 @@ body.ck-page { display: flex; flex-direction: column; }
 .ck-embed .top-nav { display: none; }
 .ck-embed .ck-header-row { display: none; }
 .ck-embed .ck-menubar .ck-menu:first-child { display: none; }
-.ck-embed .ck-tpl-title, .ck-embed .ck-tpl-list { display: none; }
+.ck-embed .ck-templates, .ck-embed #ckToggleTemplates, .ck-embed [data-action="window-templates"] { display: none; }
 
 /* 紧凑顶部：标题 + 说明 + 菜单 */
 .ck-header {
@@ -156,7 +156,12 @@ body.ck-page { display: flex; flex-direction: column; }
     overscroll-behavior: contain;
     z-index: 20;
 }
-.ck-palette h3, .ck-props h3 { margin-bottom: var(--space-xs); color: var(--color-primary); }
+.ck-palette[hidden], .ck-props[hidden], .ck-templates[hidden], .ck-narrow-btn[hidden] { display: none !important; }
+.ck-panel-hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: -1px; background: var(--color-card-bg); z-index: 1; }
+.ck-panel-hd h3 { margin: 0; color: var(--color-primary); }
+.ck-panel-close { border: 0; background: transparent; color: var(--color-text-secondary); font-size: 20px; line-height: 1; padding: 4px 7px; cursor: pointer; }
+.ck-panel-close:focus-visible { outline: 2px solid var(--color-primary); }
+#ckPropsHd, #ckTemplatesHd { cursor: move; user-select: none; touch-action: none; }
 .hint { font-size: 0.82rem; color: var(--color-text-muted); margin-top: var(--space-xs); }
 
 /* 器件面板（可折叠分组 + 器件网格） */
@@ -199,7 +204,9 @@ body.ck-page { display: flex; flex-direction: column; }
 .pal-item span { font-size: 0.72rem; line-height: 1.2; color: var(--color-text); }
 
 /* 模板分组（器件面板下方） */
-.ck-tpl-title { margin-top: var(--space-md); }
+.ck-templates { position: absolute; bottom: 10px; right: 10px; width: 210px; max-height: calc(100% - 20px); margin: 0; padding: 12px; overflow-y: auto; overscroll-behavior: contain; z-index: 20; }
+.ck-split-panels .ck-props { max-height: calc(62% - 15px); }
+.ck-split-panels .ck-templates { max-height: calc(38% - 15px); }
 .ck-tpl-list { display: flex; flex-direction: column; gap: 6px; margin-top: var(--space-xs); }
 .ck-tpl-list .btn { font-size: 0.85rem; padding: 5px 10px; text-align: left; }
 
@@ -358,7 +365,8 @@ body.ck-page { display: flex; flex-direction: column; }
     pointer-events: auto; user-select: text; cursor: text;
 }
 .ck-text-line { box-sizing: border-box; margin: 0; border: 0; font-size: 0; line-height: 0; white-space: pre; }
-.ck-text-line > span { position: relative; display: inline-block; height: 0; line-height: normal; vertical-align: top; }
+.ck-text-line > span { position: relative; display: inline-block; line-height: normal; vertical-align: top; }
+.ck-text-line:has(> br:only-child) { line-height: normal; }
 .ck-text-toolbar {
     position: absolute; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
     width: max-content; padding: 7px; box-sizing: border-box; overflow: auto; overscroll-behavior: contain;
@@ -451,7 +459,8 @@ body.ck-page { display: flex; flex-direction: column; }
         display: none;
     }
     .ck-props.ck-panel-open { display: block; }
-    #ckPropsHd { cursor: default; }
+    .ck-templates { top: 40px; bottom: auto; left: 10px; right: 10px; width: auto; max-height: calc(100% - 50px); }
+    #ckPropsHd, #ckTemplatesHd { cursor: default; }
     .pal-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .ck-tpl-list { flex-direction: row; flex-wrap: wrap; }
     /* 窄屏下快速入门面板缩小 */

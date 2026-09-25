@@ -29,7 +29,8 @@ class Element {
     get innerHTML() { return this._text; }
     setAttribute(k, v) { this.attributes[k] = String(v); }
     getAttribute(k) { return this.attributes[k]; }
-    appendChild(c) { c.parent = this; this.children.push(c); return c; }
+    appendChild(c) { c.parent = c.parentNode = this; this.children.push(c); return c; }
+    insertBefore(c, ref) { c.parent = c.parentNode = this; this.children.splice(this.children.indexOf(ref), 0, c); return c; }
     append(...children) { children.forEach(c => this.appendChild(c)); }
     replaceChildren(...children) { this.children.forEach(c => { c.parent = null; }); this.children = []; this.append(...children); }
     remove() { if (this.parent) this.parent.children = this.parent.children.filter(c => c !== this); this.parent = null; }
@@ -77,8 +78,12 @@ function harness() {
         }
     };
     function flush(ms) { for (const [id, timer] of [...timers]) if (timer.ms === ms) { timers.delete(id); timer.fn(); } }
+    const fig = require('../../../js/tests/handoff-harness').environment();
+    fig.run('tools/power-electronics/topologies.js');
+    win.document.createElementNS = fig.s.document.createElementNS; fig.s.document = win.document;
+    win.PEFigures = fig.s.PEFigures; win.CircuitFigure = fig.s.CircuitFigure; win.CircuitHandoff = fig.s.CircuitHandoff;
     UI.mount(win);
-    return { win, get, workers, observers, blobs, revoked, timers, flush,
+    return { win, get, workers, observers, blobs, revoked, timers, flush, fig, bar: body.children.find(c => c.className === 'circuit-handoff-bar'),
         select: topo => buttons.find(b => b.dataset.topo === topo).click(),
         input: (id, value, type = 'input') => { get(id).value = String(value); get(id).fire(type); },
         complete: () => { flush(150); workers.at(-1).finish(); },
@@ -178,10 +183,28 @@ test('当前 Worker 的错误 ID、卸载取消和 Buck 续流方式切换', () 
     w.emit({ id: w.payload.id + 999, ok: true, result: null }); assert.equal(w.terminated, false);
     assert.equal(h.get('exportCsv').disabled, true); w.finish();
     h.input('param-Iout', 0.1); h.input('modeSel', 'sync', 'change'); h.complete();
-    assert.match(h.get('topoFig').innerHTML, /buck:sync/); assert.match(h.get('dcParams').textContent, /同步/);
+    assert.match(h.get('topoFig').innerHTML, /同步续流/); assert.match(h.get('dcParams').textContent, /同步/);
     assert.ok(h.card('iReturn')); assert.equal(h.card('iD'), undefined);
     h.input('param-Vin', 15); h.flush(150); const current = h.workers.at(-1);
     h.win.document.documentElement.fire('beforeunload'); assert.equal(current.terminated, true); assert.equal(h.timers.size, 0);
+});
+test('六拓扑当前输入直接进入副本，求解失败仍可编辑，无效值不复用旧图', async () => {
+    const { plain, settle } = require('../../../js/tests/handoff-harness'), h = harness(), a = h.bar.children[1];
+    async function snapshot() { a.click(); const token = a.href.split('=')[1]; await settle(); return h.fig.s.CircuitHandoff.read(token); }
+    for (const topo of Object.keys(E.specs)) {
+        h.select(topo); h.input('param-Vin', 17); const r = await snapshot();
+        assert.equal(r.status, 'ready'); assert.equal(r.context.inputs.Vin, 17); assert.equal(r.context.topology, topo);
+        assert.equal(h.get('topoFig').innerHTML, h.fig.s.CircuitFigure.render(r.doc));
+        const liveRaw = Object.fromEntries(E.specs[topo].fields.map(k => [k, h.get('param-' + k).value]));
+        assert.deepEqual(plain(r.context.inputs), UI.parseInputs(topo, liveRaw, h.get('iLoadUnit').value, h.get('modeSel').value));
+        assert.equal(r.context.inputs.Vout, undefined);
+    }
+    h.select('buck'); h.input('modeSel', 'sync', 'change'); h.input('param-L', 23);
+    assert.equal((await snapshot()).context.inputs.L, 23e-6); assert.match(h.get('topoFig').innerHTML, /同步续流/);
+    h.flush(150); h.workers.at(-1).onerror(); assert.equal((await snapshot()).status, 'ready');
+    h.input('param-L', ''); assert.equal(a.getAttribute('aria-disabled'), 'true');
+    assert.match(h.get('topoFig').innerHTML, /参数无效/); assert.ok(!h.get('topoFig').innerHTML.includes('23 µH'));
+    h.input('param-L', 31); assert.equal((await snapshot()).context.inputs.L, 31e-6);
 });
 test('实际 Worker 协议忽略无效请求，并保留参数校验错误码', () => {
     const messages = [], s = { PowerElectronics: E, importScripts() {}, postMessage: m => messages.push(m) }; s.self = s;

@@ -92,10 +92,22 @@
             E.specs[name].fields.forEach(function (key) { raw[key] = String(Number((p[key] / E.fields[key].factor).toPrecision(14))); });
             return (stores[name] = { raw: raw, unit: 'A', mode: 'auto' });
         }
+        var currentFigure = null;
+        $('topoFig').classList.add('circuit-figure-scroll');
+        var figureLink = window.CircuitHandoff.toolbar($('topoFig'), '电力电子', function () {
+            if (!currentFigure) throw new Error('请先修正当前输入');
+            return window.CircuitHandoff.clone(currentFigure);
+        });
         function schematic() {
-            $('topoFig').dataset.topo = topo;
-            try { $('topoFig').innerHTML = window.PEFigures.render(topo, stores[topo].mode); }
-            catch (err) { $('topoFig').textContent = '电路图加载失败：' + err.message; }
+            $('topoFig').dataset.topo = topo; currentFigure = null;
+            var s = stores[topo], p = null, error = '';
+            try { p = parseInputs(topo, s.raw, s.unit, s.mode); } catch (err) { error = err.message; }
+            try {
+                var pack = window.PEFigures.pack(topo, s.mode, p);
+                $('topoFig').innerHTML = window.CircuitFigure.render(pack.doc);
+                currentFigure = p ? pack : null;
+            } catch (err) { $('topoFig').textContent = '电路图加载失败：' + err.message; error = err.message; }
+            figureLink.set(!!currentFigure, error ? error + '；图纸不使用旧数值。' : '');
         }
         function cancelPending() { if (debounce !== null) window.clearTimeout(debounce); debounce = null; runner.invalidate(); }
         function start() {
@@ -104,7 +116,7 @@
             catch (err) { $('cancelCalculation').disabled = true; $('waveArea').setAttribute('aria-busy', 'false'); status(err.message + '；未生成当前输入的结果。', true); }
         }
         function changed() {
-            cancelPending(); markStale(); $('cancelCalculation').disabled = false; $('waveArea').setAttribute('aria-busy', 'true');
+            schematic(); cancelPending(); markStale(); $('cancelCalculation').disabled = false; $('waveArea').setAttribute('aria-busy', 'true');
             status('参数已改变；旧结果已过期，等待重新计算。'); debounce = window.setTimeout(start, 150);
         }
         function select(name) {
@@ -134,7 +146,7 @@
                 field.append(label, line); $('parameterFields').appendChild(field);
             });
             $('modeField').hidden = name !== 'buck'; $('modeSel').value = s.mode;
-            $('topoDescText').textContent = E.specs[name].description; schematic(); changed();
+            $('topoDescText').textContent = E.specs[name].description; changed();
         }
         function row(label, value) {
             var el = document.createElement('div'); el.className = 'dc-row';
@@ -236,7 +248,7 @@
             $('scaleHint').textContent = $('axisMode').value === 'locked' ? '纵轴已锁定：参数改变后保留范围；超范围会在对应图上提示。' : '自动缩放：曲线高度相近不代表纹波相同，请比较峰峰值和刻度。';
         }
         document.querySelectorAll('.topo-btn[data-topo]').forEach(function (btn) { btn.addEventListener('click', function () { select(btn.dataset.topo); }); });
-        $('modeSel').addEventListener('change', function () { stores[topo].mode = $('modeSel').value; schematic(); changed(); });
+        $('modeSel').addEventListener('change', function () { stores[topo].mode = $('modeSel').value; changed(); });
         $('recalculate').addEventListener('click', function () { cancelPending(); markStale(); start(); });
         $('cancelCalculation').addEventListener('click', function () {
             cancelPending(); markStale(); $('cancelCalculation').disabled = true; $('waveArea').setAttribute('aria-busy', 'false'); status('计算已取消；旧结果已过期，不可导出。');

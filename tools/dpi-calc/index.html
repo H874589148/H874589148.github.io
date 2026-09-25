@@ -80,6 +80,7 @@
             <section class="paper-card tool-section parameter-card" id="params-ban" tabindex="-1">
                 <h2>3. BAN 与 DUT 注入端负载</h2>
                 <label class="check-line"><input type="checkbox" id="useBan" checked> 在 OUT1 注入端并接 BAN（取消后只保留 DUT 等效负载）</label>
+                <p class="hint">取消仅断开 OUT1 的 BAN；完整测试台 VDD 供电 BAN 仍保留，并共用以下 L_BAN、R_BAN、C_BAN 参数。</p>
                 <div id="banFields" class="parameter-grid"></div>
                 <div id="banFigure" class="schematic" aria-label="BAN三端网络及外部终端"></div>
                 <p class="hint">Fig.4，PDF 第3页：L_BAN 串在外部终端与 DUT 端之间；DUT 端有 R_BAN 与 C_BAN 串联接地支路。计算从 DUT 端向 BAN 看入的阻抗，必须指定外部端口终端。</p>
@@ -167,6 +168,9 @@
     <script src="../../js/common.js"></script>
     <script src="../../razavi/razavi-symbols.js"></script>
     <script src="../../razavi/render.js"></script>
+    <script src="../../razavi/figure-utils.js"></script>
+    <script src="../../js/circuit-handoff.js"></script>
+    <script src="topologies.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

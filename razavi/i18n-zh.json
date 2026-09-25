@@ -13,6 +13,7 @@
   },
   "categoryOrder": ["transistor", "passive", "source", "power", "switch", "analog-block", "logic", "signal-flow", "interface", "transformer"],
   "symbols": {
+    "dut-5t": "五端 DUT",
     "nmos": "NMOS 管",
     "pmos": "PMOS 管",
     "npn": "NPN 三极管",
@@ -30,6 +31,7 @@
     "current-source": "电流源",
     "pulse-voltage-source": "脉冲电压源",
     "ground": "接地",
+    "ground-triangle": "倒三角地",
     "vdd-port": "VDD 电源",
     "simple-switch": "开关",
     "closed-switch": "闭合开关",

@@ -26,16 +26,16 @@ var comp = {};   // 当前器件取值（SI 单位）
 function parseVal(str) {
     str = String(str).trim();
     if (!str) return NaN;
-    var m = str.match(/^([\d.eE+-]+)\s*([a-zA-Zμµ]*)$/);
+    var m = str.match(/^([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*([a-zA-Zμµ]*)$/);
     if (!m) return NaN;
     var v = parseFloat(m[1]);
     if (isNaN(v)) return NaN;
     var suf = m[2];
-    if (/^meg$/i.test(suf)) return v * 1e6;
+    if (/^meg$/i.test(suf)) return Number.isFinite(v * 1e6) ? v * 1e6 : NaN;
     var table = { '': 1, 'k': 1e3, 'K': 1e3, 'M': 1e6, 'G': 1e9, 'g': 1e9, 'T': 1e12,
                   'm': 1e-3, 'u': 1e-6, 'μ': 1e-6, 'µ': 1e-6, 'n': 1e-9, 'p': 1e-12, 'f': 1e-15 };
     if (!(suf in table)) return NaN;
-    return v * table[suf];
+    return Number.isFinite(v * table[suf]) ? v * table[suf] : NaN;
 }
 
 function fmt(v, unit) { return formatEngineering(v) + ' ' + unit; }
@@ -48,16 +48,17 @@ function getSpecs() {
         fL:    parseVal(el.fL.value),
         fH:    parseVal(el.fH.value),
         f0:    parseVal(el.f0.value),
-        q:     parseFloat(el.q0.value),
+        q:     parseVal(el.q0.value),
         fst:   parseVal(el.fst.value),
-        astop: parseFloat(el.astop.value),
-        rhoR:  parseFloat(el.rhoR.value),          // Ω/µm²
-        rhoC:  parseFloat(el.rhoC.value),          // fF/µm²
-        T:     parseFloat(el.tempK.value)
+        astop: parseVal(el.astop.value),
+        rhoR:  parseVal(el.rhoR.value),          // Ω/µm²
+        rhoC:  parseVal(el.rhoC.value),          // fF/µm²
+        T:     parseVal(el.tempK.value)
     };
 }
 
 function validSpecs(s) {
+    if (!ARCHS[s.arch] || ['rhoR', 'rhoC', 'T'].concat(ARCHS[s.arch].freq.map(function (k) { return k === 'q0' ? 'q' : k; })).some(function (k) { return !Number.isFinite(s[k]); })) return '请输入有效有限数值。';
     if (!(s.rhoR > 0) || !(s.rhoC > 0) || !(s.T > 0)) return '版图密度与温度必须为正数。';
     if (s.arch === 'rc-bp') {
         if (!(s.fL > 0) || !(s.fH > 0) || s.fH <= s.fL) return '带通需要 fH > fL > 0。';
@@ -203,124 +204,28 @@ function compList(s, c) {
     return [];
 }
 
-/* ---- 拓扑示意图（手绘风 SVG，位号与结果表一致） ---- */
-function _p(d) { return '<path d="' + d + '" class="tw"/>'; }
-function _w(x1, y1, x2, y2) { return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="tw"/>'; }
-function _d(x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="3" class="td"/>'; }
-function _t(x, y, s, anchor) { return '<text x="' + x + '" y="' + y + '" class="tl"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'; }
-function _res(x1, y1, x2, y2) {
-    var dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy);
-    var ux = dx / len, uy = dy / len, px = -uy, py = ux;
-    var lead = 8, amp = 7, n = 6, seg = (len - 2 * lead) / n;
-    var d = 'M' + x1 + ',' + y1 + ' L' + (x1 + ux * lead).toFixed(1) + ',' + (y1 + uy * lead).toFixed(1);
-    for (var i = 1; i < n; i++) {
-        var t = lead + seg * i, off = (i % 2 ? amp : -amp);
-        d += ' L' + (x1 + ux * t + px * off).toFixed(1) + ',' + (y1 + uy * t + py * off).toFixed(1);
-    }
-    d += ' L' + (x2 - ux * lead).toFixed(1) + ',' + (y2 - uy * lead).toFixed(1) + ' L' + x2 + ',' + y2;
-    return _p(d);
+/* ---- 当前图纸：预览与跳转共享快照，无效输入不携带旧设计 ---- */
+var filterPapers = {}, filterLinks = {};
+['topoFig', 'rTopoFig'].forEach(function (id) {
+    var container = document.getElementById(id);
+    container.classList.add('circuit-figure-scroll');
+    filterLinks[id] = CircuitHandoff.toolbar(container, '滤波器设计', function () {
+        if (!filterPapers[id]) throw new Error('当前参数无效，请先修正输入');
+        return CircuitHandoff.clone(filterPapers[id]);
+    });
+});
+function filterFigure(id, arch, values) {
+    var valid = !!values && Object.keys(values).length > 0 && Object.keys(values).every(function (k) { return Number.isFinite(values[k]) && values[k] > 0; });
+    var pack = FilterFigures.build(arch, valid ? values : null);
+    document.getElementById(id).innerHTML = CircuitFigure.render(pack.doc);
+    filterPapers[id] = valid ? pack : null;
+    filterLinks[id].set(valid, valid ? '' : '参数无效，图纸暂不标数值，请修正后打开副本。');
 }
-function _cap(x, y, vert) {
-    if (vert) return _p('M' + x + ',' + (y - 14) + ' L' + x + ',' + (y - 4) + ' M' + (x - 9) + ',' + (y - 4) + ' L' + (x + 9) + ',' + (y - 4) +
-                        ' M' + (x - 9) + ',' + (y + 4) + ' L' + (x + 9) + ',' + (y + 4) + ' M' + x + ',' + (y + 4) + ' L' + x + ',' + (y + 14));
-    return _p('M' + (x - 14) + ',' + y + ' L' + (x - 4) + ',' + y + ' M' + (x - 4) + ',' + (y - 9) + ' L' + (x - 4) + ',' + (y + 9) +
-              ' M' + (x + 4) + ',' + (y - 9) + ' L' + (x + 4) + ',' + (y + 9) + ' M' + (x + 4) + ',' + y + ' L' + (x + 14) + ',' + y);
+function forwardFigure(s) {
+    var values = {};
+    compList(s, comp).forEach(function (row) { values[row[0]] = row[1]; });
+    filterFigure('topoFig', s.arch, values);
 }
-function _gnd(x, y) {
-    return _p('M' + x + ',' + y + ' L' + x + ',' + (y + 8) + ' M' + (x - 10) + ',' + (y + 8) + ' L' + (x + 10) + ',' + (y + 8) +
-              ' M' + (x - 6) + ',' + (y + 13) + ' L' + (x + 6) + ',' + (y + 13) + ' M' + (x - 2.5) + ',' + (y + 18) + ' L' + (x + 2.5) + ',' + (y + 18));
-}
-function _gndL(x, y) {
-    return _p('M' + x + ',' + y + ' L' + (x - 8) + ',' + y + ' M' + (x - 8) + ',' + (y - 10) + ' L' + (x - 8) + ',' + (y + 10) +
-              ' M' + (x - 13) + ',' + (y - 6) + ' L' + (x - 13) + ',' + (y + 6) + ' M' + (x - 18) + ',' + (y - 2.5) + ' L' + (x - 18) + ',' + (y + 2.5));
-}
-function _op(x, y) {
-    return _p('M' + (x - 25) + ',' + (y - 22) + ' L' + (x - 25) + ',' + (y + 22) + ' L' + (x + 28) + ',' + y + ' Z') +
-           _t(x - 21, y - 6, '+') + _t(x - 21, y + 16, '−');
-}
-function _svg(w, h, body) {
-    return '<svg viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg" class="topo-svg">' + body + '</svg>';
-}
-
-var TOPO_SVGS = {
-    'rc-lp': _svg(260, 160,
-        _t(18, 50, 'Vin') + _w(30, 60, 40, 60) +
-        _res(40, 60, 120, 60) + _t(80, 42, 'R1', 'middle') +
-        _w(120, 60, 210, 60) + _d(150, 60) +
-        _w(150, 60, 150, 74) + _cap(150, 88, true) + _gnd(150, 102) + _t(166, 92, 'C1') +
-        _t(242, 50, 'Vout', 'end')),
-    'rc-hp': _svg(260, 160,
-        _t(18, 50, 'Vin') + _w(30, 60, 41, 60) +
-        _cap(55, 60, false) + _t(55, 42, 'C1', 'middle') +
-        _w(69, 60, 210, 60) + _d(150, 60) +
-        _res(150, 60, 150, 112) + _gnd(150, 112) + _t(166, 92, 'R1') +
-        _t(242, 50, 'Vout', 'end')),
-    'sk-lp': _svg(340, 200,
-        _t(12, 60, 'Vin') + _w(24, 70, 35, 70) +
-        _res(35, 70, 105, 70) + _t(70, 52, 'R1', 'middle') +
-        _w(105, 70, 135, 70) + _d(120, 70) +
-        _res(135, 70, 205, 70) + _t(170, 52, 'R2', 'middle') +
-        _w(205, 70, 215, 70) + _d(215, 70) +
-        _w(215, 70, 215, 90) + _w(215, 90, 235, 90) +
-        _d(225, 90) + _w(225, 90, 225, 104) + _cap(225, 118, true) + _gnd(225, 132) + _t(241, 122, 'C2') +
-        _w(120, 70, 120, 40) + _w(120, 40, 136, 40) + _cap(150, 40, false) + _w(164, 40, 300, 40) + _w(300, 40, 300, 100) +
-        _t(150, 25, 'C1 = 2C2', 'middle') +
-        _op(260, 100) +
-        _w(288, 100, 320, 100) + _d(300, 100) + _t(322, 90, 'Vout', 'end') +
-        _w(300, 100, 300, 158) + _w(300, 158, 210, 158) + _w(210, 158, 210, 110) + _w(210, 110, 235, 110)),
-    'sk-hp': _svg(340, 200,
-        _t(12, 60, 'Vin') + _w(24, 70, 31, 70) +
-        _cap(45, 70, false) + _t(45, 52, 'C1', 'middle') +
-        _w(59, 70, 95, 70) + _d(95, 70) +
-        _res(95, 70, 95, 112) + _gnd(95, 112) + _t(111, 95, 'R1') +
-        _w(95, 70, 111, 70) + _cap(125, 70, false) + _t(125, 52, 'C2', 'middle') +
-        _w(139, 70, 185, 70) + _d(185, 70) +
-        _w(185, 70, 185, 90) + _w(185, 90, 235, 90) +
-        _d(210, 90) + _w(210, 90, 210, 40) + _res(210, 40, 280, 40) + _w(280, 40, 300, 40) + _w(300, 40, 300, 100) +
-        _t(245, 25, 'R2 = 2R1', 'middle') +
-        _op(260, 100) +
-        _w(288, 100, 320, 100) + _d(300, 100) + _t(322, 90, 'Vout', 'end') +
-        _w(300, 100, 300, 158) + _w(300, 158, 195, 158) + _w(195, 158, 195, 110) + _w(195, 110, 235, 110)),
-    'rc-bp': _svg(330, 170,
-        _t(18, 50, 'Vin') + _w(30, 60, 41, 60) +
-        _cap(55, 60, false) + _t(55, 42, 'C1', 'middle') +
-        _w(69, 60, 110, 60) + _d(110, 60) +
-        _res(110, 60, 110, 108) + _gnd(110, 108) + _t(96, 90, 'R1', 'end') +
-        _w(110, 60, 140, 60) + _res(140, 60, 215, 60) + _t(177, 42, 'R2', 'middle') +
-        _w(215, 60, 250, 60) + _d(250, 60) +
-        _w(250, 60, 250, 74) + _cap(250, 88, true) + _gnd(250, 102) + _t(266, 92, 'C2') +
-        _w(250, 60, 300, 60) + _t(312, 50, 'Vout', 'end')),
-    'mfb-bp': _svg(340, 205,
-        _t(12, 80, 'Vin') + _w(24, 90, 35, 90) +
-        _res(35, 90, 105, 90) + _t(70, 72, 'R1', 'middle') +
-        _w(105, 90, 120, 90) + _d(120, 90) +
-        _res(120, 90, 120, 132) + _gnd(120, 132) + _t(136, 115, 'R2') +
-        _w(120, 90, 136, 90) + _cap(150, 90, false) + _t(150, 72, 'C1', 'middle') +
-        _w(164, 90, 190, 90) + _d(190, 90) +
-        _w(190, 90, 190, 120) + _w(190, 120, 235, 120) +
-        _w(120, 90, 120, 50) + _w(120, 50, 196, 50) + _cap(210, 50, false) + _t(210, 35, 'C2', 'middle') +
-        _w(224, 50, 300, 50) + _w(300, 50, 300, 110) +
-        _d(205, 120) + _w(205, 120, 205, 165) + _res(205, 165, 275, 165) + _w(275, 165, 300, 165) + _w(300, 165, 300, 110) +
-        _t(240, 185, 'R3', 'middle') +
-        _op(260, 110) + _w(235, 100, 222, 100) + _gndL(222, 100) +
-        _w(288, 110, 320, 110) + _d(300, 110) + _t(322, 100, 'Vout', 'end')),
-    'notch': _svg(300, 240,
-        _t(10, 105, 'Vin') + _w(22, 110, 35, 110) + _d(35, 110) +
-        _w(35, 110, 35, 60) + _w(35, 60, 55, 60) +
-        _res(55, 60, 125, 60) + _t(90, 42, 'R1', 'middle') +
-        _w(125, 60, 145, 60) + _d(145, 60) +
-        _res(145, 60, 215, 60) + _t(180, 42, 'R2', 'middle') +
-        _w(215, 60, 235, 60) +
-        _w(145, 60, 145, 76) + _cap(145, 90, true) + _gnd(145, 104) + _t(163, 94, 'C3=2C') +
-        _w(35, 110, 35, 160) + _w(35, 160, 51, 160) +
-        _cap(65, 160, false) + _t(65, 142, 'C1', 'middle') +
-        _w(79, 160, 145, 160) + _d(145, 160) +
-        _w(145, 160, 156, 160) + _cap(170, 160, false) + _t(170, 142, 'C2', 'middle') +
-        _w(184, 160, 235, 160) +
-        _res(145, 160, 145, 205) + _gnd(145, 205) + _t(163, 190, 'R3=R/2') +
-        _w(235, 60, 235, 110) + _w(235, 160, 235, 110) + _d(235, 110) +
-        _w(235, 110, 275, 110) + _t(280, 100, 'Vout'))
-};
 
 /* ---- 器件字段渲染（仅架构切换时重建 DOM） ---- */
 function renderCompFields(s) {
@@ -349,11 +254,18 @@ function applyArchVisibility(s) {
     el.fHField.style.display = fs.indexOf('fH') >= 0 ? '' : 'none';
     el.f0Field.style.display = fs.indexOf('f0') >= 0 ? '' : 'none';
     el.qField.style.display = fs.indexOf('q0') >= 0 ? '' : 'none';
-    el.topoFig.innerHTML = TOPO_SVGS[s.arch] || '';
 }
 
 /* ---- 结果渲染 ---- */
+function filterRangeValid(f) { return Number.isFinite(f * 100) && f / 100 > 0; }
 function renderResults(s) {
+    var fref = s.arch === 'rc-bp' ? Math.sqrt(s.fL) * Math.sqrt(s.fH) : ((s.arch === 'mfb-bp' || s.arch === 'notch') ? s.f0 : s.fc);
+    if (filterRangeValid(fref)) forwardFigure(s);
+    else { filterFigure('topoFig', s.arch, null); el.stopInfo.textContent = '当前参数超出可计算频段，请调整数值。'; }
+    if (!filterPapers.topoFig) {
+        el.compBody.innerHTML = ''; el.areaInfo.textContent = ''; el.noiseInfo.textContent = '';
+        drawPlot('magCanvas', [], [], {}); drawPlot('noiseCanvas', [], [], {}); return;
+    }
     /* 器件表 + 面积 */
     var list = compList(s, comp);
     var rhoCf = s.rhoC * 1e-15;
@@ -388,7 +300,6 @@ function renderResults(s) {
     }
 
     /* 绘图频段 */
-    var fref = s.arch === 'rc-bp' ? Math.sqrt(s.fL * s.fH) : ((s.arch === 'mfb-bp' || s.arch === 'notch') ? s.f0 : s.fc);
     var fLo = fref / 100, fHi = fref * 100, N = 400;
     var freqs = [], mags = [], noise = [];
     var Rsum = sumR(s, comp);
@@ -441,12 +352,19 @@ function drawPlot(canvasId, freqs, vals, opts) {
 
     ctx.fillStyle = '#fffcf7';
     ctx.fillRect(0, 0, w, h);
+    if (freqs.length < 2 || freqs.length !== vals.length ||
+        freqs.some(function (f) { return !Number.isFinite(f) || f <= 0; }) || freqs[0] >= freqs[freqs.length - 1] ||
+        vals.some(function (v) { return !Number.isFinite(v) || (opts.yLog && v <= 0); })) {
+        ctx.fillStyle = '#c0583a'; ctx.font = '14px sans-serif';
+        ctx.fillText('当前参数无法绘图，请检查数值范围。', 20, 35); return;
+    }
 
     var yMin, yMax, yGrid;
     if (opts.yLog) {
         var mn = Infinity, mx = -Infinity;
         vals.forEach(function (v) { if (v < mn) mn = v; if (v > mx) mx = v; });
         var lo = Math.floor(Math.log10(mn)), hi = Math.ceil(Math.log10(mx));
+        if (lo === hi) { lo--; hi++; }
         yMin = lo; yMax = hi; yGrid = [];
         for (var d = lo; d <= hi; d++) yGrid.push(d);
     } else {
@@ -535,6 +453,7 @@ function fullUpdate() {
     var err = validSpecs(s);
     applyArchVisibility(s);
     if (err) {
+        filterFigure('topoFig', s.arch, null);
         el.stopInfo.textContent = err;
         el.compBody.innerHTML = '';
         el.areaInfo.textContent = '';
@@ -560,9 +479,8 @@ el.compFields.addEventListener('input', function (e) {
     if (inp.tagName !== 'INPUT') return;
     var key = inp.getAttribute('data-key');
     var v = parseVal(inp.value);
-    if (!(v > 0)) return;
     var s = getSpecs();
-    if (validSpecs(s)) return;
+    if (!(v > 0) || !Number.isFinite(v) || validSpecs(s)) { filterFigure('topoFig', s.arch, null); return; }
     comp[key] = v;
     solveFrom(key, v, s, comp);
     fillCompInputs(key);

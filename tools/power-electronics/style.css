@@ -87,6 +87,7 @@ input[type="range"] {
 /* 拓扑示意图（手绘 SVG，风格同 filter-design） */
 .topo-fig { text-align: center; margin-bottom: var(--space-sm); }
 .topo-svg { width: 100%; max-width: 1000px; height: auto; }
+.topo-fig.circuit-figure-scroll > svg { width: auto; max-width: none; }
 .topo-fig { overflow-x: auto; }
 .topo-fig svg { min-width: 480px; }
 .topo-fig[data-topo="llc"] svg { min-width: 840px; }

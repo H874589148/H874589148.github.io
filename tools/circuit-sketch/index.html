@@ -20,6 +20,7 @@
         <span class="breadcrumb">常用工具 / 电路示意图编辑器</span>
     </nav>
 
+    <div id="copyNotice" class="circuit-copy-notice" role="status" hidden></div>
     <main class="container-wide ck-editor">
         <!-- 紧凑顶部：标题 + 说明 + 菜单 -->
         <header class="ck-header">
@@ -33,7 +34,8 @@
                 <button type="button" class="ck-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="menuFile">File <span>文件</span></button>
                 <div class="ck-menu-popup" id="menuFile" role="menu" aria-label="文件" hidden>
                     <button type="button" role="menuitem" id="clearBtn" data-action="new">New 新建画布</button>
-                    <button type="button" role="menuitem" data-action="save-local" title="保存到当前浏览器；备份文件请使用 Export → JSON">Save 保存到本地浏览器</button>
+                    <button type="button" role="menuitem" data-action="save-local" title="副本仅保存本标签页会话；备份文件请使用 Export → JSON">Save 保存（Ctrl+S）</button>
+                    <button type="button" role="menuitem" data-action="save-main" id="saveMain" hidden>保存为主编辑器存档…</button>
                     <hr role="separator">
                     <button type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="menuImport">Import 导入 <span class="ck-menu-arrow">›</span></button>
                     <div class="ck-menu-popup" id="menuImport" role="menu" aria-label="导入" hidden>
@@ -124,6 +126,16 @@
                     </div>
                 </div>
             </div>
+            <div class="ck-menu">
+                <button type="button" class="ck-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="menuWindow">Window <span>窗口</span></button>
+                <div class="ck-menu-popup" id="menuWindow" role="menu" aria-label="窗口" hidden>
+                    <button type="button" role="menuitemcheckbox" data-action="window-palette" aria-checked="true">器件库</button>
+                    <button type="button" role="menuitemcheckbox" data-action="window-templates" aria-checked="true">模板库</button>
+                    <button type="button" role="menuitemcheckbox" data-action="window-props" aria-checked="true">属性</button>
+                    <hr role="separator">
+                    <button type="button" role="menuitem" data-action="window-reset">恢复默认布局</button>
+                </div>
+            </div>
             <span class="ck-menu-status" id="ckMenuStatus" aria-live="polite">选择 · 100%</span>
             </nav>
             <input type="file" id="impFile" accept=".json,application/json" hidden>
@@ -137,14 +149,17 @@
                         <!-- 窄屏面板切换按钮 -->
                         <div class="ck-narrow-toggles" id="ckNarrowToggles">
                             <button type="button" class="ck-narrow-btn" id="ckTogglePalette" aria-label="打开器件库">器件库</button>
+                            <button type="button" class="ck-narrow-btn" id="ckToggleTemplates" aria-label="打开模板库">模板库</button>
                             <button type="button" class="ck-narrow-btn" id="ckToggleProps" aria-label="打开属性">属性</button>
                         </div>
                         <!-- 左：器件面板 -->
                         <aside class="paper-card ck-palette" id="ckPalette">
-                            <h3>器件库</h3>
+                            <div class="ck-panel-hd"><h3>器件库</h3><button type="button" class="ck-panel-close" data-close-panel="palette" aria-label="关闭器件库">×</button></div>
                             <p class="hint">单击连续放置，拖入放置一个；R 逆时针，Shift+R 左右翻转，Ctrl+R 上下翻转；Esc 退出</p>
                             <div id="palList"></div>
-                            <h3 class="ck-tpl-title">模板</h3>
+                        </aside>
+                        <aside class="paper-card ck-templates" id="ckTemplates" aria-label="模板库">
+                            <div class="ck-panel-hd" id="ckTemplatesHd" title="按住拖动"><h3>模板库</h3><button type="button" class="ck-panel-close" data-close-panel="templates" aria-label="关闭模板库">×</button></div>
                             <p class="hint">点击插入画布中心，自动成组可整体拖动</p>
                             <div class="ck-tpl-list">
                                 <button class="btn" type="button" data-tpl="diffpair">差分对</button>
@@ -175,7 +190,7 @@
                         </div>
                         <!-- 悬浮属性面板：拖标题栏移动位置；窄屏自动回退为静态面板 -->
                         <aside class="paper-card ck-props" id="ckProps">
-                            <h3 id="ckPropsHd" title="按住拖动">属性</h3>
+                            <div class="ck-panel-hd" id="ckPropsHd" title="按住拖动"><h3>属性</h3><button type="button" class="ck-panel-close" data-close-panel="props" aria-label="关闭属性">×</button></div>
                             <p class="hint" id="selInfo">未选中任何对象</p>
                             <div class="field">
                                 <label for="propWidth">线宽</label>
@@ -196,6 +211,7 @@
                             <div class="field">
                                 <label for="propDash">线型</label>
                                 <select id="propDash">
+                                    <option value="mixed" disabled>混合</option>
                                     <option value="" selected>实线</option>
                                     <option value="7 4">虚线</option>
                                     <option value="2 3">点线</option>
@@ -252,7 +268,7 @@
                                     <div class="ck-qs-row"><span class="ck-key">中键</span><span class="ck-qs-desc">平移画布</span></div>
                                     <div class="ck-qs-row"><span class="ck-key">空格</span><span class="ck-key">拖拽</span><span class="ck-qs-desc">平移画布</span></div>
                                     <div class="ck-qs-row"><span class="ck-qs-note">单击器件连续放置，拖入松开放置一个</span></div>
-                                    <div class="ck-qs-row"><span class="ck-qs-note">双击文字设置格式；Alt+Enter 换行，Enter 确认，Esc 取消</span></div>
+                                    <div class="ck-qs-row"><span class="ck-qs-note">双击文字直接编辑；Ctrl+A 替换，Alt+Enter 换行，Enter 确认，Esc 取消</span></div>
                                 </div>
                             </div>
                         </div>
@@ -284,6 +300,7 @@
     <script src="../../js/circuit-connectivity.js"></script>
     <script src="../transfer-function/canvas-netlist.js"></script>
     <script src="parameter-editor.js"></script>
+    <script src="../../js/circuit-handoff.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

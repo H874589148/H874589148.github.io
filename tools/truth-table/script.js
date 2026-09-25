@@ -54,35 +54,37 @@ tabs.forEach(function (btn, i) {
    画布 iframe 数据桥（circuit-sketch embed=tt）
    ============================================ */
 var frame = $('#ckFrame');
-var frameReady = false;
-var docWaiters = [];
+var docWaiters = new Map(), requestSequence = 0;
+function resetRequests() {
+    docWaiters.forEach(function (w) { clearTimeout(w.timer); w.reject(new Error('画布已重新加载，请重试')); });
+    docWaiters.clear();
+}
+frame.addEventListener('load', resetRequests);
 root.addEventListener('message', function (e) {
-    if (!frame.contentWindow || e.source !== frame.contentWindow) return;
+    if (!frame.contentWindow || e.source !== frame.contentWindow || e.origin !== location.origin) return;
     var d = e.data;
     if (!d || typeof d !== 'object') return;
-    if (d.type === 'tt-ready') { frameReady = true; return; }
-    if (d.type === 'tt-doc') {
-        var w = docWaiters.shift();
-        if (w) { clearTimeout(w.timer); w.resolve(d.doc); }
-    }
+    var w = docWaiters.get(d.requestId);
+    if (!w || d.type !== w.type) return;
+    docWaiters.delete(d.requestId); clearTimeout(w.timer);
+    if (d.error || d.editing) w.reject(new Error(d.error || '请先确认或取消画布中的文字草稿'));
+    else w.resolve(d);
 });
-function requestDoc() {
+function frameRequest(msg) {
     return new Promise(function (resolve, reject) {
         if (!frame.contentWindow) return reject(new Error('画布尚未加载，请稍候再试'));
-        var w = {
-            resolve: resolve,
-            timer: setTimeout(function () {
-                docWaiters = docWaiters.filter(function (x) { return x !== w; });
-                reject(new Error('画布响应超时，请刷新页面重试'));
-            }, 5000)
-        };
-        docWaiters.push(w);
-        frame.contentWindow.postMessage({ type: 'tt-get-doc' }, '*');
+        var id = 'tt-' + (++requestSequence);
+        var timer = setTimeout(function () { docWaiters.delete(id); reject(new Error('画布响应超时，请刷新页面重试')); }, 5000);
+        docWaiters.set(id, { resolve: resolve, reject: reject, timer: timer, type: msg.type === 'tt-get-doc' ? 'tt-doc' : 'tt-ack' });
+        try { frame.contentWindow.postMessage(Object.assign({}, msg, { requestId: id }), location.origin); }
+        catch (err) { clearTimeout(timer); docWaiters.delete(id); reject(err); }
     });
 }
-function postToFrame(msg) {
-    if (frame.contentWindow) frame.contentWindow.postMessage(msg, '*');
-}
+function requestDoc() { return frameRequest({ type: 'tt-get-doc' }).then(function (d) { return CircuitHandoff.validateDoc(d.doc); }); }
+function postToFrame(msg) { frameRequest(msg).catch(function (err) { setStatus(err.message, 'err'); }); }
+CircuitHandoff.toolbar(frame.parentNode, '逻辑真值表', function () {
+    return requestDoc().then(function (doc) { return { doc: doc, title: '当前逻辑画布', context: { module: 'truth-table' } }; });
+});
 
 /* 2 选 1 选择器示例：y = a&s | b&~s（razavi 符号手工布局，走线端点精确落在引脚上） */
 var EXAMPLE_DOC = (function () {

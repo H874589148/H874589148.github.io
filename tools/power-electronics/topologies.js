@@ -16,8 +16,8 @@
             if (!pin) throw new Error('未知器件端口：' + id + '.' + name);
             return [pin.x, pin.y];
         }
-        function W() { items.push({ kind: 'wire', pts: Array.from(arguments).map(function (p) { return { x: p[0], y: p[1] }; }) }); }
-        function T(x, y, text, anchor) { items.push({ kind: 'label', x: x, y: y, text: text, anchor: anchor || 'middle', size: 13 }); }
+        function W() { items.push({ kind: 'wire', id: 'wire-' + items.length, pts: Array.from(arguments).map(function (p) { return { x: p[0], y: p[1] }; }) }); }
+        function T(x, y, text, anchor) { items.push({ kind: 'label', id: 'label-' + items.length, x: x, y: y, text: text, anchor: anchor || 'middle', size: 13 }); }
         function J(x, y, text) { C('j' + items.length, 'dot', x, y); if (text) T(x, y - 14, text); }
         function G(id, x, y, text) { C(id, 'ground', x, y + 10); if (text) T(x, y + 45, text); }
         function input(x, top, bottom) {
@@ -101,9 +101,36 @@
             T(430, 420, 'ir：Lr→Cr；vCr：左(+)右(−)；im：Lm 向下；vp：原边上(+)下(−)');
             T(430, 445, 'ir−im：流入变压器原边；isec：整流桥→正输出');
         } else throw new Error('未知拓扑');
-        return { items: items };
+        return { items: items, groups: [] };
     }
-    var api = { build: build, render: function (topo, mode) {
+    function pack(topo, mode, values, R) {
+        R = R || root.Razavi;
+        var doc = build(topo, mode, R), F = root.CircuitFigure;
+        var x = R.docBBox(doc, { editorText: true }).x1 + 50, row = 0;
+        function label(id, text) {
+            var item = { kind: 'label', id: 'value-' + id, x: x, y: 40 + row++ * 30, text: text, size: 13, anchor: 'start' };
+            doc.items.push(item); return item.id;
+        }
+        label('heading', '当前输入（不包含稳态计算结果）');
+        if (values) {
+            var units = { Vin: 'V', Iout: 'A', L: 'H', L1: 'H', L2: 'H', Lm: 'H', Lr: 'H', Cout: 'F', Cf: 'F', Cr: 'F' };
+            Object.keys(units).forEach(function (id) {
+                if (values[id] === undefined) return;
+                var member = label(id, id + ' = ' + F.eng(values[id], units[id]));
+                doc.groups.push({ id: 'value-group-' + id, members: [id, member] });
+            });
+            if (values.n !== undefined) {
+                var ratio = label('n', 'n = Np/Ns = ' + F.eng(values.n, ''));
+                doc.groups.push({ id: 'value-group-T', members: ['T', ratio] });
+            }
+            label('fsw', 'fsw = ' + F.eng(values.fsw, 'Hz'));
+            label('duty', 'D = ' + (topo === 'llc' ? '50%' : Number((values.D * 100).toPrecision(6)) + '%'));
+        } else label('invalid', '参数无效；修正后显示当前数值');
+        label('mode', topo === 'buck' ? (mode === 'sync' ? '同步续流（允许反向电流）' : '二极管续流（自动 CCM/DCM）') : '理想开关；驱动关系见图');
+        return { doc: doc, title: topo.toUpperCase() + ' 当前拓扑',
+            context: { module: 'power-electronics', topology: topo, mode: mode, inputs: values ? Object.assign({}, values) : null } };
+    }
+    var api = { build: build, pack: pack, render: function (topo, mode) {
         return root.Razavi.docSvg(build(topo, mode), { stroke: 'var(--color-text)', textColor: 'var(--color-text)',
             className: 'topo-svg', margin: 24, font: 'Arial, Microsoft YaHei, sans-serif' }).str;
     } };

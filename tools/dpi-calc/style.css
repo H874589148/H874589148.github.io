@@ -30,11 +30,9 @@
 .dpi-page .formula-box { text-align: left; font-size: .93rem; line-height: 2; overflow-x: auto; }
 .dpi-page .formula-box p { min-width: min-content; }
 .schematic { overflow-x: auto; background: var(--color-bg-paper); border: 1px dashed var(--color-border); border-radius: var(--radius-md); margin: 16px 0; }
-.schematic svg { width: 100%; min-width: 560px; height: auto; display: block; }
-.wide-figure svg { min-width: 900px; }
+.schematic.circuit-figure-scroll > svg { width: auto; max-width: none; height: auto; display: block; }
 .schematic [data-focus] { cursor: pointer; }
-.schematic [data-focus]:hover rect, .schematic [data-focus]:focus rect { stroke: var(--color-accent); stroke-width: 2.5px; }
-.schematic [data-focus]:focus { outline: none; }
+.schematic [data-focus]:hover, .schematic [data-focus]:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 .parameter-card { scroll-margin-top: 90px; }
 .parameter-card:focus { outline: 3px solid var(--color-primary); outline-offset: 4px; }
 .dpi-page button:focus-visible, .dpi-page summary:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }

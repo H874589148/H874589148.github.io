@@ -2,6 +2,16 @@
    components.css - 通用组件样式
    ============================================ */
 
+/* ---- 电路图独立副本入口 ---- */
+.circuit-handoff-bar { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:8px 16px; padding:8px 0; font-size:13px; }
+.circuit-handoff-bar a { flex-shrink:0; color:var(--color-primary); }
+.circuit-handoff-bar a[aria-disabled="true"] { opacity:.55; cursor:not-allowed; }
+.circuit-handoff-status { color:var(--color-text-secondary); }
+.circuit-figure-scroll { overflow-x:auto; max-width:100%; min-width:0; }
+.circuit-figure-scroll > svg { display:block; max-width:none; height:auto; margin:auto; }
+.circuit-copy-notice { padding:8px 16px; color:var(--color-text); background:var(--color-card-bg); border-bottom:1px solid var(--color-border); font-size:13px; }
+body.ck-copy-pending .ck-editor { pointer-events:none; opacity:.55; }
+
 /* ---- 导航卡片（主页用） ---- */
 .nav-card {
   display: flex;

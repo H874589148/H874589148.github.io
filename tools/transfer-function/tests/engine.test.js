@@ -222,7 +222,8 @@ class Element {
     getAttribute(name) { return this[name]; }
     querySelector(name) { if (!this.children.has(name)) this.children.set(name, new Element()); return this.children.get(name); }
     querySelectorAll() { return []; }
-    appendChild(el) { return el; }
+    appendChild(el) { el.parentNode = this; return el; }
+    insertBefore(el) { el.parentNode = this; return el; }
     replaceChildren() {}
     focus() {}
     select() {}
@@ -269,6 +270,8 @@ function host() {
     } };
     function send(data, origin = s.location.origin, source = win) { dispatch('message', { data, origin, source }); }
     get('ckFrame').contentWindow = win;
+    const frameWrap = new Element(); s.document.body.appendChild(frameWrap); frameWrap.appendChild(get('ckFrame'));
+    vm.runInContext(fs.readFileSync(path.join(base, 'js/circuit-handoff.js'), 'utf8'), s);
     s.Worker = class {
         constructor() { workers.push(this); this.terminated = false; }
         postMessage(m) { this.payload = m; }

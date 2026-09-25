@@ -86,7 +86,7 @@ function create(options) {
         return { list: list, range: range };
     }
     function rememberSelection() {
-        if (!session || painting || composing) return;
+        if (!session || painting || composing || document.activeElement !== box) return;
         var state = readSurface();
         if (!state.range) return;
         var changed = selection.start !== state.range.start || selection.end !== state.range.end;
@@ -99,8 +99,8 @@ function create(options) {
         updateToolbar();
     }
     function restoreSelection(focus) {
-        if (!session) return;
-        if (focus !== false) box.focus({ preventScroll: true });
+        if (!session || composing || focus === false) return;
+        box.focus({ preventScroll: true });
         var positions = [], total = 0;
         Array.prototype.forEach.call(box.children, function (line, index) {
             if (index) total++;
@@ -222,6 +222,8 @@ function create(options) {
             });
             if (!div.childNodes.length) {
                 div.style.fontSize = session.model.lines[index].runs[0].size + 'px';
+                div.style.paddingTop = '0';
+                div.style.width = '24px';
                 div.appendChild(document.createElement('br'));
             }
             box.appendChild(div);
@@ -409,10 +411,14 @@ function create(options) {
         else if ((e.ctrlKey || e.metaKey) && /^(z|y)$/i.test(e.key)) { e.preventDefault(); undo(e.key.toLowerCase() === 'y' || e.shiftKey); }
     });
     document.addEventListener('selectionchange', rememberSelection);
+    box.addEventListener('focus', function () { if (!painting) restoreSelection(); });
     return {
-        active: active, notify: notify, reposition: reposition,
+        active: active, notify: notify, reposition: reposition, focus: restoreSelection,
         cancel: function () { finish(false); },
-        refresh: function () { baselineCache.clear(); if (session && !composing) paint(document.activeElement === box); },
+        refresh: function () {
+            baselineCache.clear();
+            if (session && !composing) { rememberSelection(); paint(document.activeElement === box); }
+        },
         start: function (item, settings) {
             session = { item: clone(item), model: R.richForItem(item), settings: settings || {}, error: '' };
             clearTimeout(compositionTimer); compositionTimer = 0;

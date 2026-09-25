@@ -18,7 +18,7 @@ var DIRV = { north: [0, -1], south: [0, 1], west: [-1, 0], east: [1, 0] };
 var TEXT_POS = {
     nmos: 'side', pmos: 'side', npn: 'side', pnp: 'side',
     'current-source': 'side', 'voltage-source': 'side', 'pulse-voltage-source': 'side',
-    ground: 'none', 'vdd-port': 'none'
+    ground: 'none', 'ground-triangle': 'none', 'vdd-port': 'none'
 };
 
 /* ---- 辅助绘图符号（非 razavi 库，编辑器「绘图辅助」组） ---- */
@@ -354,19 +354,20 @@ function primSvg(p, o) {
     var join = (p.style && p.style.lineJoin) || 'miter';
     var ml = (p.style && p.style.miterLimit) ? ' stroke-miterlimit="' + p.style.miterLimit + '"' : '';
     var pt = new Painter(), g;
+    var dash = o.dash ? ' stroke-dasharray="' + esc(o.dash) + '"' : '';
     if (p.kind === 'line' || p.kind === 'polyline' || p.kind === 'path') {
         pt.put('stroke', o.stroke);
         if (p.kind === 'line') g = '<line x1="' + fmt(p.from.x) + '" y1="' + fmt(p.from.y) + '" x2="' + fmt(p.to.x) + '" y2="' + fmt(p.to.y) + '"';
         else if (p.kind === 'polyline') g = '<polyline points="' + p.points.map(function (q) { return fmt(q.x) + ',' + fmt(q.y); }).join(' ') + '"';
         else g = '<path d="' + p.data + '"';
-        return g + pt.tag() + ' stroke-width="' + w + '" fill="none" stroke-linecap="' + cap + '" stroke-linejoin="' + join + '"' + ml + '/>';
+        return g + pt.tag() + ' stroke-width="' + w + '" fill="none" stroke-linecap="' + cap + '" stroke-linejoin="' + join + '"' + ml + dash + '/>';
     }
     if (p.kind === 'polygon' || p.kind === 'circle') {
         pt.put('fill', p.fill === 'foreground' ? o.stroke : (p.fill || 'none'));
         pt.put('stroke', p.stroke === 'foreground' ? o.stroke : (p.stroke || 'none'));
         if (p.kind === 'polygon') g = '<polygon points="' + p.points.map(function (q) { return fmt(q.x) + ',' + fmt(q.y); }).join(' ') + '"';
         else g = '<circle cx="' + fmt(p.center.x) + '" cy="' + fmt(p.center.y) + '" r="' + fmt(p.radius) + '"';
-        return g + pt.tag() + (p.stroke && p.stroke !== 'none' ? ' stroke-width="' + w + '"' : '') + '/>';
+        return g + pt.tag() + (p.stroke && p.stroke !== 'none' ? ' stroke-width="' + w + '"' + dash : '') + '/>';
     }
     return '';
 }
@@ -396,7 +397,7 @@ function pinLabelSvg(p, o) {
 function symbolInner(id, opts) {
     opts = opts || {};
     var o = {
-        stroke: opts.stroke || '#1a1a1a', sw: opts.sw || 1.5,
+        stroke: opts.stroke || '#1a1a1a', sw: opts.sw || 1.5, dash: opts.dash || '',
         font: opts.font || "'Fira Code',monospace",
         textColor: opts.textColor || opts.stroke || '#1a1a1a',
         editorText: opts.editorText === true, showPinNames: opts.showPinNames !== false
@@ -483,7 +484,7 @@ function itemSvg(it, opts) {
     var m = meta(it.type);
     var body;
     if (m.razavi) {
-        body = symbolInner(it.type, { stroke: stroke, sw: it.sw || 1.5, variant: it.variant, font: font, editorText: opts.editorText, textColor: opts.textColor || stroke });
+        body = symbolInner(it.type, { stroke: stroke, sw: it.sw || 1.5, dash: it.dash, variant: it.variant, font: font, editorText: opts.editorText, textColor: opts.textColor || stroke });
     } else {
         pt = new Painter();
         pt.put('stroke', stroke);
@@ -537,7 +538,10 @@ function docSvg(doc, opts) {
     s += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + x + ' ' + y + ' ' + w + ' ' + h +
         '" width="' + w + '" height="' + h + '"' + (opts.className ? ' class="' + opts.className + '"' : '') + '>';
     if (opts.bg) s += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + opts.bg + '"/>';
-    (doc.items || []).forEach(function (it) { s += itemSvg(it, opts); });
+    (doc.items || []).forEach(function (it) {
+        var body = itemSvg(it, opts);
+        s += opts.itemIds && it.id ? '<g data-item-id="' + esc(it.id) + '">' + body + '</g>' : body;
+    });
     return { str: s + '</svg>', w: w, h: h };
 }
 

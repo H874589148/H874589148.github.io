@@ -4,6 +4,17 @@
   "version": 1,
   "entries": [
     {
+      "symbolId": "dut-5t",
+      "name": "Five-terminal DUT",
+      "category": "analog-block",
+      "reviewStatus": "project-extension",
+      "pinOrder": ["VDD", "IN", "GND", "OUT1", "OUT2"],
+      "palette": true,
+      "automaticMappings": [],
+      "assetPath": "dut-5t.symbol.json",
+      "generation": { "kind": "project-extension", "description": "五端抽象 DUT，不定义芯片内部电路" }
+    },
+    {
       "symbolId": "transconductance-4t",
       "name": "Four-terminal transconductance",
       "category": "signal-flow",
@@ -487,6 +498,17 @@
         "converterPath": "scripts/generate-razavi-peripheral-assets.mjs",
         "converterVersion": 1
       }
+    },
+    {
+      "symbolId": "ground-triangle",
+      "name": "Triangle Ground",
+      "category": "power",
+      "reviewStatus": "pending",
+      "pinOrder": ["0"],
+      "palette": true,
+      "automaticMappings": [],
+      "manualOnlyReason": "Drawing-only ground marker; no additional analysis reference-net semantics.",
+      "assetPath": "ground-triangle.symbol.json"
     },
     {
       "symbolId": "ideal-switch",

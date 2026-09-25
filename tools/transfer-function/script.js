@@ -41,7 +41,8 @@
             var id = 'tf-' + (++requestId);
             var timeout = setTimeout(function () { waiters.delete(id); reject(new Error('画布响应超时，请检查页面是否加载完整')); }, type === 'tf-export' ? 15000 : 5000);
             waiters.set(id, { resolve: resolve, reject: reject, timer: timeout, type: type === 'tf-get-doc' ? 'tf-doc' : 'tf-ack' });
-            frame.contentWindow.postMessage(Object.assign({ type: type, requestId: id }, data || {}), location.origin);
+            try { frame.contentWindow.postMessage(Object.assign({ type: type, requestId: id }, data || {}), location.origin); }
+            catch (err) { clearTimeout(timeout); waiters.delete(id); reject(err); }
         });
     }
     function syncTheme() {
@@ -54,6 +55,14 @@
             accept(d); return d;
         });
     }
+    CircuitHandoff.toolbar(frame.parentNode, '传递函数', function () {
+        if (transaction) throw new Error('正在载入工程，请稍后重试');
+        return snapshot().then(function (d) {
+            var doc = CircuitHandoff.clone(d.doc);
+            doc.analysisContext = { version: 1, kind: 'tf' }; doc.inputKind = d.inputKind;
+            return { doc: doc, title: '当前小信号画布', context: { module: 'transfer-function', analysis: 'tf', inputKind: d.inputKind } };
+        });
+    });
     function stop() {
         sequence++; pending = false;
         if (worker) worker.terminate(); worker = null;

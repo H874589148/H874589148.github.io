@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "dut-5t",
+  "name": "Five-terminal DUT",
+  "viewBox": { "x": -114, "y": -124, "width": 228, "height": 248 },
+  "pins": [
+    { "name": "VDD", "role": "power", "at": { "x": 0, "y": -120 }, "direction": "north", "presentation": { "visibility": "visible", "leadLength": 20 } },
+    { "name": "IN", "role": "input", "at": { "x": -110, "y": 0 }, "direction": "west", "presentation": { "visibility": "visible", "leadLength": 20 } },
+    { "name": "GND", "role": "ground", "at": { "x": 0, "y": 120 }, "direction": "south", "presentation": { "visibility": "visible", "leadLength": 20 } },
+    { "name": "OUT1", "role": "output", "at": { "x": 110, "y": -40 }, "direction": "east", "presentation": { "visibility": "visible", "leadLength": 20 } },
+    { "name": "OUT2", "role": "output", "at": { "x": 110, "y": 40 }, "direction": "east", "presentation": { "visibility": "visible", "leadLength": 20 } }
+  ],
+  "primitives": [
+    { "kind": "polygon", "points": [{ "x": -90, "y": -100 }, { "x": 90, "y": -100 }, { "x": 90, "y": 100 }, { "x": -90, "y": 100 }], "fill": "none", "stroke": "foreground", "style": { "strokeRole": "emphasis" } },
+    { "kind": "line", "from": { "x": 0, "y": -120 }, "to": { "x": 0, "y": -100 } },
+    { "kind": "line", "from": { "x": -110, "y": 0 }, "to": { "x": -90, "y": 0 } },
+    { "kind": "line", "from": { "x": 0, "y": 100 }, "to": { "x": 0, "y": 120 } },
+    { "kind": "line", "from": { "x": 90, "y": -40 }, "to": { "x": 110, "y": -40 } },
+    { "kind": "line", "from": { "x": 90, "y": 40 }, "to": { "x": 110, "y": 40 } }
+  ],
+  "variants": [],
+  "formulaPresentation": { "defaultFormula": "DUT", "supportsCoefficient": false, "center": { "x": 0, "y": 0 }, "fontSize": 16 }
+}

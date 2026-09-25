@@ -1,6 +1,6 @@
 /* tools/filter-design/rev-calc.js
    反向计算子标签页：器件值 → 特征频率 / 幅频曲线 / 输出噪声谱
-   （依赖 script.js 的全局：TOPO_SVGS、drawPlot、parseVal、fmt、KB 与 common.js 的 formatEngineering） */
+   （依赖 script.js 的全局：filterFigure、drawPlot、parseVal、fmt、KB 与 common.js 的 formatEngineering） */
 
 /* ---- tab 切换 ---- */
 (function initFdTabs() {
@@ -51,7 +51,7 @@ function renderRevFields() {
                 '<span class="unit">' + (pair[0][0] === 'R' ? 'Ω' : 'F') + '</span></div></div>';
     });
     re.rCompFields.innerHTML = html;
-    re.rTopoFig.innerHTML = TOPO_SVGS[arch] || '';
+    filterFigure('rTopoFig', arch, null);
 }
 
 /* 读取并校验器件值（全部为正才返回对象，否则 null） */
@@ -60,7 +60,7 @@ function revReadComps() {
     var c = {};
     for (var i = 0; i < inps.length; i++) {
         var v = parseVal(inps[i].value);
-        if (!(v > 0)) return null;
+        if (!(v > 0) || !Number.isFinite(v)) return null;
         c[inps[i].getAttribute('data-key')] = v;
     }
     return c;
@@ -76,7 +76,7 @@ function revH(arch, c, f) {
             A = c.R1 * c.R2 * c.C1 * c.C2; B = w * c.C2 * (c.R1 + c.R2);
             return 1 / Math.sqrt(Math.pow(1 - w * w * A, 2) + B * B);
         case 'sk-hp':
-            A = c.R1 * c.R2 * c.C1 * c.C2; B = w * (c.R1 * (c.C1 + c.C2) + c.R2 * c.C2);
+            A = c.R1 * c.R2 * c.C1 * c.C2; B = w * c.R1 * (c.C1 + c.C2);
             return w * w * A / Math.sqrt(Math.pow(1 - w * w * A, 2) + B * B);
         case 'rc-bp':
             var uL = w * c.R1 * c.C1, uH = w * c.R2 * c.C2;
@@ -113,7 +113,7 @@ function revFeatures(arch, c) {
             break;
         case 'sk-hp':
             w0 = 1 / Math.sqrt(c.R1 * c.R2 * c.C1 * c.C2);
-            Q = Math.sqrt(c.R1 * c.R2 * c.C1 * c.C2) / (c.R1 * (c.C1 + c.C2) + c.R2 * c.C2);
+            Q = Math.sqrt(c.R1 * c.R2 * c.C1 * c.C2) / (c.R1 * (c.C1 + c.C2));
             f0 = w0 / (2 * Math.PI);
             row('特征频率 f0', fmt(f0, 'Hz'));
             row('品质因数 Q', Q.toFixed(3));
@@ -150,14 +150,23 @@ function revFeatures(arch, c) {
 /* ---- 主更新 ---- */
 function revUpdate() {
     var arch = re.rArch.value;
-    var T = parseFloat(re.rTemp.value);
+    var T = parseVal(re.rTemp.value);
     var c = revReadComps();
-    if (!c || !(T > 0)) {
+    if (!c || !(T > 0) || !Number.isFinite(T)) {
+        filterFigure('rTopoFig', arch, null);
         re.rResultBody.innerHTML = '<tr><td colspan="2">请检查：所有器件值与温度需为正数。</td></tr>';
         re.rNoiseInfo.textContent = '';
         return;
     }
+    var values = arch === 'notch' ? { R1: c.R, R2: c.R, R3: c.R / 2, C1: c.C, C2: c.C, C3: 2 * c.C } : c;
     var fe = revFeatures(arch, c);
+    if (!filterRangeValid(fe.fref) || fe.marks.some(function (f) { return !Number.isFinite(f) || f <= 0; })) {
+        filterFigure('rTopoFig', arch, null);
+        re.rResultBody.innerHTML = '<tr><td colspan="2">当前参数超出可计算频段，请调整数值。</td></tr>';
+        re.rNoiseInfo.textContent = '';
+        drawPlot('rMagCanvas', [], [], {}); drawPlot('rNoiseCanvas', [], [], {}); return;
+    }
+    filterFigure('rTopoFig', arch, values);
 
     /* 结果表 + 可选 fst 校验 */
     var html = '';

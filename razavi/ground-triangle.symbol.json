@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-triangle",
+  "name": "Triangle Ground",
+  "viewBox": { "x": -12, "y": -14, "width": 24, "height": 31 },
+  "pins": [
+    {
+      "name": "0",
+      "role": "ground",
+      "at": { "x": 0, "y": -10 },
+      "direction": "north",
+      "presentation": { "visibility": "visible", "leadLength": 10 }
+    }
+  ],
+  "primitives": [
+    {
+      "kind": "line",
+      "from": { "x": 0, "y": -10 },
+      "to": { "x": 0, "y": 0 },
+      "style": { "strokeRole": "normal", "lineCap": "butt", "lineJoin": "miter" }
+    },
+    {
+      "kind": "polygon",
+      "points": [{ "x": -8, "y": 0 }, { "x": 8, "y": 0 }, { "x": 0, "y": 12 }],
+      "fill": "none",
+      "stroke": "foreground",
+      "style": { "strokeRole": "ground", "lineCap": "butt", "lineJoin": "miter" }
+    }
+  ],
+  "variants": [],
+  "labelVisibility": "hidden"
+}

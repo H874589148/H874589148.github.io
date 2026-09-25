@@ -13,7 +13,7 @@ var svg = document.getElementById('ckCanvas');
 var layerMain = document.getElementById('layerMain');
 var layerOverlay = document.getElementById('layerOverlay');
 var wrap = document.getElementById('ckWrap');
-var statusEl = document.getElementById('ckStatus');
+var statusExtra = '';
 var quickstartEl = document.getElementById('ckQuickstart');
 var togglePaletteBtn = document.getElementById('ckTogglePalette');
 var togglePropsBtn = document.getElementById('ckToggleProps');
@@ -24,9 +24,15 @@ var layerPreview = document.getElementById('layerPreview');
 var viewport = document.getElementById('ckViewport');
 var palettePanel = document.getElementById('ckPalette');
 var propsPanel = document.getElementById('ckProps');
+var templatesPanel = document.getElementById('ckTemplates');
+var panels = { palette: palettePanel, templates: templatesPanel, props: propsPanel };
+var panelButtons = { palette: togglePaletteBtn, templates: document.getElementById('ckToggleTemplates'), props: togglePropsBtn };
+var UI_KEY = 'ee-circuit-sketch-ui-v1';
+var desktopPanels = { palette: true, templates: true, props: true }, narrowPanel = null, panelNarrow = false;
+var panelPositions = {};
 var placement = null;
 var paletteDrag = null;
-var propsDrag = null;
+var panelDrag = null;
 var lastPointer = null;
 var previewFrame = 0;
 var previewKey = '';
@@ -105,23 +111,27 @@ function zoomView(factor, mx, my) {
 function canvasUsableRect() {
     var r = svg.getBoundingClientRect();
     var left = Math.min(40, r.width / 4), right = r.width - left;
-    var spans = [];
-    [palettePanel, propsPanel].forEach(function (panel) {
-        if (getComputedStyle(panel).position !== 'absolute') return;
+    var top = Math.min(40, r.height / 4), bottom = r.height - top;
+    var xs = [left, right], ys = [top, bottom], obstacles = [];
+    Object.keys(panels).forEach(function (key) {
+        var panel = panels[key], style = getComputedStyle(panel);
+        if (panel.hidden || style.display === 'none' || style.position !== 'absolute') return;
         var p = panel.getBoundingClientRect();
-        if (p.bottom <= r.top || p.top >= r.bottom) return;
-        spans.push({ left: Math.max(left, p.left - r.left - 16), right: Math.min(right, p.right - r.left + 16) });
+        var box = { l: Math.max(left, p.left - r.left - 16), r: Math.min(right, p.right - r.left + 16),
+            t: Math.max(top, p.top - r.top - 16), b: Math.min(bottom, p.bottom - r.top + 16) };
+        if (box.l >= box.r || box.t >= box.b) return;
+        obstacles.push(box); xs.push(box.l, box.r); ys.push(box.t, box.b);
     });
-    spans.sort(function (a, b) { return a.left - b.left; });
-    var cursor = left, best = { left: left, right: left };
-    spans.forEach(function (p) {
-        if (p.left - cursor > best.right - best.left) best = { left: cursor, right: p.left };
-        cursor = Math.max(cursor, p.right);
-    });
-    if (right - cursor > best.right - best.left) best = { left: cursor, right: right };
-    if (best.right <= best.left) best = { left: left, right: right };
-    var top = Math.min(40, r.height / 4);
-    return { x: best.left, y: top, width: best.right - best.left, height: r.height - 2 * top };
+    xs.sort(function (a, b) { return a - b; }); ys.sort(function (a, b) { return a - b; });
+    var best = { x: left, y: top, width: 0, height: 0 };
+    xs.forEach(function (x, i) { xs.slice(i + 1).forEach(function (x1) {
+        ys.forEach(function (y, j) { ys.slice(j + 1).forEach(function (y1) {
+            if ((x1 - x) * (y1 - y) <= best.width * best.height) return;
+            if (obstacles.some(function (p) { return x < p.r && x1 > p.l && y < p.b && y1 > p.t; })) return;
+            best = { x: x, y: y, width: x1 - x, height: y1 - y };
+        }); });
+    }); });
+    return best.width ? best : { x: left, y: top, width: right - left, height: bottom - top };
 }
 
 /* 适应全部内容仅改变视图，不写入文档或撤销栈 */
@@ -168,7 +178,7 @@ var EMBED = (function () {
 function deviceVisible(id) {
     if (EMBED) return EMBED.devices.indexOf(id) >= 0;
     var m = SYMBOLS[id];
-    return !(m && (m.ttOnly || m.embedOnly));
+    return !(m && (m.ttOnly || (m.embedOnly && !(hasTFContext() && m.embedOnly === 'tf'))));
 }
 
 /* embed 模式器件面板分组（设备白名单过滤后展示） */
@@ -222,6 +232,10 @@ var TYPE_MIGRATE = {
            {kind:'label', id, x, y, text, anchor, size, stroke}]
    ============================================ */
 var doc = { items: [], groups: [] };
+var copyMode = /(?:^#|&)handoff(?:=|&|$)/.test(location.hash || '');
+var copyToken = copyMode ? new URLSearchParams(location.hash.slice(1)).get('handoff') : null;
+var copyPending = copyMode, copyRecord = null, copySessionWarning = '';
+var analysisPalette = false;
 var sel = [];
 var tool = 'select';           // select / wire / label
 var wireMode = 'orth';         // 连线走线：orth 正交 / diag 斜线
@@ -236,8 +250,21 @@ var hintMsg = '';              // 状态栏常驻提示（如迁移/载入标准
 var suppressSave = false;      // ?fig= 载入后、首次编辑前不覆盖本地存档
 var parameterEditor = null, parameterItem = null;
 var tfInputKind = 'voltage', tfRevision = 0, tfSignature = '', tfChangeTimer = null;
-function isTF() { return EMBED && EMBED.mode === 'tf'; }
-function isParameter(it) { return isTF() && it && it.kind === 'comp' && !!TFNetlist.TYPES[it.type]; }
+function isTF() { return !copyMode && EMBED && EMBED.mode === 'tf'; }
+function hasTFContext() { return isTF() || !!(doc && doc.analysisContext && doc.analysisContext.kind === 'tf'); }
+function isParameter(it) { return hasTFContext() && it && it.kind === 'comp' && !!TFNetlist.TYPES[it.type]; }
+function auxiliaryGroups() {
+    return Razavi.AUX_GROUPS.concat(hasTFContext() && !EMBED ? [{ id: 'analog-io', name: '模拟输入输出', ids: Razavi.TF_IO_ORDER }] : []);
+}
+function syncAnalysisContext() {
+    if (hasTFContext()) {
+        tfInputKind = doc.inputKind === 'current' ? 'current' : 'voltage';
+        initParameters();
+    }
+    if (analysisPalette !== hasTFContext()) {
+        analysisPalette = hasTFContext(); buildPalette(); buildInsertMenu();
+    }
+}
 function tfNameUsed(name, except) {
     return doc.items.some(function (it) {
         return it.id !== except && ((it.analysis && it.analysis.symbol === name) || ((it.type === 'tf-in' || it.type === 'tf-out') && it.text === name));
@@ -245,7 +272,7 @@ function tfNameUsed(name, except) {
 }
 function tfUnique(base, except) { var i = 1; while (tfNameUsed(base + i, except)) i++; return base + i; }
 function tfDefaults(it) {
-    if (!isTF() || it.kind !== 'comp') return;
+    if (!hasTFContext() || it.kind !== 'comp') return;
     if (TFNetlist.TYPES[it.type] && !it.analysis) {
         it.analysis = { version: 1, symbol: tfUnique(TFNetlist.TYPES[it.type], it.id), value: '', prefix: it.type === 'resistor' ? 'k' : it.type === 'capacitor' ? 'p' : 'm' };
     }
@@ -268,7 +295,7 @@ function tfNotify() {
     tfChangeTimer = setTimeout(function () { tfSend('tf-doc-changed', { doc: JSON.parse(tfSignature), inputKind: tfInputKind }); }, 80);
 }
 function initParameters() {
-    if (!isTF()) return;
+    if (!hasTFContext() || parameterEditor) return;
     parameterEditor = CircuitParameterEditor.create({ duplicate: tfNameUsed, finish: function (data) {
         var it = byId(parameterItem); parameterItem = null;
         if (data && it && JSON.stringify(it.analysis) !== JSON.stringify(data)) {
@@ -462,6 +489,7 @@ function drawMain() {
     layerMain.innerHTML = doc.items.map(displayItemSvg).join('');
 }
 function render() {
+    syncAnalysisContext();
     tfNotify();
     if (transformPivot && transformPivot.key !== sel.slice().sort().join(',')) transformPivot = null;
     drawMain();
@@ -510,12 +538,12 @@ function canEditText(it) {
     return it && (it.kind === 'label' || (it.kind === 'comp' && Razavi.textPos(it.type) !== 'none'));
 }
 function isLogicSignal(it) {
-    return it && it.kind === 'comp' && (it.type === 'tt-in' || it.type === 'tt-out' || (isTF() && (it.type === 'tf-in' || it.type === 'tf-out')));
+    return it && it.kind === 'comp' && (it.type === 'tt-in' || it.type === 'tt-out' || (hasTFContext() && (it.type === 'tf-in' || it.type === 'tf-out')));
 }
 function validateSignalName(model, item) {
     if (!isLogicSignal(item)) return '';
     var text = Razavi.richPlain(model);
-    if (isTF()) {
+    if (hasTFContext()) {
         if (!TFNetlist.validName(text)) return '输入输出名称须为合法且非空的标识符，不能使用保留字。';
         return tfNameUsed(text, item.id) ? '名称已被其他输入输出或器件参数使用。' : '';
     }
@@ -529,6 +557,7 @@ function validateSignalName(model, item) {
     return duplicate ? '信号名「' + text + '」已被其他输入或输出使用，请使用不同名称。' : '';
 }
 function editingBlocked() {
+    if (copyPending) return true;
     if (parameterEditor && parameterEditor.active) { parameterEditor.notify(); return true; }
     if (!textSession) return false;
     if (textEditor) textEditor.notify();
@@ -547,7 +576,7 @@ function startTextEdit(it) {
     drawMain(); renderOverlay(); renderProps(); updateQuickstartVisibility(); syncMenuStatus();
     textEditor.start(it, isLogicSignal(it) ? {
         singleLine: true, selectAll: true,
-        hint: (it.type.endsWith('-in') ? '输入' : '输出') + '信号名；Enter 确认，Esc 取消；仅限英文字母、数字、下划线，不以数字开头' + (isTF() ? '；名称不能为空' : '；留空时生成真值表自动命名')
+        hint: (it.type.endsWith('-in') ? '输入' : '输出') + '信号名；Enter 确认，Esc 取消；仅限英文字母、数字、下划线，不以数字开头' + (hasTFContext() ? '；名称不能为空' : '；留空时生成真值表自动命名')
     } : {});
 }
 function finishTextEdit(model) {
@@ -589,18 +618,21 @@ function initTextEditing() {
     });
     /* 外部点击不提交、不穿透；仅允许菜单导航和主题切换。 */
     function allowedOutside(target) {
-        return target.closest && target.closest('.theme-toggle, #ckMenubar [aria-controls], #ckMenubar [data-action="toggle-theme"]');
+        return target.closest && target.closest('.theme-toggle, #ckMenubar [aria-controls], #ckMenubar [data-action="toggle-theme"], #ckMenubar [data-action^="window-"], [data-close-panel], .ck-narrow-btn');
     }
     ['pointerdown', 'mousedown', 'click', 'dblclick', 'auxclick', 'wheel', 'drop'].forEach(function (type) {
         document.addEventListener(type, function (e) {
             if (!textSession || host.contains(e.target) || allowedOutside(e.target)) return;
-            e.preventDefault(); e.stopImmediatePropagation(); textEditor.notify();
+            e.preventDefault(); e.stopImmediatePropagation(); textEditor.notify(); textEditor.focus();
         }, { capture: true, passive: false });
     });
     document.addEventListener('keydown', function (e) {
         if (!textSession || host.contains(e.target)) return;
         if (e.key === 'Escape' && !e.isComposing) {
-            e.preventDefault(); e.stopImmediatePropagation(); closeMenus(false); textEditor.cancel(); return;
+            e.preventDefault(); e.stopImmediatePropagation();
+            if (menubar.contains(e.target)) { closeMenus(false); textEditor.focus(); }
+            else textEditor.cancel();
+            return;
         }
         if (allowedOutside(e.target) || menubar.contains(e.target)) return;
         e.preventDefault(); e.stopImmediatePropagation(); textEditor.notify();
@@ -632,10 +664,48 @@ function wirePath(a, b) {
     return manhattan(a, b);
 }
 
+/* 已固定线段保存在同一个对象中，鼠标尾段只用于预览。 */
+function finishWire() {
+    wireStart = null;
+    hoverPort = null;
+    statusExtra = '';
+}
+function cleanWirePoints(points) {
+    var out = [];
+    points.forEach(function (p) {
+        var last = out[out.length - 1];
+        if (last && last.x === p.x && last.y === p.y) return;
+        if (out.length > 1) {
+            var a = out[out.length - 2], ux = last.x - a.x, uy = last.y - a.y;
+            var vx = p.x - last.x, vy = p.y - last.y;
+            if (ux * vy === uy * vx && ux * vx + uy * vy > 0) out.pop();
+        }
+        out.push({ x: p.x, y: p.y });
+    });
+    return out;
+}
+function fixWirePoint(pt) {
+    if (!wireStart || (pt.x === wireStart.x && pt.y === wireStart.y)) return false;
+    var item = wireStart.wireId && byId(wireStart.wireId);
+    if (wireStart.wireId && !item) { finishWire(); return false; }
+    var segment = wirePath(wireStart, pt);
+    if (!item) {
+        pushUndo(true);
+        item = { kind: 'wire', id: uid(), pts: segment, stroke: '#1a1a1a', sw: 1.5, dash: '' };
+        doc.items.push(item);
+        wireStart.wireId = item.id;
+    } else item.pts = item.pts.concat(segment.slice(1));
+    item.pts = cleanWirePoints(item.pts);
+    wireStart.x = pt.x; wireStart.y = pt.y;
+    delete wireStart.cur;
+    return true;
+}
+
 /* ============================================
    撤销 / 重做（快照命令栈，上限 50）
    ============================================ */
-function pushUndo() {
+function pushUndo(keepWire) {
+    if (!keepWire) finishWire();
     transformPivot = null;
     suppressSave = false;    // 有真实编辑动作，允许写回本地存档
     undoStack.push(JSON.stringify(doc));
@@ -643,7 +713,10 @@ function pushUndo() {
     redoStack = [];
 }
 function undo() {
-    if (editingBlocked() || !undoStack.length) return;
+    if (editingBlocked()) return;
+    var onlyStart = wireStart && !wireStart.wireId;
+    finishWire();
+    if (onlyStart || !undoStack.length) { renderOverlay(); syncMenuState(); return; }
     transformPivot = null;
     redoStack.push(JSON.stringify(doc));
     doc = JSON.parse(undoStack.pop());
@@ -653,7 +726,9 @@ function undo() {
     setStatus('');
 }
 function redo() {
-    if (editingBlocked() || !redoStack.length) return;
+    if (editingBlocked()) return;
+    finishWire();
+    if (!redoStack.length) { renderOverlay(); syncMenuState(); return; }
     transformPivot = null;
     undoStack.push(JSON.stringify(doc));
     doc = JSON.parse(redoStack.pop());
@@ -681,7 +756,7 @@ function isCanvasPoint(e) {
 }
 
 function placementPoint(e) {
-    if (spaceDown || isPanning || propsDrag || pickerEl || !isCanvasPoint(e)) return null;
+    if (spaceDown || isPanning || panelDrag || pickerEl || !isCanvasPoint(e)) return null;
     var p = evPos(e);
     return { x: snap(p.x), y: snap(p.y) };
 }
@@ -692,7 +767,7 @@ function compDraft(type, x, y, direction) {
     var draft = { kind: 'comp', type: type, x: x, y: y, rot: direction.rot || 0, fh: !!direction.fh, fv: !!direction.fv,
         text: DEFAULT_TEXT[type] || '', stroke: '#1a1a1a', sw: 1.5, dash: '' };
     tfDefaults(draft);
-    if (isTF() && (type === 'tf-in' || type === 'tf-out') && tfNameUsed(draft.text)) draft.text = tfUnique(type === 'tf-in' ? 'input' : 'output');
+    if (hasTFContext() && (type === 'tf-in' || type === 'tf-out') && tfNameUsed(draft.text)) draft.text = tfUnique(type === 'tf-in' ? 'input' : 'output');
     return draft;
 }
 
@@ -785,7 +860,8 @@ function snapPort(x, y) {
 }
 
 function setStatus(extra) {
-    if (statusEl) statusEl.textContent = (hintMsg ? '｜ ' + hintMsg + ' ' : '') + (extra || '');
+    statusExtra = extra || '';
+    syncMenuStatus();
 }
 
 /* 快速入门面板：画布完全空白时显示，添加任意对象后隐藏 */
@@ -793,7 +869,7 @@ function updateQuickstartVisibility() {
     if (!quickstartEl) return;
     if (EMBED) { quickstartEl.setAttribute('hidden', ''); return; }
     var isEmpty = !doc.items.length;
-    if (isEmpty && !placement && !textSession && tool !== 'label') {
+    if (isEmpty && !placement && !textSession && tool === 'select') {
         quickstartEl.removeAttribute('hidden');
     } else {
         quickstartEl.setAttribute('hidden', '');
@@ -804,7 +880,7 @@ function updateQuickstartVisibility() {
    画布鼠标交互
    ============================================ */
 svg.addEventListener('mousedown', function (e) {
-    if (e.button !== 0 || spaceDown || isPanning || paletteDrag || propsDrag) return;
+    if (e.button !== 0 || spaceDown || isPanning || paletteDrag || panelDrag) return;
     e.preventDefault();
     svg.focus({ preventScroll: true });
     if (placement) {
@@ -816,17 +892,19 @@ svg.addEventListener('mousedown', function (e) {
 
     /* ---- 连线模式 ---- */
     if (tool === 'wire') {
-        var pt = snapPort(pos.x, pos.y);
+        if (editingBlocked() || e.detail > 1) return;
+        var port = nearestPort(pos.x, pos.y, 20);
+        var pt = port ? { x: port.x, y: port.y } : { x: snap(pos.x), y: snap(pos.y) };
         if (!wireStart) {
-            wireStart = pt;
+            wireStart = { x: pt.x, y: pt.y, wireId: null };
+            sel = [];
+            renderOverlay(); renderProps(); syncMenuState();
         } else {
-            if (pt.x !== wireStart.x || pt.y !== wireStart.y) {
-                pushUndo();
-                doc.items.push({ kind: 'wire', id: uid(), pts: wirePath(wireStart, pt), stroke: '#1a1a1a', sw: 1.5, dash: '' });
-            }
-            wireStart = null;
+            var changed = fixWirePoint(pt);
+            if (port && wireStart && wireStart.wireId) finishWire();
+            if (changed) render();
+            else { renderOverlay(); syncMenuState(); }
         }
-        render();
         return;
     }
 
@@ -884,7 +962,7 @@ svg.addEventListener('mousedown', function (e) {
 });
 
 window.addEventListener('mousemove', function (e) {
-    if (textSession || placement || paletteDrag || propsDrag || isPanning || spaceDown || pickerEl) return;
+    if (textSession || placement || paletteDrag || panelDrag || isPanning || spaceDown || pickerEl) return;
     if (!drag && !isCanvasPoint(e)) {
         if (hoverPort || (wireStart && wireStart.cur)) {
             hoverPort = null;
@@ -899,7 +977,7 @@ window.addEventListener('mousemove', function (e) {
     if (tool === 'wire') {
         hoverPort = nearestPort(pos.x, pos.y, 20);
         if (wireStart) wireStart.cur = snapPort(pos.x, pos.y);
-        setStatus('｜ (' + snap(pos.x) + ', ' + snap(pos.y) + ')' + (wireStart ? ' 点击完成连线，Esc 取消' : ' 点击放置连线起点'));
+        setStatus('｜ (' + snap(pos.x) + ', ' + snap(pos.y) + ')');
         renderOverlay();
         return;
     }
@@ -957,11 +1035,20 @@ window.addEventListener('mouseup', function () {
 
 /* 双击编辑文字（器件标签 / 自由标注） */
 svg.addEventListener('dblclick', function (e) {
-    if (tool !== 'select' || placement || paletteDrag || spaceDown || isPanning || e.button !== 0) return;
+    if (placement || paletteDrag || panelDrag || spaceDown || isPanning || e.button !== 0 || editingBlocked()) return;
     var pos = evPos(e);
     var hit = hitItem(pos.x, pos.y);
-    if (!hit) return;
-    if (canEditText(hit)) startTextEdit(hit);
+    if (tool === 'wire') {
+        e.preventDefault();
+        // 双击的首个 mousedown 已固定末段；第二次不重复追加或重新起线。
+        if (wireStart && (!hit || hit.kind === 'wire')) { finishWire(); renderOverlay(); syncMenuState(); }
+        return;
+    }
+    if (tool !== 'select' || !hit) return;
+    if (canEditText(hit)) {
+        e.preventDefault();
+        startTextEdit(hit);
+    }
 });
 
 /* ============================================
@@ -982,7 +1069,7 @@ svg.addEventListener('wheel', function (e) {
 /* 中键或空格+左键平移 */
 var panButton = null;
 svg.addEventListener('mousedown', function (e) {
-    if (paletteDrag || propsDrag || drag || isPanning) return;
+    if (paletteDrag || panelDrag || drag || isPanning) return;
     if (e.button === 1 || (e.button === 0 && spaceDown)) {
         e.preventDefault();
         svg.focus({ preventScroll: true });
@@ -1016,14 +1103,14 @@ window.addEventListener('mouseup', function (e) {
 /* 输入控件、菜单和选择器保留自身键盘行为 */
 function shortcutBlocked(e) {
     var target = e.target;
-    return textSession || e.defaultPrevented || e.isComposing || pickerEl ||
+    return copyPending || textSession || (parameterEditor && parameterEditor.active) || e.defaultPrevented || e.isComposing || pickerEl ||
         (target && (target.isContentEditable || (target.closest && target.closest(
             'input, textarea, select, button, a, [role="button"], #ckMenubar, .ck-picker-mask'))));
 }
 
 /* 空格键追踪 */
 window.addEventListener('keydown', function (e) {
-    if (e.code !== 'Space' || shortcutBlocked(e) || e.ctrlKey || e.metaKey || e.altKey || paletteDrag || propsDrag || drag) return;
+    if (e.code !== 'Space' || shortcutBlocked(e) || e.ctrlKey || e.metaKey || e.altKey || paletteDrag || panelDrag || drag) return;
     e.preventDefault();
     spaceDown = true;
     hidePlacementPreview();
@@ -1038,7 +1125,7 @@ window.addEventListener('keyup', function (e) {
 
 function resetPointerInteractions() {
     cancelPaletteDrag();
-    cancelPropsDrag();
+    cancelPanelDrag();
     spaceDown = false;
     lastPointer = null;
     endPan();
@@ -1052,6 +1139,11 @@ function resetPointerInteractions() {
 }
 window.addEventListener('blur', resetPointerInteractions);
 window.addEventListener('pointercancel', resetPointerInteractions);
+svg.addEventListener('mouseleave', function () {
+    hoverPort = null;
+    if (wireStart) delete wireStart.cur;
+    renderOverlay();
+});
 
 /* 初始化视图变换在 boot 中执行，确保面板与菜单均已就绪 */
 
@@ -1100,7 +1192,7 @@ function buildPalette() {
             Razavi.CATALOG.forEach(function (e) { if (e.palette && e.category === cat.id) ids.push(e.id); });
             if (ids.length) s += palGroup(cat.name, ids, false);
         });
-        Razavi.AUX_GROUPS.forEach(function (g) {
+        auxiliaryGroups().forEach(function (g) {
             var ids = g.ids.filter(deviceVisible);
             if (ids.length) s += palGroup(g.name, ids, g.id === 'aux');
         });
@@ -1125,7 +1217,7 @@ function bindPalItem(div, type) {
         svg.focus({ preventScroll: true });
     });
     div.addEventListener('pointerdown', function (e) {
-        if (e.button !== 0 || e.isPrimary === false || isPanning || propsDrag) return;
+        if (e.button !== 0 || e.isPrimary === false || isPanning || panelDrag) return;
         e.preventDefault();
         setTool('select');
         svg.focus({ preventScroll: true });
@@ -1227,12 +1319,12 @@ function normalizeItem(it) {
 function normalizeDoc(d) {
     d.items = d.items || [];
     d.groups = d.groups || [];
-    d.items.forEach(normalizeItem);
     /* uid 种子越过已有 id，避免冲突 */
-    d.items.forEach(function (it) {
+    d.items.concat(d.groups).forEach(function (it) {
         var m = /^i(\d+)$/.exec(it.id);
         if (m) _uid = Math.max(_uid, parseInt(m[1], 10) + 1);
     });
+    d.items.forEach(normalizeItem);
     return d;
 }
 
@@ -1252,7 +1344,7 @@ function migrateDoc(d) {
    模板：共享标准图（RAZAVI_FIGURES）深拷贝插入画布中心并自动成组
    ============================================ */
 function insertFigure(key) {
-    if (editingBlocked()) return;
+    if (EMBED || editingBlocked()) return;
     var fig = window.RAZAVI_FIGURES && RAZAVI_FIGURES[key];
     if (!fig) return;
     setTool('select');
@@ -1267,6 +1359,7 @@ function insertFigure(key) {
     var ids = [];
     var items = JSON.parse(JSON.stringify(fig.doc.items));
     items.forEach(function (it) {
+        it.id = uid();
         normalizeItem(it);
         moveItem(it, dx, dy);
         doc.items.push(it);
@@ -1440,7 +1533,7 @@ function pasteClip() {
         c.id = uid();
         if (isParameter(c) && c.analysis) {
             c.analysis.symbol = tfUnique(TFNetlist.TYPES[c.type]); c.text = TFNetlist.label(c.analysis, c.type); delete c.richText;
-        } else if (isTF() && (c.type === 'tf-in' || c.type === 'tf-out')) {
+        } else if (hasTFContext() && (c.type === 'tf-in' || c.type === 'tf-out')) {
             c.text = tfUnique(c.type === 'tf-in' ? 'input' : 'output'); delete c.richText;
         }
         moveItem(c, 20, 20);
@@ -1481,10 +1574,13 @@ function renderProps() {
     propEditText.textContent = items.length === 1 && isParameter(items[0]) ? '编辑参数' : '编辑文字';
     propText.textContent = items.length === 1 && canEditText(items[0]) ? (items[0].text || '（空白标号）') :
         (items.length > 1 ? '多选时不编辑文字' : '未选中文字');
+    var lineItems = items.filter(function (it) { return it.kind === 'comp' || it.kind === 'wire'; });
+    propDash.disabled = !lineItems.length || !!textSession || !!(parameterEditor && parameterEditor.active);
+    var dash = lineItems.length ? lineItems[0].dash || '' : '';
+    propDash.value = lineItems.some(function (it) { return (it.dash || '') !== dash; }) ? 'mixed' : dash;
     if (!items.length) { propVariantRow.style.display = 'none'; return; }
     propWidth.value = String(items[0].sw || 1.5);
     if (items[0].stroke) propColor.value = items[0].stroke;
-    propDash.value = items[0].dash || '';
     /* 符号变体：选中项中含可变体器件（nmos/pmos）即可用，作用于全部此类器件 */
     var varComps = items.filter(function (it) { return it.kind === 'comp' && Razavi.variantOptions(it.type); });
     if (varComps.length) {
@@ -1518,7 +1614,13 @@ propColor.addEventListener('input', function () {
 });
 propDash.addEventListener('change', function () {
     var v = propDash.value;
-    applyProps(function (it) { it.dash = v; });
+    if (editingBlocked() || ['', '7 4', '2 3'].indexOf(v) < 0) return;
+    var items = selItems().filter(function (it) { return it.kind !== 'label' && (it.dash || '') !== v; });
+    if (!items.length) return;
+    pushUndo();
+    items.forEach(function (it) { it.dash = v; });
+    render();
+    svg.focus({ preventScroll: true });
 });
 propEditText.addEventListener('click', function () {
     var items = selItems();
@@ -1543,92 +1645,141 @@ propVariant.addEventListener('change', function () {
 });
 
 /* ---- 属性面板按视口钳制，窄屏清除拖动定位 ---- */
-function cancelPropsDrag() {
-    if (propsDrag) propsDrag.cleanup();
+function cancelPanelDrag() {
+    if (panelDrag) panelDrag.cleanup();
 }
-function positionProps(left, top) {
-    var maxL = Math.max(0, viewport.clientWidth - propsPanel.offsetWidth);
-    var maxT = Math.max(0, viewport.clientHeight - propsPanel.offsetHeight);
-    propsPanel.style.left = Math.max(0, Math.min(maxL, left)) + 'px';
-    propsPanel.style.top = Math.max(0, Math.min(maxT, top)) + 'px';
-    propsPanel.style.right = 'auto';
+function panelMode() { return EMBED ? EMBED.mode : 'full'; }
+function panelAllowed(key) { return key !== 'templates' || !EMBED; }
+function panelVisible(key) { return panelAllowed(key) && (panelNarrow ? narrowPanel === key : desktopPanels[key]); }
+function positionPanel(key, left, top) {
+    var panel = panels[key];
+    var maxL = Math.max(0, viewport.clientWidth - panel.offsetWidth);
+    var maxT = Math.max(0, viewport.clientHeight - panel.offsetHeight);
+    left = Math.max(0, Math.min(maxL, left)); top = Math.max(0, Math.min(maxT, top));
+    panel.style.left = left + 'px'; panel.style.top = top + 'px';
+    panel.style.right = 'auto'; panel.style.bottom = 'auto';
+    panelPositions[key] = { left: left, top: top };
 }
-function clampProps() {
-    if (getComputedStyle(propsPanel).position !== 'absolute') {
-        cancelPropsDrag();
-        propsPanel.style.removeProperty('left');
-        propsPanel.style.removeProperty('top');
-        propsPanel.style.removeProperty('right');
-    } else if (propsPanel.style.left) {
-        positionProps(propsPanel.offsetLeft, propsPanel.offsetTop);
-    }
-}
-(function initPropsDrag() {
-    var hd = document.getElementById('ckPropsHd');
-    hd.addEventListener('pointerdown', function (e) {
-        if (e.button !== 0 || e.isPrimary === false || paletteDrag || isPanning || drag ||
-                getComputedStyle(propsPanel).position !== 'absolute') return;
-        e.preventDefault();
-        cancelPropsDrag();
-        var rect = propsPanel.getBoundingClientRect();
-        var dx = e.clientX - rect.left, dy = e.clientY - rect.top, pointerId = e.pointerId;
-        var state = { cleanup: cleanup };
-        propsDrag = state;
-        hidePlacementPreview();
-        function cleanup() {
-            window.removeEventListener('pointermove', mv);
-            window.removeEventListener('pointerup', up);
-            window.removeEventListener('pointercancel', up);
-            hd.removeEventListener('lostpointercapture', up);
-            if (propsDrag === state) propsDrag = null;
-            if (hd.hasPointerCapture(pointerId)) hd.releasePointerCapture(pointerId);
-            schedulePlacementPreview();
-        }
-        function mv(ev) {
-            if (ev.pointerId !== pointerId) return;
-            if (!(ev.buttons & 1)) { cleanup(); return; }
-            if (getComputedStyle(propsPanel).position !== 'absolute') { clampProps(); return; }
-            var r = viewport.getBoundingClientRect();
-            positionProps(ev.clientX - r.left - dx, ev.clientY - r.top - dy);
-        }
-        function up(ev) {
-            if (ev.pointerId === pointerId) cleanup();
-        }
-        window.addEventListener('pointermove', mv);
-        window.addEventListener('pointerup', up);
-        window.addEventListener('pointercancel', up);
-        hd.addEventListener('lostpointercapture', up);
-        try { hd.setPointerCapture(pointerId); } catch (err) { /* 窗口监听仍可结束拖动 */ }
+function clampPanels() {
+    ['props', 'templates'].forEach(function (key) {
+        var panel = panels[key], pos = panelPositions[key];
+        if (panelNarrow || !pos) {
+            ['left', 'top', 'right', 'bottom'].forEach(function (p) { panel.style[p] = ''; });
+        } else if (panelVisible(key)) positionPanel(key, pos.left, pos.top);
     });
-})();
+}
+function savePanelPreferences() {
+    try {
+        var stored = JSON.parse(localStorage.getItem(UI_KEY) || '{}');
+        if (!stored || typeof stored !== 'object' || Array.isArray(stored)) stored = {};
+        stored[panelMode()] = Object.assign({}, desktopPanels);
+        localStorage.setItem(UI_KEY, JSON.stringify(stored));
+    } catch (err) { /* UI 存储受限时只保留本页面状态，不影响工程。 */ }
+}
+function syncPanels() {
+    Object.keys(panels).forEach(function (key) {
+        var visible = panelVisible(key), panel = panels[key], button = panelButtons[key];
+        panel.hidden = !visible;
+        panel.classList.toggle('ck-panel-open', visible && panelNarrow);
+        button.hidden = !panelAllowed(key);
+        button.classList.toggle('active', visible);
+        button.setAttribute('aria-expanded', String(visible));
+        button.setAttribute('aria-controls', panel.id);
+        button.setAttribute('aria-label', (visible ? '关闭' : '打开') + ({ palette: '器件库', templates: '模板库', props: '属性' }[key]));
+    });
+    viewport.classList.toggle('ck-split-panels', !panelNarrow && panelVisible('props') && panelVisible('templates'));
+    clampPanels(); syncMenuState(); schedulePlacementPreview();
+    if (textEditor) textEditor.reposition();
+}
+function togglePanel(key) {
+    if (!panels[key] || !panelAllowed(key) || (parameterEditor && parameterEditor.active)) return;
+    cancelPanelDrag();
+    if (panelNarrow) narrowPanel = narrowPanel === key ? null : key;
+    else { desktopPanels[key] = !desktopPanels[key]; savePanelPreferences(); }
+    syncPanels();
+}
+function resetPanelLayout() {
+    if (parameterEditor && parameterEditor.active) return;
+    cancelPanelDrag(); panelPositions = {}; narrowPanel = null;
+    if (!panelNarrow) {
+        desktopPanels = { palette: true, templates: true, props: true };
+        savePanelPreferences();
+    }
+    syncPanels();
+}
+function initPanels() {
+    panelNarrow = window.innerWidth <= 980;
+    try {
+        var stored = JSON.parse(localStorage.getItem(UI_KEY) || '{}');
+        var pref = stored && stored[panelMode()];
+        Object.keys(desktopPanels).forEach(function (key) {
+            if (pref && typeof pref[key] === 'boolean') desktopPanels[key] = pref[key];
+        });
+    } catch (err) { /* 损坏或不可读的 UI 偏好回退默认布局。 */ }
+    Object.keys(panels).forEach(function (key) {
+        panelButtons[key].addEventListener('click', function () { togglePanel(key); focusAfterPanel(); });
+        panels[key].querySelector('[data-close-panel]').addEventListener('click', function () {
+            if (panelVisible(key)) togglePanel(key);
+            focusAfterPanel();
+        });
+    });
+    ['props', 'templates'].forEach(function (key) {
+        var panel = panels[key], hd = panel.querySelector('.ck-panel-hd');
+        hd.addEventListener('pointerdown', function (e) {
+            if (e.button !== 0 || e.isPrimary === false || panelNarrow || panel.hidden ||
+                    paletteDrag || isPanning || drag || textSession || (parameterEditor && parameterEditor.active) || e.target.closest('button')) return;
+            e.preventDefault(); cancelPanelDrag();
+            var rect = panel.getBoundingClientRect();
+            var dx = e.clientX - rect.left, dy = e.clientY - rect.top, pointerId = e.pointerId;
+            var state = { cleanup: cleanup, key: key };
+            panelDrag = state; hidePlacementPreview();
+            if (wireStart) delete wireStart.cur;
+            hoverPort = null; renderOverlay();
+            function cleanup() {
+                window.removeEventListener('pointermove', mv);
+                window.removeEventListener('pointerup', up);
+                window.removeEventListener('pointercancel', up);
+                hd.removeEventListener('lostpointercapture', up);
+                if (panelDrag === state) panelDrag = null;
+                if (hd.hasPointerCapture(pointerId)) hd.releasePointerCapture(pointerId);
+                schedulePlacementPreview();
+            }
+            function mv(ev) {
+                if (ev.pointerId !== pointerId) return;
+                if (!(ev.buttons & 1) || panelNarrow || panel.hidden) { cleanup(); return; }
+                var r = viewport.getBoundingClientRect();
+                positionPanel(key, ev.clientX - r.left - dx, ev.clientY - r.top - dy);
+            }
+            function up(ev) { if (ev.pointerId === pointerId) cleanup(); }
+            window.addEventListener('pointermove', mv);
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+            hd.addEventListener('lostpointercapture', up);
+            try { hd.setPointerCapture(pointerId); } catch (err) { /* 窗口监听仍可结束拖动 */ }
+        });
+    });
+    syncPanels();
+}
+function focusAfterPanel() {
+    if (textSession) textEditor.focus();
+    else if (parameterEditor && parameterEditor.active) parameterEditor.notify();
+    else svg.focus({ preventScroll: true });
+}
 
 /* 窄屏面板切换：一次只展开一个 */
-function toggleNarrowPanel(which) {
-    if (!palettePanel || !propsPanel) return;
-    var isPalette = which === 'palette';
-    var target = isPalette ? palettePanel : propsPanel;
-    var other = isPalette ? propsPanel : palettePanel;
-    var btn = isPalette ? togglePaletteBtn : togglePropsBtn;
-    var otherBtn = isPalette ? togglePropsBtn : togglePaletteBtn;
-    var isOpen = target.classList.contains('ck-panel-open');
-    // 关闭另一个
-    other.classList.remove('ck-panel-open');
-    if (otherBtn) otherBtn.classList.remove('active');
-    // 切换当前
-    if (isOpen) {
-        target.classList.remove('ck-panel-open');
-        if (btn) btn.classList.remove('active');
-    } else {
-        target.classList.add('ck-panel-open');
-        if (btn) btn.classList.add('active');
+function syncPanelBreakpoint() {
+    var narrow = window.innerWidth <= 980;
+    if (narrow !== panelNarrow) {
+        panelNarrow = narrow; narrowPanel = null;
+        cancelPanelDrag(); syncPanels();
     }
 }
-if (togglePaletteBtn) togglePaletteBtn.addEventListener('click', function () { toggleNarrowPanel('palette'); });
-if (togglePropsBtn) togglePropsBtn.addEventListener('click', function () { toggleNarrowPanel('props'); });
 
 /* 尺寸与主题变化只影响显示层，不保存文档 */
 function refreshViewport() {
-    clampProps();
+    cancelPanelDrag();
+    syncPanelBreakpoint();
+    clampPanels();
     updateGridBounds();
     schedulePlacementPreview();
     if (textEditor) textEditor.reposition();
@@ -1637,7 +1788,7 @@ function observeViewport() {
     window.addEventListener('resize', refreshViewport);
     if (window.ResizeObserver) {
         var resizeObserver = new ResizeObserver(refreshViewport);
-        [viewport, wrap, propsPanel].forEach(function (el) { resizeObserver.observe(el); });
+        [viewport, wrap, propsPanel, templatesPanel].forEach(function (el) { resizeObserver.observe(el); });
     }
     new MutationObserver(function () {
         syncMenuState();
@@ -1654,9 +1805,11 @@ var exportOptions = { svgTransparent: false, pngTransparent: false };
 
 function setTool(t) {
     if (editingBlocked()) return;
+    if (t === 'wire' && tool === 'wire') return;
+    finishWire();
     transformPivot = null;
     cancelPaletteDrag();
-    cancelPropsDrag();
+    cancelPanelDrag();
     cancelPlacement();
     if (isPanning) endPan();
     tool = t;
@@ -1673,14 +1826,16 @@ function setTool(t) {
 function syncMenuStatus() {
     if (!menuStatus) return;
     var label = textSession ? 'Enter 确认，Esc 取消' : placement ? '连续放置 · Esc 退出' : ({ select: '选择', wire: '连线', label: '文字标注' }[tool] || '选择');
-    menuStatus.textContent = label + ' · ' + Math.round(viewTransform.scale * 100) + '%';
+    if (tool === 'wire') label = wireStart ? '单击固定折点；点端口/双击空白结束；Esc 保留实线退出' : '单击指定连线起点；Esc 退出';
+    menuStatus.textContent = label + ' · ' + Math.round(viewTransform.scale * 100) + '%' +
+        (statusExtra || (hintMsg ? ' ｜ ' + hintMsg : ''));
 }
 
 function syncMenuState() {
     if (!menubar) return;
     var count = selItems().length;
     var disabled = {
-        undo: !undoStack.length, redo: !redoStack.length, paste: !clipboard.length,
+        undo: !wireStart && !undoStack.length, redo: !redoStack.length, paste: !clipboard.length,
         'select-all': !doc.items.length,
         ungroup: !sel.some(function (id) { return !!groupOf(id); }),
         'zoom-in': viewTransform.scale >= 10, 'zoom-out': viewTransform.scale <= 0.1
@@ -1692,6 +1847,13 @@ function syncMenuState() {
     };
     menubar.querySelectorAll('[data-action]').forEach(function (btn) {
         var action = btn.getAttribute('data-action');
+        if (action.indexOf('window-') === 0) {
+            var key = action.slice(7);
+            btn.hidden = key !== 'reset' && !panelAllowed(key);
+            btn.disabled = !!(parameterEditor && parameterEditor.active);
+            if (key !== 'reset') btn.setAttribute('aria-checked', String(panelVisible(key)));
+            return;
+        }
         var transform = ['rotate', 'flip-h', 'flip-v'].indexOf(action) >= 0;
         btn.disabled = !!disabled[action] || (!(transform && pendingDraft()) && count < Number(btn.getAttribute('data-min-selection') || 0));
         if (Object.prototype.hasOwnProperty.call(checked, action)) btn.setAttribute('aria-checked', String(checked[action]));
@@ -1704,6 +1866,8 @@ function syncMenuState() {
 var menuActions = {
     'new': newDoc,
     'save-local': function () {
+        if (editingBlocked()) return;
+        if (copyMode) { saveCopy(); return; }
         if (EMBED) { if (isTF()) tfSend('tf-save'); return; }
         try {
             localStorage.setItem(LS_KEY, JSON.stringify(doc));
@@ -1712,6 +1876,11 @@ var menuActions = {
             setStatus('');
         } catch (err) { alert('保存失败，请导出 JSON 备份：' + err.message); }
     },
+    'save-main': function () {
+        if (!copyMode || editingBlocked() || !confirm('将覆盖主编辑器的本地存档。建议先备份原存档；确认保存当前副本？')) return;
+        try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); setStatus('已显式保存为主存档；后续编辑仍仅保存本副本。'); }
+        catch (err) { alert('保存主存档失败：' + err.message); }
+    },
     'import-json': function () { setTool('select'); impFile.click(); },
     'export-svg': function () { return exportSVG().catch(function (err) { setStatus('导出失败：' + err.message); }); },
     'export-png': function () { return exportPNG().catch(function (err) { setStatus('导出失败：' + err.message); }); },
@@ -1719,7 +1888,7 @@ var menuActions = {
     'svg-transparent': function () { exportOptions.svgTransparent = !exportOptions.svgTransparent; },
     'png-transparent': function () { exportOptions.pngTransparent = !exportOptions.pngTransparent; },
     'close-editor': function () {
-        var message = suppressSave ? '当前载入的标准图尚未保存，仍要返回主页？' : '返回主页？当前工程已自动保存在此浏览器，建议先导出 JSON 备份。';
+        var message = copyMode ? '此副本仅保存在当前标签页会话中，关闭后不长期保留。建议先导出 JSON；仍要返回主页？' : suppressSave ? '当前载入的标准图尚未保存，仍要返回主页？' : '返回主页？当前工程已自动保存在此浏览器，建议先导出 JSON 备份。';
         if (confirm(message)) location.href = '../../index.html';
     },
     undo: undo, redo: redo, copy: copySel, paste: pasteClip, 'delete': delSel,
@@ -1732,6 +1901,10 @@ var menuActions = {
     'reset-zoom': function () { zoomView(1 / viewTransform.scale); },
     'toggle-grid': function () { gridEnabled = !gridEnabled; updateGridVisibility(); },
     'toggle-theme': function () { Theme.toggle(); },
+    'window-palette': function () { togglePanel('palette'); },
+    'window-templates': function () { togglePanel('templates'); },
+    'window-props': function () { togglePanel('props'); },
+    'window-reset': resetPanelLayout,
     'tool-select': function () { setTool('select'); },
     'tool-wire': function () { setTool('wire'); },
     'tool-label': function () { setTool('label'); },
@@ -1775,7 +1948,7 @@ function buildInsertMenu() {
             .map(function (e) { return e.id; });
         category(cat.name, ids, index);
     });
-    Razavi.AUX_GROUPS.forEach(function (g) {
+    auxiliaryGroups().forEach(function (g) {
         category(g.name, g.ids.filter(deviceVisible), g.id);
     });
     document.getElementById('menuInsert').innerHTML = html;
@@ -1851,14 +2024,16 @@ function initMenus() {
         }
         var action = btn.getAttribute('data-action');
         var device = btn.getAttribute('data-device');
-        if (textSession && action !== 'toggle-theme') { textEditor.notify(); return; }
+        var windowAction = action && action.indexOf('window-') === 0;
+        if (textSession && action !== 'toggle-theme' && !windowAction) { textEditor.notify(); return; }
         var keepOpen = btn.getAttribute('role') === 'menuitemcheckbox';
         if (!keepOpen) {
             closeMenus(false);
-            svg.focus({ preventScroll: true });
+            if (!textSession) svg.focus({ preventScroll: true });
         }
         if (device) insertMenuDevice(device);
         else if (Object.prototype.hasOwnProperty.call(menuActions, action)) menuActions[action]();
+        if (!keepOpen && textSession) textEditor.focus();
         syncMenuState();
     });
     menubar.addEventListener('pointerover', function (e) {
@@ -2020,7 +2195,7 @@ function renderPickerList(body, query) {
         });
     });
     /* 共享辅助分组与器件面板、插入菜单保持一致。 */
-    Razavi.AUX_GROUPS.forEach(function (g) {
+    auxiliaryGroups().forEach(function (g) {
         var ids = g.ids.filter(function (id) {
             return deviceVisible(id) && (!query || (id + ' ' + Razavi.meta(id).nameZh).toLowerCase().indexOf(query) >= 0);
         });
@@ -2063,11 +2238,11 @@ function closeDevicePicker() {
 
 /* 捕获拖入期间的 Esc，避免焦点变化使取消丢失 */
 window.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape' || (!paletteDrag && !propsDrag)) return;
+    if (e.key !== 'Escape' || (!paletteDrag && !panelDrag)) return;
     e.preventDefault();
     e.stopPropagation();
     if (paletteDrag) setTool('select');
-    else cancelPropsDrag();
+    else cancelPanelDrag();
 }, true);
 
 document.addEventListener('keydown', function (e) {
@@ -2082,8 +2257,7 @@ document.addEventListener('keydown', function (e) {
         e.preventDefault();
         if (isPanning) endPan();
         if (placement || paletteDrag) setTool('select');
-        else if (wireStart) { wireStart = null; renderOverlay(); }
-        else if (tool !== 'select') setTool('select');
+        else if (wireStart || tool !== 'select') setTool('select');
         else {
             drag = null;
             sel = [];
@@ -2096,13 +2270,13 @@ document.addEventListener('keydown', function (e) {
     var transformKey = k === 'r' || (!ctrl && !e.shiftKey && (k === 'h' || k === 'v'));
     var canvasContext = document.activeElement === svg || svg.contains(document.activeElement) ||
         (document.activeElement === document.body && isCanvasPoint(lastPointer));
-    if (transformKey && !(ctrl && e.shiftKey) && canvasContext && !propsDrag && !drag && !isPanning &&
+    if (transformKey && !(ctrl && e.shiftKey) && canvasContext && !panelDrag && !drag && !isPanning &&
             !spaceDown && (pendingDraft() || (tool === 'select' && selItems().length))) {
         e.preventDefault();
         if (!e.repeat) transformSel(k === 'h' || e.shiftKey ? 'fh' : (k === 'v' || ctrl ? 'fv' : 'rot'));
         return;
     }
-    if (paletteDrag || propsDrag || drag || isPanning) return;
+    if (paletteDrag || panelDrag || drag || isPanning) return;
     if (ctrl) {
         if (k === 'a') { e.preventDefault(); setTool('select'); sel = doc.items.map(function (it) { return it.id; }); render(); }
         else if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -2238,7 +2412,10 @@ impFile.addEventListener('change', function () {
             var d = JSON.parse(rd.result);
             if (!d || !Array.isArray(d.items)) throw new Error('bad json');
             var migrated = migrateDoc(d);
-            d = normalizeDoc(d);
+            // 旧文档允许补齐 ID；其余数据先校验，避免规范化掩盖损坏。
+            var used = new Set(d.items.concat(d.groups || []).map(function (it) { return it.id; }));
+            d.items.forEach(function (it) { if (!it.id) { var id; do { id = uid(); } while (used.has(id)); it.id = id; used.add(id); } });
+            d = normalizeDoc(CircuitHandoff.validateDoc(d));
             if (doc.items.length && !confirm('导入将替换当前画布，是否继续？（可用 Ctrl+Z 恢复）')) { impFile.value = ''; return; }
             pushUndo();
             doc = d;
@@ -2272,7 +2449,50 @@ function newDoc() {
     updateQuickstartVisibility();
 }
 
+function copyNotice(message) {
+    var el = document.getElementById('copyNotice');
+    el.hidden = false;
+    el.textContent = message || ('独立副本：' + copyRecord.source + ' / ' + copyRecord.title + '。不回写原页或主存档；仅本标签页会话保存，长期保留请导出 JSON。' + copySessionWarning);
+}
+function saveCopy() {
+    if (copyPending || !copyRecord || textSession) return false;
+    copyRecord.doc = doc;
+    try {
+        CircuitHandoff.saveSession(copyToken, copyRecord);
+        copySessionWarning = ''; copyNotice(); return true;
+    } catch (err) {
+        copySessionWarning = ' 会话保存失败，刷新可能丢失修改，请立即导出 JSON：' + err.message;
+        copyNotice(); return false;
+    }
+}
+function receiveCopy() {
+    document.body.classList.add('ck-copy-pending');
+    document.querySelector('.ck-editor').inert = true;
+    copyNotice('正在载入图纸副本…');
+    function accept(record) {
+        doc = normalizeDoc(CircuitHandoff.validateDoc(record.doc));
+        copyRecord = record; copyPending = false; sel = []; undoStack = []; redoStack = [];
+        document.body.classList.remove('ck-copy-pending'); document.querySelector('.ck-editor').inert = false;
+        document.getElementById('saveMain').hidden = false;
+        var saved = saveCopy();
+        if (saved) { try { CircuitHandoff.consume(copyToken); } catch (_) { /* 会话已有独立副本 */ } }
+        else { try { CircuitHandoff.acknowledge(copyToken); } catch (_) { /* 会话风险已在副本提示 */ } }
+        render(); fitContent(); copyNotice();
+    }
+    Promise.resolve().then(function () {
+        if (/[?&](embed|fig)=/i.test(location.search)) throw new Error('副本入口不能与 embed/fig 同时使用');
+        var saved;
+        try { saved = CircuitHandoff.loadSession(copyToken); }
+        catch (err) { throw new Error('无法恢复副本会话，已保留原数据：' + err.message); }
+        if (saved) return saved;
+        return CircuitHandoff.wait(copyToken);
+    }).then(accept).catch(function (err) { copyNotice('图纸载入失败：' + err.message + '。请返回源页面重新点击链接。主存档未被修改。'); });
+    window.addEventListener('beforeunload', function (e) {
+        if (!copyPending) { e.preventDefault(); e.returnValue = ''; }
+    });
+}
 function saveLocal() {
+    if (copyMode) { saveCopy(); return; }
     if (EMBED || suppressSave || textSession) return;
     try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch (e) { /* 存储满忽略 */ }
 }
@@ -2336,14 +2556,16 @@ function sampleDoc() {
 }
 
 (function boot() {
-    if (EMBED) document.body.classList.add('ck-embed');
+    if (copyMode) document.body.classList.add('ck-copy-pending');
+    if (EMBED && !copyMode) document.body.classList.add('ck-embed');
     buildPalette();
     initMenus();
+    initPanels();
     initTextEditing();
     initParameters();
     applyViewTransform();
     observeViewport();
-    if (EMBED) {
+    if (copyMode || EMBED) {
         doc = { items: [], groups: [] };            // embed 模式禁用本地存档，始终空画布启动
     } else {
         var loaded = loadLocal();
@@ -2353,6 +2575,8 @@ function sampleDoc() {
     render();
     setStatus('');
     updateQuickstartVisibility();
+
+    if (copyMode) { receiveCopy(); return; }
 
     /* 跳转传图：?fig=ota5|telescopic|folded|diffpair|curmirror → pushUndo 后载入标准图（embed 模式禁用） */
     var mq = /[?&]fig=([a-z0-9-]+)/i.exec(location.search || '');
@@ -2374,24 +2598,23 @@ function sampleDoc() {
     if (isTF()) initTFBridge();
     if (EMBED && EMBED.mode === 'tt') {
         window.addEventListener('message', function (e) {
-            if (e.source !== window.parent) return;
+            if (e.source !== window.parent || e.origin !== location.origin) return;
             var d = e.data;
-            if (!d || typeof d !== 'object') return;
+            if (!d || typeof d !== 'object' || typeof d.requestId !== 'string') return;
+            var editing = !!textSession || !!(parameterEditor && parameterEditor.active);
             if (d.type === 'tt-get-doc') {
-                window.parent.postMessage({ type: 'tt-doc', doc: JSON.parse(JSON.stringify(doc)) }, '*');
+                window.parent.postMessage({ type: 'tt-doc', requestId: d.requestId, editing: editing, doc: JSON.parse(JSON.stringify(doc)) }, location.origin);
             } else if (d.type === 'tt-load-doc') {
-                var incoming = d.doc;
-                if (!incoming || !Array.isArray(incoming.items)) return;
-                pushUndo();                            // Ctrl+Z 可恢复注入前画布
-                doc = normalizeDoc(JSON.parse(JSON.stringify(incoming)));
-                doc.groups = [];
-                sel = [];
-                render();
-                fitContent();
-                setStatus('');
-                updateQuickstartVisibility();
+                try {
+                    if (editing) throw new Error('请先确认或取消画布中的文字草稿');
+                    var incoming = CircuitHandoff.validateDoc(d.doc);
+                    pushUndo();
+                    doc = normalizeDoc(incoming); sel = [];
+                    render(); fitContent(); setStatus(''); updateQuickstartVisibility();
+                    window.parent.postMessage({ type: 'tt-ack', requestId: d.requestId }, location.origin);
+                } catch (err) { window.parent.postMessage({ type: 'tt-ack', requestId: d.requestId, error: err.message }, location.origin); }
             }
         });
-        window.parent.postMessage({ type: 'tt-ready' }, '*');
+        window.parent.postMessage({ type: 'tt-ready' }, location.origin);
     }
 })();

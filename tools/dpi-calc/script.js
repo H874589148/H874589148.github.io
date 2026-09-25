@@ -179,7 +179,7 @@ function update() {
     var parasitic = $('blockModel').value === 'parasitic';
     $('parasiticFields').hidden = !parasitic;
     ['parasiticFields', 'banFields'].forEach(function (id) {
-        var enabled = id === 'banFields' ? $('useBan').checked : parasitic;
+        var enabled = id === 'banFields' || parasitic;
         $(id).querySelectorAll('input, select').forEach(function (el) { el.disabled = !enabled; if (!enabled) el.removeAttribute('aria-invalid'); });
     });
     attempt('rfError', 'rfResults', function () {
@@ -202,77 +202,38 @@ function update() {
     drawSchematics(); renderSweep();
 }
 
-/* 所有 R/C/L/源/地/端口来自现有 Razavi；矩形仅用于系统功能块。 */
-var ink = 'var(--color-text)', accent = 'var(--color-primary)';
-var svgOpts = { stroke: ink, textColor: ink, font: 'Arial, Microsoft YaHei, sans-serif' };
-function comp(type, x, y, rot) { return Razavi.itemSvg({ kind: 'comp', type: type, x: x, y: y, rot: rot || 0 }, svgOpts); }
-function wire() {
-    return Razavi.itemSvg({ kind: 'wire', pts: Array.prototype.map.call(arguments, function (p) { return { x: p[0], y: p[1] }; }) }, svgOpts);
-}
-function text(x, y, s, anchor, color) { return Razavi.itemSvg({ kind: 'label', x: x, y: y, text: s, size: 13, anchor: anchor || 'middle', stroke: color || ink }, svgOpts); }
-function ground(x, y) { return comp('ground', x, y + 10); }
-function dot(x, y) { return comp('dot', x, y); }
-function box(x, y, w, h, label, target) {
-    return '<g' + (target ? ' data-focus="' + target + '" tabindex="0" role="button" aria-label="' + esc('定位参数：' + label) + '"' : '') + '><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="4" style="fill:var(--color-card-bg);stroke:var(--color-text)" stroke-width="1.5"/>' + text(x + w / 2, y + h / 2 + 5, label) + '</g>';
-}
-function figure(id, w, h, body) { $(id).innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '"><title>' + esc($(id).getAttribute('aria-label')) + '</title>' + body + '</svg>'; }
-function labelValue(id, unit) {
-    var d = defs[id], v = raw(id);
-    return Number.isFinite(v) && v >= d.min && v <= d.max ? (unit === 'dBm' ? num(v) + ' dBm' : eng(v, unit)) : '—';
-}
+/* 图纸预览与传输共享文档；交互定位仅绑定已知对象，不接收任意 HTML。 */
+var papers = {}, paperLinks = {};
+Object.keys(DPIFigures.titles).forEach(function (kind) {
+    var container = $(kind + 'Figure'); container.classList.add('circuit-figure-scroll');
+    paperLinks[kind] = CircuitHandoff.toolbar(container, 'DPI 计算', function () {
+        if (!papers[kind]) throw new Error('请先修正此图相关参数');
+        return CircuitHandoff.clone(papers[kind]);
+    });
+});
 function drawSchematics() {
-    if (!root.Razavi) {
-        ['benchFigure', 'blockFigure', 'banFigure', 'injectionFigure', 'monitorFigure'].forEach(function (id) { $(id).textContent = '器件库未加载，请检查 razavi 脚本路径。'; });
-        return;
-    }
-    // 完整测试台按 Fig.6 的五个 DUT 引脚组织，监测支路不穿过 BAN。
-    var s = box(410, 145, 180, 200, 'DUT') + text(450, 164, 'VDD') + text(438, 233, 'IN') + text(500, 329, 'GND') + text(560, 204, 'OUT1') + text(560, 284, 'OUT2');
-    s += comp('voltage-source', 80, 100) + text(80, 48, '电池 / DC') + wire([80, 80], [80, 70], [180, 70]);
-    s += box(180, 50, 120, 40, 'BAN · 电源', 'ban') + wire([300, 70], [450, 70], [450, 145]) + wire([240, 90], [240, 115]) + ground(240, 115) + ground(80, 120);
-    s += comp('voltage-source', 80, 270) + text(80, 218, '同板驱动') + wire([80, 250], [80, 230], [180, 230]);
-    s += box(180, 210, 150, 40, 'L_RF_BLOCK', 'monitor') + wire([330, 230], [410, 230]) + ground(80, 290) + text(255, 275, labelValue('lrf', 'H'));
-    s += wire([500, 345], [500, 378]) + ground(500, 378);
-    s += wire([590, 200], [675, 200], [720, 200]) + dot(675, 200) + box(720, 180, 100, 40, 'BAN · OUT1', 'ban');
-    s += wire([770, 220], [770, 238]) + ground(770, 238) + wire([820, 200], [920, 200], [920, 230]) + comp('resistor', 920, 250) + ground(920, 270) + text(920, 180, '线束负载');
-    s += box(610, 35, 130, 40, 'RF 源 + R_s', 'rf') + box(610, 105, 130, 40, '隔直 C_block', 'block');
-    s += wire([675, 75], [675, 105]) + wire([675, 145], [675, 200]) + text(815, 62, labelValue('p', 'dBm'), 'start') + text(815, 88, labelValue('f', 'Hz'), 'start');
-    s += wire([590, 280], [650, 280], [720, 280]) + dot(650, 280) + wire([650, 280], [650, 340]) + comp('resistor', 650, 360) + ground(650, 380) + text(700, 375, '同板负载');
-    s += box(720, 260, 110, 40, 'R_M / C_M', 'monitor') + wire([775, 300], [775, 320]) + ground(775, 320);
-    s += wire([830, 280], [850, 280]) + box(850, 260, 100, 40, '示波器', 'monitor') + wire([900, 300], [900, 330]) + ground(900, 330);
-    figure('benchFigure', 1000, 425, s);
-
-    if ($('blockModel').value === 'parasitic') {
-        s = text(35, 92, 'RF侧', 'start') + wire([80, 90], [110, 90]) + comp('resistor', 130, 90, 1) + text(130, 58, 'ESR ' + labelValue('esr', 'Ω'));
-        s += wire([150, 90], [230, 90]) + comp('inductor-compact', 250, 90, 1) + text(250, 58, 'ESL ' + labelValue('esl', 'H'));
-        s += wire([270, 90], [330, 90], [390, 90]) + comp('capacitor', 410, 90, 1) + wire([430, 90], [510, 90], [600, 90]);
-        s += text(420, 58, 'C ' + labelValue('cb', 'F')) + dot(330, 90) + dot(510, 90);
-        s += wire([330, 90], [330, 155], [390, 155]) + comp('resistor', 410, 155, 1) + wire([430, 155], [510, 155], [510, 90]);
-        s += text(410, 191, 'R_leak ' + labelValue('leak', 'Ω')) + text(605, 94, 'DUT侧', 'start');
-    } else {
-        s = text(80, 94, 'RF侧') + wire([110, 90], [310, 90]) + comp('capacitor', 330, 90, 1) + wire([350, 90], [570, 90]) + text(620, 94, 'DUT侧');
-        s += text(330, 57, 'C_block = ' + labelValue('cb', 'F')) + text(330, 150, '理想模式：不包含 ESR / ESL / 漏电支路');
-    }
-    figure('blockFigure', 700, 220, s);
-
-    s = text(120, 32, '外部端口 E') + comp('resistor', 120, 155) + text(40, 195, 'R_ext ' + labelValue('rext', 'Ω'), 'start') + ground(120, 175);
-    s += wire([120, 135], [120, 75], [250, 75]) + comp('inductor-compact', 270, 75, 1) + wire([290, 75], [390, 75], [600, 75]);
-    s += dot(390, 75) + wire([390, 75], [390, 95]) + comp('resistor', 390, 115) + wire([390, 135], [390, 160]) + comp('capacitor', 390, 180) + ground(390, 200);
-    s += text(270, 45, 'L_BAN ' + labelValue('lb', 'H')) + text(420, 119, 'R_BAN ' + labelValue('rb', 'Ω'), 'start') + text(420, 184, 'C_BAN ' + labelValue('cban', 'F'), 'start');
-    s += text(610, 79, 'DUT端 D', 'start') + text(390, 250, $('useBan').checked ? '交流等效：E端由 R_ext 对参考地终接' : '当前计算未接入 BAN（上图仅说明连接）');
-    figure('banFigure', 750, 280, s);
-
-    s = comp('voltage-source', 65, 130) + ground(65, 150) + text(65, 195, 'v_s') + wire([65, 110], [65, 70], [130, 70]) + comp('resistor', 150, 70, 1) + text(150, 43, 'R_0');
-    s += wire([170, 70], [230, 70]) + box(230, 50, 105, 40, 'Z_block', 'block') + wire([335, 70], [430, 70], [430, 120]);
-    s += box(385, 120, 90, 40, 'Z_DUT', 'ban') + wire([430, 160], [430, 190]) + ground(430, 190) + text(430, 43, 'OUT1 / V_DUT', 'start');
-    if ($('useBan').checked) s += dot(430, 70) + wire([430, 70], [620, 70], [620, 120]) + box(570, 120, 100, 40, 'Z_BAN', 'ban') + wire([620, 160], [620, 190]) + ground(620, 190);
-    figure('injectionFigure', 740, 230, s);
-
-    s = text(40, 74, 'OUT2', 'start') + wire([90, 70], [150, 70]) + comp('resistor', 170, 70, 1) + text(170, 40, 'R_M ' + labelValue('rm', 'Ω'));
-    s += wire([190, 70], [300, 70], [480, 70], [620, 70], [710, 70]) + text(715, 74, '监测', 'start');
-    [300, 480, 620].forEach(function (x) { s += dot(x, 70) + wire([x, 70], [x, 115]) + wire([x, 155], [x, 190]) + ground(x, 190); });
-    s += comp('capacitor', 300, 135) + comp('resistor', 480, 135) + comp('capacitor', 620, 135);
-    s += text(300, 230, 'C_M ' + labelValue('cm', 'F')) + text(480, 230, 'R_in ' + labelValue('rin', 'Ω')) + text(650, 255, 'C_in ' + labelValue('cin', 'F'));
-    figure('monitorFigure', 770, 285, s);
+    var parasitic = $('blockModel').value === 'parasitic', useBan = $('useBan').checked;
+    var blockIds = ['cb'].concat(parasitic ? groups.parasiticFields : []);
+    var injectionIds = ['p', 'f', 'r0', 'rd', 'xd'].concat(blockIds, useBan ? groups.banFields : []);
+    var related = { block: blockIds, ban: groups.banFields, injection: injectionIds,
+        monitor: groups.monitorFields, bench: injectionIds.concat(groups.banFields, groups.monitorFields) };
+    Object.keys(related).forEach(function (kind) {
+        var p = { parasitic: parasitic, useBan: useBan }, valid = true;
+        related[kind].forEach(function (id) {
+            var v = raw(id), d = defs[id], ok = Number.isFinite(v) && v >= d.min && v <= d.max;
+            p[id] = ok ? v : null; valid = valid && ok;
+        });
+        var pack = DPIFigures.build(kind, p), container = $(kind + 'Figure');
+        container.innerHTML = CircuitFigure.render(pack.doc, { itemIds: true });
+        container.querySelectorAll('[data-item-id]').forEach(function (el) {
+            var target = pack.focus[el.getAttribute('data-item-id')];
+            if (!target) return;
+            el.setAttribute('data-focus', target); el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
+            el.setAttribute('aria-label', '定位参数：' + target);
+        });
+        papers[kind] = valid ? { doc: pack.doc, title: pack.title, context: pack.context } : null;
+        paperLinks[kind].set(valid, valid ? '' : '参数无效，不使用旧数值；请修正后打开副本。');
+    });
 }
 
 var chartData = null;
