@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>2048 · EE工具箱版</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family: "PingFang SC","Helvetica Neue","Microsoft YaHei",system-ui,sans-serif;
+    min-height:100vh; display:flex; justify-content:center; align-items:flex-start;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,175,55,.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 85% 110%, rgba(120,90,40,.06) 0%, transparent 60%),
+      linear-gradient(170deg, #14161c 0%, #0c0e13 100%);
+    color:#e9e4d8; user-select:none; overflow-x:hidden;
+  }
+  #app { width:100%; max-width:480px; padding:28px 18px 40px; }
+
+  .header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px; }
+  .title {
+    font-size:52px; font-weight:800; letter-spacing:2px; line-height:1;
+    background:linear-gradient(160deg,#f3dfa0 0%,#d4af37 45%,#9a7b1e 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:0 0 40px rgba(212,175,55,.15);
+  }
+  .subtitle { font-size:11px; color:#6f7482; letter-spacing:3px; margin-top:6px; }
+  .scores { display:flex; gap:10px; }
+  .score-box {
+    background:rgba(255,255,255,.04); border:1px solid rgba(212,175,55,.18);
+    border-radius:12px; padding:8px 16px; text-align:center; min-width:78px;
+  }
+  .score-box .label { font-size:10px; color:#8b93a8; letter-spacing:2px; }
+  .score-box .value { font-size:22px; font-weight:700; color:#f3dfa0; margin-top:2px; transition:transform .1s; }
+  .score-box .value.bump { animation:bump .25s ease; }
+  @keyframes bump { 50% { transform:scale(1.25); } }
+
+  .controls { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .tip { font-size:12px; color:#6f7482; }
+  .btn {
+    padding:10px 22px; border:none; border-radius:10px; cursor:pointer;
+    font-size:14px; font-weight:600; letter-spacing:2px;
+    background:linear-gradient(160deg,#e8c96a,#b8912e); color:#1a150a;
+    box-shadow:0 4px 16px rgba(212,175,55,.2); transition:.15s;
+  }
+  .btn:active { transform:scale(.95); }
+
+  #board-wrap { position:relative; }
+  #board {
+    position:relative; width:100%; aspect-ratio:1;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(212,175,55,.15);
+    border-radius:16px;
+    box-shadow: inset 0 2px 20px rgba(0,0,0,.5), 0 20px 60px rgba(0,0,0,.4);
+    touch-action:none;
+  }
+  .cell {
+    position:absolute; border-radius:10px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.03);
+  }
+  .tile {
+    position:absolute; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; transition:transform .12s ease-in-out;
+    box-shadow:0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+    will-change:transform;
+  }
+  .tile.new { animation:pop .18s ease; }
+  .tile.merged { animation:mergepop .22s ease; z-index:10; }
+  @keyframes pop { 0% { scale:.4; opacity:0; } 100% { scale:1; opacity:1; } }
+  @keyframes mergepop { 0% { scale:.6; } 60% { scale:1.15; } 100% { scale:1; } }
+
+  /* 曜金配色瓷砖 */
+  .t2    { background:linear-gradient(160deg,#3a3f4e,#2c303c); color:#cfd4e2; }
+  .t4    { background:linear-gradient(160deg,#4a4f63,#383d4c); color:#e4e8f2; }
+  .t8    { background:linear-gradient(160deg,#6e5a3e,#57462f); color:#f5ead3; }
+  .t16   { background:linear-gradient(160deg,#8a6a42,#6d5334); color:#f9efdb; }
+  .t32   { background:linear-gradient(160deg,#a67c48,#86623a); color:#fdf3e0; }
+  .t64   { background:linear-gradient(160deg,#c2904f,#a07340); color:#fff6e6; }
+  .t128  { background:linear-gradient(160deg,#d4a557,#b58842); color:#1f1808; box-shadow:0 0 18px rgba(212,175,55,.25), 0 4px 14px rgba(0,0,0,.35); }
+  .t256  { background:linear-gradient(160deg,#e2b968,#c89c4c); color:#1f1808; box-shadow:0 0 22px rgba(212,175,55,.3), 0 4px 14px rgba(0,0,0,.35); }
+  .t512  { background:linear-gradient(160deg,#ecc877,#d4aa54); color:#1f1808; box-shadow:0 0 26px rgba(212,175,55,.4), 0 4px 14px rgba(0,0,0,.35); }
+  .t1024 { background:linear-gradient(160deg,#f5d584,#ddb860); color:#1f1808; box-shadow:0 0 30px rgba(212,175,55,.5), 0 4px 14px rgba(0,0,0,.35); }
+  .t2048 { background:linear-gradient(160deg,#fce398,#e8c96a); color:#1f1808; box-shadow:0 0 40px rgba(240,210,120,.65), 0 4px 14px rgba(0,0,0,.35); animation:glow 2s ease-in-out infinite; }
+  .tsuper{ background:linear-gradient(160deg,#2c2f3a,#1d202a); color:#f3dfa0; box-shadow:0 0 30px rgba(212,175,55,.35); }
+  @keyframes glow { 50% { box-shadow:0 0 60px rgba(240,210,120,.85), 0 4px 14px rgba(0,0,0,.35); } }
+
+  /* 遮罩层 */
+  #overlay {
+    position:absolute; inset:0; border-radius:16px; display:none;
+    align-items:center; justify-content:center; flex-direction:column; gap:16px;
+    background:rgba(12,14,19,.82); backdrop-filter:blur(4px); z-index:20;
+  }
+  #overlay.show { display:flex; animation:fadein .4s ease; }
+  @keyframes fadein { from{opacity:0} to{opacity:1} }
+  #overlay .msg {
+    font-size:34px; font-weight:800; letter-spacing:4px;
+    background:linear-gradient(160deg,#f3dfa0,#d4af37);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  #overlay .sub { font-size:13px; color:#8b93a8; }
+  #overlay .btn-row { display:flex; gap:12px; }
+
+  .footer { margin-top:18px; text-align:center; font-size:11px; color:#565b68; letter-spacing:1px; line-height:1.8; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="title">2048</div>
+      <div class="subtitle">EE 工具箱 版</div>
+    </div>
+    <div class="scores">
+      <div class="score-box"><div class="label">得分</div><div class="value" id="score">0</div></div>
+      <div class="score-box"><div class="label">最高</div><div class="value" id="best">0</div></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="tip">滑动或方向键移动方块</div>
+    <button class="btn" id="btnNew">新游戏</button>
+  </div>
+  <div id="board-wrap">
+    <div id="board"></div>
+    <div id="overlay">
+      <div class="msg" id="ovMsg"></div>
+      <div class="sub" id="ovSub"></div>
+      <div class="btn-row">
+        <button class="btn" id="btnKeep" style="display:none">继续挑战</button>
+        <button class="btn" id="btnRetry">再来一局</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer">合并相同数字，抵达 2048<br>支持触屏滑动 · 方向键 · WASD</div>
+</div>
+
+<script>
+(function(){
+  const SIZE = 4;
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const ovMsg = document.getElementById('ovMsg');
+  const ovSub = document.getElementById('ovSub');
+  const btnKeep = document.getElementById('btnKeep');
+
+  let tiles = [];       // {id, value, row, col, el}
+  let nextId = 1;
+  let score = 0;
+  let best = parseInt(localStorage.getItem('best2048') || '0', 10);
+  let won = false, keepPlaying = false, over = false;
+  let cellSize = 0, gap = 0;
+  bestEl.textContent = best;
+
+  /* ---------- 布局 ---------- */
+  function layout(){
+    const w = board.clientWidth;
+    gap = Math.max(8, Math.round(w * 0.025));
+    cellSize = (w - gap * (SIZE + 1)) / SIZE;
+    board.querySelectorAll('.cell').forEach(c => c.remove());
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      place(cell, r, c);
+      board.insertBefore(cell, board.firstChild);
+    }
+    tiles.forEach(t => { sizeTile(t.el); place(t.el, t.row, t.col); });
+  }
+  function place(el, r, c){
+    el.style.width = cellSize + 'px';
+    el.style.height = cellSize + 'px';
+    el.style.transform = `translate(${gap + c * (cellSize + gap)}px, ${gap + r * (cellSize + gap)}px)`;
+  }
+  function sizeTile(el){
+    el.style.fontSize = (cellSize * 0.42) + 'px';
+    if (el.textContent.length >= 4) el.style.fontSize = (cellSize * 0.32) + 'px';
+  }
+  function tileClass(v){ return v > 2048 ? 'tsuper' : 't' + v; }
+
+  /* ---------- 瓷砖 ---------- */
+  function addTile(value, row, col, cls){
+    const el = document.createElement('div');
+    el.className = 'tile ' + tileClass(value) + (cls ? ' ' + cls : '');
+    el.textContent = value;
+    const t = { id: nextId++, value, row, col, el };
+    sizeTile(el); place(el, row, col);
+    board.appendChild(el);
+    tiles.push(t);
+    return t;
+  }
+  function spawn(){
+    const empty = [];
+    const occ = new Set(tiles.map(t => t.row * SIZE + t.col));
+    for (let i = 0; i < SIZE * SIZE; i++) if (!occ.has(i)) empty.push(i);
+    if (!empty.length) return;
+    const idx = empty[Math.floor(Math.random() * empty.length)];
+    addTile(Math.random() < 0.9 ? 2 : 4, Math.floor(idx / SIZE), idx % SIZE, 'new');
+  }
+
+  /* ---------- 移动逻辑 ---------- */
+  function computeMove(dir){
+    const grid = Array.from({length: SIZE}, () => Array(SIZE).fill(null));
+    tiles.forEach(t => grid[t.row][t.col] = t);
+    const moved = [], merges = [];
+    const mergedCells = new Set();
+    const vec = { left:[0,-1], right:[0,1], up:[-1,0], down:[1,0] }[dir];
+    const [dr, dc] = vec;
+    const rows = [0,1,2,3], cols = [0,1,2,3];
+    if (dir === 'right') cols.reverse();
+    if (dir === 'down') rows.reverse();
+    for (const r of rows) for (const c of cols) {
+      const tile = grid[r][c];
+      if (!tile) continue;
+      let nr = r, nc = c;
+      while (true) {
+        const tr = nr + dr, tc = nc + dc;
+        if (tr < 0 || tr >= SIZE || tc < 0 || tc >= SIZE || grid[tr][tc]) break;
+        nr = tr; nc = tc;
+      }
+      const tr = nr + dr, tc = nc + dc;
+      if (tr >= 0 && tr < SIZE && tc >= 0 && tc < SIZE) {
+        const other = grid[tr][tc];
+        const key = tr * SIZE + tc;
+        if (other && other.value === tile.value && !mergedCells.has(key)) {
+          mergedCells.add(key);
+          grid[r][c] = null; grid[tr][tc] = null;
+          moved.push({ tile, row: tr, col: tc, remove: true });
+          moved.push({ tile: other, row: tr, col: tc, remove: true });
+          merges.push({ value: tile.value * 2, row: tr, col: tc });
+          grid[tr][tc] = { blocked: true };  // 合并位阻挡后续滑动与二次合并
+          continue;
+        }
+      }
+      if (nr !== r || nc !== c) {
+        grid[r][c] = null; grid[nr][nc] = tile;
+        moved.push({ tile, row: nr, col: nc });
+      }
+    }
+    return { moved, merges };
+  }
+
+  let animating = false;
+  function move(dir){
+    if (over || animating || (won && !keepPlaying)) return;
+    const { moved, merges } = computeMove(dir);
+    if (!moved.length) { checkState(); return; }
+    animating = true;
+    moved.forEach(m => { m.tile.row = m.row; m.tile.col = m.col; place(m.tile.el, m.row, m.col); });
+    setTimeout(() => {
+      // 移除被合并的瓷砖
+      moved.filter(m => m.remove).forEach(m => {
+        m.tile.el.remove();
+        tiles = tiles.filter(t => t !== m.tile);
+      });
+      // 生成合并结果
+      merges.forEach(mg => addTile(mg.value, mg.row, mg.col, 'merged'));
+      if (merges.length) {
+        const gain = merges.reduce((s, m) => s + m.value, 0);
+        score += gain;
+        scoreEl.textContent = score;
+        scoreEl.classList.remove('bump'); void scoreEl.offsetWidth; scoreEl.classList.add('bump');
+        if (score > best) { best = score; bestEl.textContent = best; localStorage.setItem('best2048', best); }
+      }
+      spawn();
+      animating = false;
+      checkState();
+    }, 130);
+  }
+
+  /* ---------- 状态判定 ---------- */
+  function canMove(){
+    if (tiles.length < SIZE * SIZE) return true;
+    const grid = Array.from({length: SIZE}, () => Array(SIZE).fill(0));
+    tiles.forEach(t => grid[t.row][t.col] = t.value);
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      const v = grid[r][c];
+      if (r + 1 < SIZE && grid[r+1][c] === v) return true;
+      if (c + 1 < SIZE && grid[r][c+1] === v) return true;
+    }
+    return false;
+  }
+  function checkState(){
+    if (!won && tiles.some(t => t.value >= 2048)) {
+      won = true;
+      ovMsg.textContent = '你赢了';
+      ovSub.textContent = '成功合成 2048 · 得分 ' + score;
+      btnKeep.style.display = 'block';
+      overlay.classList.add('show');
+      return;
+    }
+    if (!canMove()) {
+      over = true;
+      ovMsg.textContent = '游戏结束';
+      ovSub.textContent = '本局得分 ' + score + ' · 最高 ' + best;
+      btnKeep.style.display = 'none';
+      overlay.classList.add('show');
+    }
+  }
+
+  /* ---------- 新游戏 ---------- */
+  function newGame(){
+    tiles.forEach(t => t.el.remove());
+    tiles = []; score = 0; won = false; keepPlaying = false; over = false;
+    scoreEl.textContent = '0';
+    overlay.classList.remove('show');
+    spawn(); spawn();
+  }
+  document.getElementById('btnNew').onclick = newGame;
+  document.getElementById('btnRetry').onclick = newGame;
+  btnKeep.onclick = () => { keepPlaying = true; overlay.classList.remove('show'); };
+
+  /* ---------- 输入 ---------- */
+  const KEYMAP = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down',
+                   a:'left', d:'right', w:'up', s:'down', A:'left', D:'right', W:'up', S:'down' };
+  document.addEventListener('keydown', e => {
+    const dir = KEYMAP[e.key];
+    if (dir) { e.preventDefault(); move(dir); }
+  });
+  let tx = 0, ty = 0;
+  board.addEventListener('touchstart', e => {
+    tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+  }, { passive: true });
+  board.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = e.changedTouches[0].clientY - ty;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  });
+  board.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+  window.addEventListener('resize', layout);
+  layout();
+  newGame();
+
+  /* ---------- 调试句柄（测试用） ---------- */
+  window.__2048 = {
+    move,
+    getState(){ return { score, tiles: tiles.map(t => ({ value: t.value, row: t.row, col: t.col })) }; },
+    setGrid(values){
+      tiles.forEach(t => t.el.remove());
+      tiles = []; score = 0; won = false; keepPlaying = false; over = false; animating = false;
+      scoreEl.textContent = '0';
+      overlay.classList.remove('show');
+      values.forEach((row, r) => row.forEach((v, c) => { if (v) addTile(v, r, c); }));
+    }
+  };
+})();
+</script>
+</body>
+</html>

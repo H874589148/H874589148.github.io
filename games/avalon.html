@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>阿瓦隆 · 无纸化助手</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family: "PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background: radial-gradient(ellipse at 50% -20%, #2b3a5e 0%, #131a2b 55%, #0b0f1a 100%);
+    color:#e8e2d0; min-height:100vh; display:flex; justify-content:center;
+    user-select:none;
+  }
+  #app { width:100%; max-width:480px; padding:18px 16px 40px; }
+  h1 { text-align:center; font-size:22px; letter-spacing:6px; color:#d8c47f;
+       text-shadow:0 0 18px rgba(216,196,127,.35); margin:6px 0 2px; }
+  .subtitle { text-align:center; font-size:12px; color:#8b93a8; letter-spacing:2px; margin-bottom:18px; }
+  .screen { display:none; animation:fadein .35s ease; }
+  .screen.active { display:block; }
+  @keyframes fadein { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+  .card-panel { background:rgba(255,255,255,.04); border:1px solid rgba(216,196,127,.18);
+    border-radius:14px; padding:16px; margin-bottom:16px; }
+  .panel-title { font-size:14px; color:#d8c47f; letter-spacing:2px; margin-bottom:12px; }
+  .hint { font-size:12px; color:#8b93a8; line-height:1.7; margin-top:10px; }
+
+  .num-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .num-btn {
+    padding:18px 0; border-radius:12px; border:1px solid rgba(216,196,127,.35);
+    background:linear-gradient(160deg,#22304f,#17233c); color:#e8e2d0;
+    font-size:20px; font-weight:600; cursor:pointer; transition:.15s;
+  }
+  .num-btn:active { transform:scale(.95); }
+  .num-btn.selected { background:linear-gradient(160deg,#8a6d1f,#5e4a12); border-color:#d8c47f; color:#fff; }
+
+  /* 身份牌 */
+  .role-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:12px; }
+  .role-card {
+    aspect-ratio: 3/4.7; border-radius:12px; position:relative; cursor:pointer;
+    perspective:600px; transition:opacity .3s;
+  }
+  .role-inner { position:absolute; inset:0; transform-style:preserve-3d; transition:transform .5s; }
+  .role-card.revealed .role-inner { transform:rotateY(180deg); }
+  .role-face {
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:12px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    border:1px solid rgba(216,196,127,.4);
+  }
+  .role-back { background:linear-gradient(160deg,#26345a,#141d33); }
+  .role-back .seat { font-size:26px; font-weight:700; color:#d8c47f; }
+  .role-back .tap { font-size:11px; color:#8b93a8; }
+  .role-front { transform:rotateY(180deg); padding:8px; text-align:center; }
+  .role-front.good { background:linear-gradient(160deg,#1f4f8a,#12315c); border-color:#6fb1ff; }
+  .role-front.evil { background:linear-gradient(160deg,#7c1f2b,#4a0f18); border-color:#ff7d8a; }
+  .role-front .rname { font-size:17px; font-weight:700; }
+  .role-front .rcamp { font-size:11px; opacity:.85; margin-top:2px; }
+  .role-front .rdesc { font-size:10px; line-height:1.5; opacity:.85; margin-top:6px; }
+  .role-card.destroyed { pointer-events:none; opacity:.35; }
+  .role-card.destroyed .role-inner { transform:none; }
+  .role-card.destroyed .role-back { background:#1a1f2b; border-style:dashed; }
+  .role-card.destroyed .seat { color:#556; font-size:16px; }
+  .role-card.destroyed .seat::after { content:"已销毁"; display:block; font-size:11px; color:#667; margin-top:4px; }
+
+  .btn {
+    display:block; width:100%; padding:14px 0; border:none; border-radius:12px;
+    font-size:16px; font-weight:600; letter-spacing:2px; cursor:pointer; transition:.15s;
+  }
+  .btn:active { transform:scale(.97); }
+  .btn-gold { background:linear-gradient(160deg,#c9a227,#8a6d1f); color:#141414; }
+  .btn-ghost { background:transparent; border:1px solid rgba(139,147,168,.4); color:#8b93a8; font-size:13px; padding:10px 0; margin-top:10px; }
+  .btn:disabled { opacity:.35; pointer-events:none; }
+
+  /* 发车配置 */
+  .cfg-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:8px; }
+  .cfg-label { font-size:14px; color:#cfd4e2; flex-shrink:0; }
+  .stepper { display:flex; align-items:center; gap:12px; }
+  .stepper button {
+    width:38px; height:38px; border-radius:50%; border:1px solid rgba(216,196,127,.4);
+    background:#22304f; color:#e8e2d0; font-size:20px; cursor:pointer;
+  }
+  .stepper .val { font-size:22px; font-weight:700; min-width:34px; text-align:center; color:#d8c47f; }
+  .round-tabs { display:flex; gap:6px; margin-bottom:14px; }
+  .round-tab {
+    flex:1; padding:8px 0; text-align:center; font-size:13px; border-radius:8px;
+    border:1px solid rgba(139,147,168,.3); color:#8b93a8; cursor:pointer;
+  }
+  .round-tab.selected { background:linear-gradient(160deg,#8a6d1f,#5e4a12); border-color:#d8c47f; color:#fff; }
+
+  /* 投票 */
+  .vote-progress { text-align:center; font-size:14px; color:#cfd4e2; margin-bottom:14px; }
+  .vote-progress b { color:#d8c47f; font-size:18px; }
+  .vote-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .vote-card {
+    aspect-ratio:3/4; border-radius:14px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    border:2px solid transparent; transition:.15s; font-size:18px; font-weight:700;
+  }
+  .vote-card .vicon { font-size:40px; }
+  .vote-card .vsub { font-size:11px; font-weight:400; opacity:.7; }
+  .vote-card.success { background:linear-gradient(160deg,#1f4f8a,#12315c); border-color:rgba(111,177,255,.35); }
+  .vote-card.fail { background:linear-gradient(160deg,#7c1f2b,#4a0f18); border-color:rgba(255,125,138,.35); }
+  .vote-card.selected.success { border-color:#6fb1ff; box-shadow:0 0 24px rgba(111,177,255,.5); }
+  .vote-card.selected.fail { border-color:#ff7d8a; box-shadow:0 0 24px rgba(255,125,138,.5); }
+  .vote-card:active { transform:scale(.96); }
+  .pass-mask {
+    text-align:center; padding:30px 12px; border-radius:14px;
+    background:rgba(255,255,255,.04); border:1px dashed rgba(139,147,168,.4); color:#8b93a8; font-size:14px; line-height:1.8;
+  }
+
+  /* 结果弹层 */
+  #overlay {
+    position:fixed; inset:0; background:rgba(5,8,15,.88); display:none;
+    align-items:center; justify-content:center; z-index:10; padding:24px;
+  }
+  #overlay.show { display:flex; animation:fadein .3s ease; }
+  .result-box {
+    width:100%; max-width:380px; border-radius:18px; padding:28px 20px; text-align:center;
+    background:linear-gradient(170deg,#1c2742,#101729); border:1px solid rgba(216,196,127,.3);
+  }
+  .result-verdict { font-size:30px; font-weight:800; letter-spacing:4px; margin:10px 0; }
+  .result-verdict.win { color:#6fb1ff; text-shadow:0 0 24px rgba(111,177,255,.6); }
+  .result-verdict.lose { color:#ff7d8a; text-shadow:0 0 24px rgba(255,125,138,.6); }
+  .result-counts { display:flex; justify-content:center; gap:24px; margin:16px 0 6px; font-size:14px; color:#cfd4e2; }
+  .result-counts b { display:block; font-size:26px; margin-bottom:2px; }
+  .shuffling { font-size:15px; color:#8b93a8; padding:20px 0; letter-spacing:3px; }
+
+  details.rules { margin-top:8px; }
+  details.rules summary { cursor:pointer; font-size:13px; color:#8b93a8; letter-spacing:1px; padding:6px 0; }
+  .rules-body { font-size:12px; color:#9aa2b5; line-height:1.9; padding:8px 2px; }
+  .rules-body b { color:#cfd4e2; }
+  .rules-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:11px; }
+  .rules-table th,.rules-table td { border:1px solid rgba(139,147,168,.25); padding:4px 6px; text-align:center; }
+  .rules-table th { color:#d8c47f; }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>阿瓦隆</h1>
+  <div class="subtitle">AVALON · 无纸化发车助手</div>
+
+  <!-- 屏 1：选人数 -->
+  <div class="screen active" id="s-setup">
+    <div class="card-panel">
+      <div class="panel-title">选择本局人数（5–10 人 · 标准包）</div>
+      <div class="num-grid" id="numGrid"></div>
+      <div class="hint">选定人数后，系统将按规则随机分配身份到 1–N 号座位牌。</div>
+    </div>
+    <button class="btn btn-gold" id="btnStart" disabled>开始分配身份</button>
+
+    <details class="rules">
+      <summary>📜 角色配置与发车人数速查</summary>
+      <div class="rules-body" id="rulesBody"></div>
+    </details>
+  </div>
+
+  <!-- 屏 2：身份牌 -->
+  <div class="screen" id="s-roles">
+    <div class="card-panel">
+      <div class="panel-title">身份牌 · 点击自己的序号查看身份，再点一次销毁</div>
+      <div class="role-grid" id="roleGrid"></div>
+      <div class="hint" id="destroyHint">请依次查看：看身份时确保周围无人偷看；看完点牌销毁，下一个人就看不到了。</div>
+    </div>
+    <button class="btn btn-gold" id="btnToMission">进入发车阶段</button>
+    <button class="btn btn-ghost" id="btnReshuffle">↻ 重新洗牌分配</button>
+  </div>
+
+  <!-- 屏 3：发车 -->
+  <div class="screen" id="s-mission">
+    <div class="card-panel" id="cfgPanel">
+      <div class="panel-title">发车配置</div>
+      <div class="round-tabs" id="roundTabs"></div>
+      <div class="cfg-row">
+        <span class="cfg-label">本轮发车人数</span>
+        <div class="stepper">
+          <button data-k="team" data-d="-1">−</button>
+          <span class="val" id="teamVal">2</span>
+          <button data-k="team" data-d="1">＋</button>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <span class="cfg-label">失败阈值（≥N 张「失败」则任务失败）</span>
+        <div class="stepper">
+          <button data-k="fail" data-d="-1">−</button>
+          <span class="val" id="failVal">1</span>
+          <button data-k="fail" data-d="1">＋</button>
+        </div>
+      </div>
+      <div class="hint">已按人数与轮次带出标准值（7 人及以上第 4 轮为保护轮，需 2 张失败），可按需修改。</div>
+      <button class="btn btn-gold" id="btnBeginVote" style="margin-top:12px">开始秘密投票</button>
+      <button class="btn btn-ghost" id="btnBackRoles">← 返回身份牌</button>
+    </div>
+
+    <div class="card-panel" id="votePanel" style="display:none">
+      <div class="vote-progress" id="voteProgress"></div>
+      <div id="voteArea">
+        <div class="vote-grid">
+          <div class="vote-card success" id="vcSuccess">
+            <div class="vicon">🛡️</div>任务成功<div class="vsub">好人必须出此牌</div>
+          </div>
+          <div class="vote-card fail" id="vcFail">
+            <div class="vicon">🗡️</div>任务失败<div class="vsub">坏人可选出此牌</div>
+          </div>
+        </div>
+        <button class="btn btn-gold" id="btnConfirmVote" disabled>确认投票（投后不可见）</button>
+      </div>
+      <div class="pass-mask" id="passMask" style="display:none">
+        投票已记录并隐藏。<br>请把手机交给下一位车上玩家。
+        <button class="btn btn-gold" id="btnNextVoter" style="margin-top:14px">我是下一位，开始投票</button>
+      </div>
+      <div id="resultEntry" style="display:none">
+        <button class="btn btn-gold" id="btnShowResult">点击查看任务结果</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 结果弹层 -->
+<div id="overlay">
+  <div class="result-box">
+    <div id="resultContent"></div>
+    <button class="btn btn-gold" id="btnNextRound" style="display:none;margin-top:14px">下一轮发车</button>
+    <button class="btn btn-ghost" id="btnCloseOverlay" style="display:none">留在本页</button>
+  </div>
+</div>
+
+<script>
+/* ============ 规则数据（来源：标准包配置） ============ */
+const ROLE_INFO = {
+  "梅林":        {camp:"good", campText:"蓝方 · 好人", desc:"你知道除莫德雷德以外的所有坏人。隐藏好自己——三次任务成功后，刺客若找出你，坏人即获胜。"},
+  "派西维尔":    {camp:"good", campText:"蓝方 · 好人", desc:"你看到了梅林与莫甘娜，但不知道谁是真的梅林。保护好真正的梅林。"},
+  "亚瑟的忠臣":  {camp:"good", campText:"蓝方 · 好人", desc:"无特殊能力的好人。靠发言与判断完成任务、掩护梅林。"},
+  "莫甘娜":      {camp:"evil", campText:"红方 · 坏人", desc:"假扮梅林，迷惑派西维尔。任务中你可以出「任务失败」。"},
+  "刺客":        {camp:"evil", campText:"红方 · 坏人", desc:"三次任务成功后你可以刺杀一人：若杀中梅林，坏人直接胜利。"},
+  "莫德雷德":    {camp:"evil", campText:"红方 · 坏人", desc:"梅林看不到你。藏好自己，暗中破坏任务。"},
+  "莫德雷德的爪牙":{camp:"evil", campText:"红方 · 坏人", desc:"无特殊能力的坏人，配合队友破坏任务。"},
+  "奥伯伦":      {camp:"evil", campText:"红方 · 坏人", desc:"你看不到其他坏人，其他坏人也看不到你，独自行动。"}
+};
+const CONFIGS = {
+  5:  ["梅林","派西维尔","亚瑟的忠臣","莫甘娜","刺客"],
+  6:  ["梅林","派西维尔","亚瑟的忠臣","亚瑟的忠臣","莫甘娜","刺客"],
+  7:  ["梅林","派西维尔","亚瑟的忠臣","亚瑟的忠臣","莫甘娜","刺客","奥伯伦"],
+  8:  ["梅林","派西维尔","亚瑟的忠臣","亚瑟的忠臣","亚瑟的忠臣","莫甘娜","刺客","莫德雷德的爪牙"],
+  9:  ["梅林","派西维尔","亚瑟的忠臣","亚瑟的忠臣","亚瑟的忠臣","亚瑟的忠臣","莫甘娜","刺客","莫德雷德"],
+  10: ["梅林","派西维尔","亚瑟的忠臣","亚瑟的忠臣","亚瑟的忠臣","亚瑟的忠臣","莫甘娜","刺客","莫德雷德","奥伯伦"]
+};
+const MISSIONS = {5:[2,3,2,3,3], 6:[2,3,4,3,4], 7:[2,3,3,4,4], 8:[3,4,4,5,5], 9:[3,4,4,5,5], 10:[3,4,4,5,5]};
+const protectedRound = n => n >= 7 ? 4 : -1;   // 保护轮（需 2 张失败）
+
+/* ============ 状态 ============ */
+const S = {
+  playerCount: 0,
+  roles: [],          // index = 座位号-1
+  destroyed: 0,
+  round: 1,
+  teamSize: 2,
+  failThreshold: 1,
+  votes: [],          // true=成功 false=失败
+  pendingVote: null
+};
+
+const $ = id => document.getElementById(id);
+const show = id => { document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); window.scrollTo(0,0); };
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ============ 屏 1：选人数 ============ */
+(function initSetup(){
+  const g = $("numGrid");
+  for(let n=5;n<=10;n++){
+    const b=document.createElement("button");
+    b.className="num-btn"; b.textContent=n+" 人";
+    b.onclick=()=>{
+      document.querySelectorAll(".num-btn").forEach(x=>x.classList.remove("selected"));
+      b.classList.add("selected"); S.playerCount=n; $("btnStart").disabled=false;
+    };
+    g.appendChild(b);
+  }
+  // 规则速查
+  let html="<b>身份配置（标准包）</b><table class='rules-table'><tr><th>人数</th><th>蓝方</th><th>红方</th></tr>";
+  const desc={5:"梅林 派西维尔 忠臣×1|莫甘娜 刺客",6:"梅林 派西维尔 忠臣×2|莫甘娜 刺客",
+    7:"梅林 派西维尔 忠臣×2|莫甘娜 刺客 奥伯伦",8:"梅林 派西维尔 忠臣×3|莫甘娜 刺客 爪牙",
+    9:"梅林 派西维尔 忠臣×4|莫甘娜 刺客 莫德雷德",10:"梅林 派西维尔 忠臣×4|莫甘娜 刺客 莫德雷德 奥伯伦"};
+  for(let n=5;n<=10;n++){ const p=desc[n].split("|"); html+=`<tr><td>${n}</td><td>${p[0]}</td><td>${p[1]}</td></tr>`; }
+  html+="</table><br><b>各轮发车人数</b><table class='rules-table'><tr><th>人数</th><th>①</th><th>②</th><th>③</th><th>④</th><th>⑤</th></tr>";
+  const rows={5:"5人",6:"6人",7:"7人",8:"8–10人"};
+  for(const k of [5,6,7,8]) html+=`<tr><td>${rows[k]}</td>`+MISSIONS[k].map(v=>`<td>${v}</td>`).join("")+"</tr>";
+  html+=`</table><br>7 人及以上第 ④ 轮为保护轮：需 2 张「任务失败」才判定任务失败，其余轮 1 张即失败。<br>整局 5 个任务：3 次任务失败坏人直接获胜；3 次任务成功后刺客若刺中梅林，坏人获胜，否则好人获胜。`;
+  $("rulesBody").innerHTML=html;
+})();
+
+$("btnStart").onclick = ()=>{ assignRoles(); show("s-roles"); };
+$("btnReshuffle").onclick = ()=>{ if(confirm("重新洗牌？当前已销毁的牌将全部重置。")) assignRoles(); };
+
+function assignRoles(){
+  S.roles = shuffle([...CONFIGS[S.playerCount]]);
+  S.destroyed = 0;
+  const g = $("roleGrid"); g.innerHTML="";
+  S.roles.forEach((role,i)=>{
+    const info = ROLE_INFO[role];
+    const card = document.createElement("div");
+    card.className="role-card";
+    card.innerHTML=`
+      <div class="role-inner">
+        <div class="role-face role-back"><div class="seat">${i+1}</div><div class="tap">点击查看身份</div></div>
+        <div class="role-face role-front ${info.camp}">
+          <div class="rname">${role}</div>
+          <div class="rcamp">${info.campText}</div>
+          <div class="rdesc">${info.desc}</div>
+          <div class="rcamp" style="margin-top:6px">再点一次销毁</div>
+        </div>
+      </div>`;
+    card.onclick = ()=>{
+      if(card.classList.contains("destroyed")) return;
+      if(!card.classList.contains("revealed")){
+        card.classList.add("revealed");
+      }else{
+        card.classList.remove("revealed");
+        card.classList.add("destroyed");
+        S.destroyed++;
+        $("destroyHint").textContent = `已销毁 ${S.destroyed}/${S.playerCount} 张。${S.destroyed<S.playerCount?"请下一位点击自己的序号牌。":"全部身份已确认并销毁。"}`;
+      }
+    };
+    g.appendChild(card);
+  });
+  $("destroyHint").textContent="请依次查看：看身份时确保周围无人偷看；看完点牌销毁，下一个人就看不到了。";
+}
+
+/* ============ 屏 3：发车配置 ============ */
+$("btnToMission").onclick = ()=>{ S.round=1; buildRoundTabs(); applyRound(1); resetVoteUI(); show("s-mission"); };
+$("btnBackRoles").onclick = ()=> show("s-roles");
+
+function buildRoundTabs(){
+  const t=$("roundTabs"); t.innerHTML="";
+  for(let r=1;r<=5;r++){
+    const d=document.createElement("div");
+    d.className="round-tab"; d.textContent="第"+r+"轮";
+    d.onclick=()=>applyRound(r);
+    t.appendChild(d);
+  }
+}
+function applyRound(r){
+  S.round=r;
+  document.querySelectorAll(".round-tab").forEach((el,i)=>el.classList.toggle("selected", i===r-1));
+  S.teamSize = MISSIONS[S.playerCount][r-1];
+  S.failThreshold = (protectedRound(S.playerCount)===r) ? 2 : 1;
+  renderCfg();
+}
+function renderCfg(){ $("teamVal").textContent=S.teamSize; $("failVal").textContent=S.failThreshold; }
+document.querySelectorAll(".stepper button").forEach(b=>{
+  b.onclick=()=>{
+    const k=b.dataset.k, d=+b.dataset.d;
+    if(k==="team") S.teamSize=Math.min(S.playerCount, Math.max(1, S.teamSize+d));
+    else S.failThreshold=Math.min(S.teamSize, Math.max(1, S.failThreshold+d));
+    renderCfg();
+  };
+});
+
+/* ============ 投票 ============ */
+$("btnBeginVote").onclick = ()=>{
+  $("cfgPanel").style.display="none";
+  startVoting();
+};
+function resetVoteUI(){
+  $("cfgPanel").style.display="block";
+  $("votePanel").style.display="none";
+}
+function startVoting(){
+  S.votes=[]; S.pendingVote=null;
+  $("votePanel").style.display="block";
+  $("resultEntry").style.display="none";
+  showVoterTurn();
+}
+function showVoterTurn(){
+  S.pendingVote=null;
+  $("btnConfirmVote").disabled=true;
+  $("vcSuccess").classList.remove("selected");
+  $("vcFail").classList.remove("selected");
+  $("voteProgress").innerHTML=`第 ${S.round} 轮发车（${S.teamSize} 人）· 正在投票：<b>${S.votes.length+1}</b> / ${S.teamSize}`;
+  $("voteArea").style.display="block";
+  $("passMask").style.display="none";
+}
+$("vcSuccess").onclick=()=>selectVote(true);
+$("vcFail").onclick=()=>selectVote(false);
+function selectVote(v){
+  S.pendingVote=v;
+  $("vcSuccess").classList.toggle("selected", v);
+  $("vcFail").classList.toggle("selected", !v);
+  $("btnConfirmVote").disabled=false;
+}
+$("btnConfirmVote").onclick=()=>{
+  if(S.pendingVote===null) return;
+  S.votes.push(S.pendingVote);
+  if(S.votes.length >= S.teamSize){
+    $("voteProgress").innerHTML=`第 ${S.round} 轮发车（${S.teamSize} 人）· 投票完毕 <b>${S.votes.length}</b> / ${S.teamSize}`;
+    $("voteArea").style.display="none";
+    $("passMask").style.display="none";
+    $("resultEntry").style.display="block";
+  }else{
+    $("voteArea").style.display="none";
+    $("passMask").style.display="block";
+  }
+};
+$("btnNextVoter").onclick=showVoterTurn;
+
+/* ============ 结果 ============ */
+$("btnShowResult").onclick=()=>{
+  $("overlay").classList.add("show");
+  $("btnNextRound").style.display="none";
+  $("btnCloseOverlay").style.display="none";
+  $("resultContent").innerHTML=`<div class="shuffling">任务卡洗混中 …</div>`;
+  setTimeout(()=>{
+    const fails=S.votes.filter(v=>!v).length;
+    const succs=S.votes.length-fails;
+    const missionFailed = fails >= S.failThreshold;
+    $("resultContent").innerHTML=`
+      <div style="font-size:13px;color:#8b93a8;letter-spacing:2px">第 ${S.round} 轮任务结果</div>
+      <div class="result-verdict ${missionFailed?"lose":"win"}">${missionFailed?"任务失败":"任务成功"}</div>
+      <div class="result-counts">
+        <div><b style="color:#6fb1ff">${succs}</b>任务成功</div>
+        <div><b style="color:#ff7d8a">${fails}</b>任务失败</div>
+      </div>
+      <div style="font-size:12px;color:#8b93a8">判定标准：出现 ${S.failThreshold} 张及以上「失败」即任务失败</div>`;
+    $("btnNextRound").style.display="block";
+    $("btnCloseOverlay").style.display="block";
+  }, 1200);
+};
+$("btnNextRound").onclick=()=>{
+  $("overlay").classList.remove("show");
+  if(S.round<5) applyRound(S.round+1);
+  resetVoteUI();
+};
+$("btnCloseOverlay").onclick=()=>$("overlay").classList.remove("show");
+</script>
+</body>
+</html>
