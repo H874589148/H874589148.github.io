@@ -1,0 +1,80 @@
+body {
+	font-size: 12px;
+	line-height: 150%;
+}
+.box {
+	margin:0 auto;
+	width:460px;
+	position: relative;
+}
+.chess_left {
+	float:left;
+	text-align:center
+}
+.chess_right {
+	float:left;
+	display:none
+}
+.move_info {
+	float:left;
+	margin-top:20px
+}
+.bill_box {
+	height: 320px;
+	width: 80px;
+	overflow:auto;
+}
+.bill_box li {
+	cursor:pointer;
+	text-align:left
+}
+.bill_box li:hover {
+	cursor:pointer;
+	background: #C6A577;
+}
+.bill_box li:active {
+	cursor:pointer;
+	background: #fff;
+}
+#billList {
+	margin-top:20px
+}
+.bn_box {
+	margin: 10px auto;
+}
+
+.tricksButtons{
+text-align:center;
+}
+.tricksButtons a{
+margin-right: 16px;
+margin-bottom: 10px;
+display: inline-block;
+text-transform: uppercase;
+padding: 1em 1.5em 0.75em;
+border-radius: 2px;
+font-weight: bold;
+border: none;
+color: #fff !important;
+text-decoration: none;
+font-family: 'Open Sans Condensed',sans-serif;
+font-size: 14px;
+line-height: 1;
+cursor: pointer;
+}
+.tricksButtons a:hover,.read-more a:hover{
+opacity:0.9;
+}
+.tricksButtons .demo{
+font-size: 18px;
+padding: 1.2em 2.5em 1em;
+background-color: #a5d16d;
+box-shadow: 0 0 5px #a4cf6c inset, 0 1px 1px #eee;
+}
+.tricksButtons .download{
+margin-right:0;
+font-size: 18px;
+padding: 1.2em 2.5em 1em;
+background-color: #93d0ea;
+box-shadow: 0 0 5px #8fcde7 inset, 0 1px 1px #eee;
+}

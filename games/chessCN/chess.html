@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>HTML5中国象棋</title>
+	<link href="css/zzsc.css" type="text/css" rel="stylesheet" />
+	<link rel="stylesheet" href="../../css/layout.css">
+	<link rel="stylesheet" href="../../css/base.css">
+</head>
+<body>
+	<nav class="top-nav">
+		<a class="back-btn" href="../index.html">&larr; <span class="back-text">返回主页</span></a>
+		<a href="../index.html">EE工具箱</a>
+		<span class="breadcrumb">游戏合集 / 中国象棋</span>
+	</nav>
+	<div class="container">
+		<div class="paper-card" style="margin-top:var(--space-lg);">
+			<h3>游戏来自于html5tricks.com，这是我学习前端时经常访问的网站，从网上资料得知该网站已于2023年正式关闭，因此搬运这个游戏，如有侵权请联系删除。</h3>
+		</div>
+		<div class="box" id="box">
+			<div class="chess_left">
+				<div>
+					<div class="bn_box" id="bnBox">
+						<input type="button" name="offensivePlay" id="tyroPlay" value="新手水平" />
+						<input type="button" name="offensivePlay" id="superPlay" value="高级水平" />
+						<!--
+						<input type="button" name="offensivePlay" id="offensivePlay" value="先手开始" />
+						<input type="button" name="defensivePlay" id="defensivePlay" value="后手开始" />
+						<input type="button" name="stypeBn" id="stypeBn" value="换肤" />
+						<input type="button" name="billBn" id="billBn" value="棋谱" class="bn_box" />
+						-->
+						<input type="button" name="regret" id="regretBn" value="悔棋" />
+					</div>
+				</div>
+				<canvas id="chess"><h1>对不起，您的浏览器不支持HTML5，请升级浏览器至IE9、firefox或者谷歌浏览器！</h1></canvas>
+				<audio src="audio/click.wav" id="clickAudio" preload="auto"></audio>
+				<audio src="audio/select.wav" id="selectAudio" preload="auto"></audio>
+			</div>
+			<div class="chess_right" id="chessRight">
+				<select name="billList" id="billList">
+				</select>
+				<ol id="billBox" class="bill_box">
+				</ol>
+			</div>
+			<div id="moveInfo" class="move_info"> </div>
+		</div>
+	</div>
+	<script src="js/common.js"></script>
+	<script src="js/play.js"></script>
+	<script src="js/AI.js"></script>
+	<script src="js/bill.js"></script>
+	<script src="js/gambit.js"></script>
+	<script type="text/javascript">
+		abc();
+	</script>
+</body>
+</html>
