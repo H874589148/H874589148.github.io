@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>模拟人生 · 古风长卷</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family:"STKaiti","KaiTi","PingFang SC","Microsoft YaHei",serif;
+    background:#efe6d5; color:#4a3b2c; user-select:none;
+    display:flex; justify-content:center; touch-action:manipulation;
+  }
+  #app { width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column; background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,251,240,.9), rgba(239,230,213,0) 60%), #efe6d5; }
+
+  /* ============ 开局 ============ */
+  #setup { padding:20px 18px 40px; }
+  h1 { text-align:center; font-size:30px; letter-spacing:10px; color:#6b4f30; margin:14px 0 2px; }
+  .subtitle { text-align:center; font-size:12px; color:#a08767; letter-spacing:4px; margin-bottom:18px; }
+  .sec { background:rgba(255,252,245,.75); border:1px solid #d9c9ab; border-radius:14px;
+    padding:14px; margin-bottom:14px; box-shadow:0 2px 8px rgba(107,79,48,.08); }
+  .sec-title { font-size:15px; color:#6b4f30; letter-spacing:3px; margin-bottom:10px; font-weight:700; }
+  .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .cards.c3 { grid-template-columns:repeat(3,1fr); }
+  .pick {
+    padding:10px 4px; text-align:center; font-size:14px; border-radius:10px; cursor:pointer;
+    background:#f7f0e0; border:1px solid #d9c9ab; color:#6b5844; transition:.15s;
+  }
+  .pick.selected { background:#6b4f30; color:#f7ecd7; border-color:#6b4f30; box-shadow:0 3px 10px rgba(107,79,48,.3); }
+  .pick:active { transform:scale(.96); }
+  .attr-row { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px dashed #e3d7bf; }
+  .attr-row:last-child { border-bottom:none; }
+  .attr-name { font-size:15px; color:#5c4632; width:56px; }
+  .attr-desc { font-size:10px; color:#a08767; flex:1; padding-left:4px; }
+  .stepper { display:flex; align-items:center; gap:10px; }
+  .stepper button {
+    width:30px; height:30px; border-radius:50%; border:1px solid #c9b48c; background:#f7f0e0;
+    color:#6b4f30; font-size:17px; cursor:pointer; line-height:1;
+  }
+  .stepper .val { font-size:17px; font-weight:700; min-width:22px; text-align:center; color:#6b4f30; }
+  .points-left { text-align:center; font-size:13px; color:#a08767; margin:6px 0 14px; }
+  .points-left b { color:#b3542e; font-size:17px; }
+  .btn {
+    display:block; width:100%; padding:14px 0; border:none; border-radius:12px; cursor:pointer;
+    font-size:17px; font-weight:700; letter-spacing:5px; font-family:inherit;
+    background:linear-gradient(160deg,#8a6a42,#6b4f30); color:#f7ecd7;
+    box-shadow:0 4px 14px rgba(107,79,48,.35); transition:.15s;
+  }
+  .btn:active { transform:scale(.97); }
+  .btn:disabled { opacity:.4; pointer-events:none; }
+  .btn.ghost { background:transparent; border:1px solid #c9b48c; color:#8a6a42; box-shadow:none;
+    font-size:14px; padding:11px 0; letter-spacing:2px; }
+
+  /* ============ 游戏界面 ============ */
+  #game { display:none; flex-direction:column; min-height:100vh; }
+  #hud { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; row-gap:4px; padding:10px 14px 6px; z-index:5; }
+  #ageBadge { font-size:14px; color:#6b4f30; letter-spacing:1px; white-space:nowrap; }
+  #ageBadge b { font-size:20px; }
+  #chips { display:flex; gap:4px; flex-wrap:nowrap; justify-content:flex-end; }
+  .chip {
+    font-size:10px; background:rgba(255,252,245,.85); border:1px solid #d9c9ab; border-radius:8px;
+    padding:3px 6px; color:#6b5844;
+  }
+  .chip b { color:#b3542e; }
+  .chip.up { animation:chipup .8s ease; }
+  @keyframes chipup { 30% { background:#ffe9c9; transform:scale(1.15); } }
+
+  #scene { position:relative; height:44vh; min-height:300px; overflow:hidden;
+    border-top:1px solid #d9c9ab; border-bottom:1px solid #d9c9ab; }
+  .sky { position:absolute; inset:0; background:linear-gradient(180deg,#8fb4d6 0%,#bcd4e4 42%,#e6e4d2 78%,#d9ceae 100%); }
+  .sun { position:absolute; top:7%; right:10%; width:52px; height:52px; border-radius:50%;
+    background:radial-gradient(circle at 42% 40%, rgba(255,246,220,.95), rgba(244,214,140,.75) 55%, rgba(244,214,140,0) 78%);
+    box-shadow:0 0 60px rgba(246,220,150,.6); }
+  .scene-poem { position:absolute; top:5%; left:5%; writing-mode:vertical-rl;
+    font-size:17px; letter-spacing:7px; color:rgba(90,70,50,.42); font-weight:700;
+    text-shadow:0 0 6px rgba(255,255,255,.5); z-index:1; }
+  .clouds { position:absolute; top:0; left:0; width:200%; height:56%;
+    background:
+      radial-gradient(ellipse 150px 46px at 74% 24%, rgba(255,255,255,.95), transparent 68%),
+      radial-gradient(ellipse 100px 36px at 62% 16%, rgba(255,255,255,.85), transparent 68%),
+      radial-gradient(ellipse 90px 30px at 88% 12%, rgba(255,255,255,.8), transparent 68%),
+      radial-gradient(ellipse 120px 36px at 18% 34%, rgba(255,255,255,.5), transparent 70%),
+      radial-gradient(ellipse 80px 26px at 36% 14%, rgba(255,255,255,.45), transparent 70%),
+      radial-gradient(ellipse 60px 20px at 50% 40%, rgba(255,255,255,.4), transparent 70%);
+    animation:drift 80s linear infinite; }
+  @keyframes drift { to { transform:translateX(-50%); } }
+  .mountains { position:absolute; bottom:24%; left:0; width:200%; height:36%;
+    background:
+      radial-gradient(ellipse 280px 110px at 8% 100%, rgba(146,168,182,.55) 60%, transparent 62%),
+      radial-gradient(ellipse 340px 140px at 40% 100%, rgba(128,152,166,.48) 60%, transparent 62%),
+      radial-gradient(ellipse 260px 100px at 70% 100%, rgba(146,168,182,.52) 60%, transparent 62%),
+      radial-gradient(ellipse 300px 120px at 96% 100%, rgba(128,152,166,.46) 60%, transparent 62%);
+    animation:scrollBg 90s linear infinite; }
+  .trees { position:absolute; bottom:17%; left:0; width:200%; height:24%;
+    background:
+      radial-gradient(ellipse 30px 40px at 6% 62%, rgba(133,158,124,.85) 62%, transparent 64%),
+      radial-gradient(ellipse 22px 30px at 8% 78%, rgba(112,140,106,.8) 62%, transparent 64%),
+      radial-gradient(ellipse 34px 44px at 22% 58%, rgba(133,158,124,.8) 62%, transparent 64%),
+      radial-gradient(ellipse 24px 32px at 41% 72%, rgba(112,140,106,.75) 62%, transparent 64%),
+      radial-gradient(ellipse 32px 42px at 58% 60%, rgba(133,158,124,.8) 62%, transparent 64%),
+      radial-gradient(ellipse 22px 30px at 76% 74%, rgba(112,140,106,.75) 62%, transparent 64%),
+      radial-gradient(ellipse 34px 44px at 92% 58%, rgba(133,158,124,.8) 62%, transparent 64%);
+    animation:scrollBg 45s linear infinite; }
+  .ground { position:absolute; bottom:0; left:0; width:200%; height:20%;
+    background:linear-gradient(180deg,#d8caa4 0%,#bfae86 100%);
+    animation:scrollBg 22s linear infinite; }
+  .ground::after { content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 34px 5px at 10% 30%, rgba(107,79,48,.14), transparent 70%),
+      radial-gradient(ellipse 44px 6px at 30% 60%, rgba(107,79,48,.11), transparent 70%),
+      radial-gradient(ellipse 28px 4px at 55% 35%, rgba(107,79,48,.13), transparent 70%),
+      radial-gradient(ellipse 40px 5px at 78% 65%, rgba(107,79,48,.11), transparent 70%),
+      radial-gradient(ellipse 34px 5px at 95% 40%, rgba(107,79,48,.12), transparent 70%); }
+  @keyframes scrollBg { to { transform:translateX(-50%); } }
+
+  #figure { position:absolute; bottom:3%; left:50%; transform:translateX(-50%);
+    width:78vw; height:64%; max-height:520px; display:flex; align-items:flex-end; justify-content:center;
+    background:radial-gradient(ellipse at 50% 80%, #fff5e8 0%, #ffe9d4 55%, #f3d9b8 100%);
+    border-radius:18px; overflow:hidden;
+    box-shadow:0 6px 18px rgba(107,79,48,.12), inset 0 -4px 12px rgba(107,79,48,.08); }
+  #figure img { height:100%; width:auto; max-width:90%; object-fit:contain; object-position:bottom center; pointer-events:none; filter:drop-shadow(0 4px 6px rgba(74,59,44,.18)); }
+  .shadow { position:absolute; bottom:7%; left:50%; transform:translateX(-50%);
+    width:120px; height:14px; border-radius:50%; background:rgba(74,59,44,.18); }
+
+  /* 叙事面板 */
+  #panel { flex:1; padding:14px 16px 26px; display:flex; flex-direction:column; }
+  #story {
+    background:rgba(255,252,245,.88); border:1px solid #d9c9ab; border-radius:14px;
+    padding:16px; box-shadow:0 3px 12px rgba(107,79,48,.1); animation:fadein .4s ease;
+  }
+  @keyframes fadein { from{opacity:0; transform:translateY(8px);} to{opacity:1;} }
+  #storyTag { font-size:11px; color:#a08767; letter-spacing:2px; margin-bottom:6px; }
+  #storyText { font-size:15.5px; line-height:1.9; color:#4a3b2c; }
+  #options { margin-top:12px; display:flex; flex-direction:column; gap:9px; }
+  .opt {
+    padding:12px 14px; border-radius:11px; border:1px solid #c9b48c; cursor:pointer;
+    background:#f9f3e4; font-size:14.5px; color:#5c4632; font-family:inherit; text-align:left;
+    line-height:1.6; transition:.15s; animation:fadein .4s ease;
+  }
+  .opt small { display:block; font-size:11px; color:#a08767; margin-top:2px; }
+  .opt:active { transform:scale(.98); background:#efe3c8; }
+  .opt:disabled { opacity:.45; pointer-events:none; }
+  #delta { margin-top:10px; font-size:12px; color:#8a6a42; min-height:16px; }
+  #delta span { display:inline-block; margin-right:10px; animation:fadein .5s ease; }
+
+  /* 结局 */
+  #ending { display:none; padding:22px 18px 40px; }
+  .end-title { text-align:center; font-size:24px; letter-spacing:6px; color:#6b4f30; margin:12px 0 4px; }
+  .end-age { text-align:center; font-size:14px; color:#a08767; margin-bottom:16px; }
+  .end-verdict { background:rgba(255,252,245,.85); border:1px solid #d9c9ab; border-radius:14px;
+    padding:16px; font-size:15px; line-height:2; margin-bottom:14px; }
+  .end-verdict b { color:#b3542e; }
+  .end-log { background:rgba(255,252,245,.7); border:1px solid #e3d7bf; border-radius:14px;
+    padding:14px 16px; font-size:13px; line-height:2; color:#6b5844; max-height:46vh; overflow-y:auto; }
+  .end-log .li { border-bottom:1px dashed #e8dec9; padding:4px 0; }
+  .end-log .li:last-child { border-bottom:none; }
+  .end-log .y { color:#b3542e; font-weight:700; margin-right:6px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= 开局配置 ================= -->
+  <div id="setup">
+    <h1>模拟人生</h1>
+    <div class="subtitle">一 卷 长 路 · 自 选 平 生</div>
+
+    <div class="sec">
+      <div class="sec-title">出生朝代 / 时代</div>
+      <div class="cards" id="eraCards"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">父母的职业</div>
+      <div class="cards c3" id="occCards"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">你的性别</div>
+      <div class="cards" style="grid-template-columns:repeat(2,1fr)" id="genderCards"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">先天禀赋分配</div>
+      <div id="attrRows"></div>
+    </div>
+
+    <div class="points-left">剩余可分配点数：<b id="pointsLeft">0</b>（总和固定 30，每项 1–10）</div>
+    <button class="btn" id="btnBegin" disabled>确认，开始这一生</button>
+  </div>
+
+  <!-- ================= 游戏 ================= -->
+  <div id="game">
+    <div id="hud">
+      <div id="ageBadge">年龄 <b>0</b> 岁</div>
+      <div id="chips"></div>
+    </div>
+    <div id="scene">
+      <div class="sky"></div>
+      <div class="scene-poem">人生如逆旅<br>我亦是行人</div>
+      <div class="sun"></div>
+      <div class="clouds"></div>
+      <div class="mountains"></div>
+      <div class="trees"></div>
+      <div class="ground"></div>
+      <div class="shadow"></div>
+      <div id="figure"></div>
+    </div>
+    <div id="panel">
+      <div id="story">
+        <div id="storyTag"></div>
+        <div id="storyText"></div>
+        <div id="delta"></div>
+      </div>
+      <div id="options"></div>
+    </div>
+  </div>
+
+  <!-- ================= 结局 ================= -->
+  <div id="ending">
+    <div class="end-title" id="endTitle">一生落幕</div>
+    <div class="end-age" id="endAge"></div>
+    <div class="end-verdict" id="endVerdict"></div>
+    <div class="end-log" id="endLog"></div>
+    <button class="btn" style="margin-top:16px" onclick="location.reload()">再入轮回 · 重开一生</button>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   数据：时代 / 职业 / 禀赋
+================================================================ */
+const ERA_GROUPS = {
+  ancient: ["西汉","盛唐","北宋","大明","清朝"],
+  minguo: ["民国"],
+  modern: ["现代"]
+};
+const ERA_OF = {};
+Object.keys(ERA_GROUPS).forEach(g => ERA_GROUPS[g].forEach(e => ERA_OF[e] = g));
+
+const OCCUPATIONS = {
+  ancient: ["农夫","木匠","小商贩","落第书生","武将","县衙小吏","郎中"],
+  minguo: ["黄包车夫","纱厂工人","私塾先生","商铺掌柜","报馆编辑","西医大夫"],
+  modern: ["农民","厂工","教师","医生","个体户","公务员","程序员","企业高管"]
+};
+
+const ATTRS = [
+  ["iq","智商","学业与谋略"],
+  ["eq","情商","人缘与处世"],
+  ["talent","天赋","技艺与灵感"],
+  ["body","体力","健康与命数"],
+  ["wealth","财富","家底厚薄"],
+  ["power","权力","门第势能"]
+];
+const TOTAL_POINTS = 30;
+
+const state = {
+  era:null, occ:null, gender:null,
+  attrs:{ iq:5, eq:5, talent:5, body:5, wealth:5, power:5 },
+  age:0, tags:new Set(), outfit:"cloth", stage:"child",
+  log:[], alive:true, deathCause:null, used:new Set()
+};
+
+/* ================================================================
+   开局界面逻辑
+================================================================ */
+function pickGroup(containerId, items, onPick){
+  const c = document.getElementById(containerId);
+  c.innerHTML = "";
+  items.forEach(it => {
+    const d = document.createElement("div");
+    d.className = "pick"; d.textContent = it;
+    d.onclick = () => {
+      c.querySelectorAll(".pick").forEach(x => x.classList.remove("selected"));
+      d.classList.add("selected"); onPick(it);
+    };
+    c.appendChild(d);
+  });
+}
+
+pickGroup("eraCards", ["西汉","盛唐","北宋","大明","清朝","民国","现代"], era => {
+  state.era = era;
+  state.occ = null;
+  pickGroup("occCards", OCCUPATIONS[ERA_OF[era]], occ => state.occ = occ);
+  refreshBegin();
+});
+pickGroup("genderCards", ["男","女"], g => { state.gender = g; refreshBegin(); });
+
+function renderAttrs(){
+  const c = document.getElementById("attrRows");
+  c.innerHTML = "";
+  ATTRS.forEach(([key,name,desc]) => {
+    const row = document.createElement("div");
+    row.className = "attr-row";
+    row.innerHTML = `<span class="attr-name">${name}</span><span class="attr-desc">${desc}</span>
+      <div class="stepper">
+        <button data-k="${key}" data-d="-1">−</button>
+        <span class="val" id="val_${key}">${state.attrs[key]}</span>
+        <button data-k="${key}" data-d="1">＋</button>
+      </div>`;
+    c.appendChild(row);
+  });
+  c.querySelectorAll("button").forEach(b => b.onclick = () => {
+    const k = b.dataset.k, d = +b.dataset.d;
+    const used = Object.values(state.attrs).reduce((s,v)=>s+v,0);
+    const nv = state.attrs[k] + d;
+    if (nv < 1 || nv > 10) return;
+    if (d > 0 && used >= TOTAL_POINTS) return;
+    state.attrs[k] = nv;
+    document.getElementById("val_"+k).textContent = nv;
+    document.getElementById("pointsLeft").textContent = TOTAL_POINTS - used - d + (d<0?0:0) + (d<0?0:0);
+    updatePoints();
+  });
+  updatePoints();
+}
+function updatePoints(){
+  const used = Object.values(state.attrs).reduce((s,v)=>s+v,0);
+  document.getElementById("pointsLeft").textContent = TOTAL_POINTS - used;
+  refreshBegin();
+}
+function refreshBegin(){
+  const used = Object.values(state.attrs).reduce((s,v)=>s+v,0);
+  document.getElementById("btnBegin").disabled =
+    !(state.era && state.occ && state.gender && used === TOTAL_POINTS);
+}
+renderAttrs();
+document.getElementById("pointsLeft").textContent = TOTAL_POINTS - 30;
+
+/* ================================================================
+   人物绘制（SVG 手绘古风）
+================================================================ */
+const SKIN = "#f5dcbd", INK = "#4a382c";
+const OUTFITS = {
+  cloth:    { robe:"#8f9678", robe2:"#79825f", pants:"#6e6250", sash:"#6b5a44", name:"布衣" },
+  scholar:  { robe:"#7d94a8", robe2:"#67809a", pants:"#5a5c66", sash:"#4e5a68", name:"青衫" },
+  wuxia:    { robe:"#63605a", robe2:"#514e48", pants:"#42403a", sash:"#8a3d3d", name:"劲装" },
+  merchant: { robe:"#b08d60", robe2:"#96754c", pants:"#6b5844", sash:"#7a4a34", name:"绸衫" },
+  official: { robe:"#9a4a4c", robe2:"#803c3e", pants:"#3d3a3a", sash:"#3a3448", name:"官服" },
+  farmer:   { robe:"#ab9a74", robe2:"#90825e", pants:"#7a6a52", sash:"#6b5a44", name:"短褐" },
+  medic:    { robe:"#e6e0ce", robe2:"#cfc8b2", pants:"#6b6b70", sash:"#7a8a6a", name:"杏林袍" },
+  artist:   { robe:"#c68a98", robe2:"#a96e80", pants:"#7a6a72", sash:"#6e5a6a", name:"彩衣" },
+  suit:     { robe:"#525e6e", robe2:"#424c5a", pants:"#3c4148", sash:"#33363c", name:"西装" },
+  worker:   { robe:"#6e8ea2", robe2:"#5a7889", pants:"#4c5666", sash:"#3e4a56", name:"工装" },
+  sport:    { robe:"#c46a52", robe2:"#a8563e", pants:"#4c4c56", sash:"#8a4432", name:"运动服" },
+  casual:   { robe:"#8fa88e", robe2:"#769275", pants:"#6b6b70", sash:"#5e7060", name:"休闲装" }
+};
+
+
+/* 人物精灵图：按 (年代 / 阶段 / 性别) 选择
+ * 由 aily-generate-image suite 在参考图风格下生成的 Q 版国风水彩图 */
+const CHAR_MAP = {
+  ancient: {
+    child: { "男":"chars/ancient-child-boy.png", "女":"chars/ancient-child-girl.png" },
+    teen:  { "男":"chars/ancient-teen-boy.png",  "女":"chars/ancient-teen-girl.png" },
+    adult: { "男":"chars/ancient-adult-man.png",  "女":"chars/ancient-adult-woman.png" },
+    elder: { "男":"chars/ancient-elder-man.png",  "女":"chars/ancient-elder-woman.png" }
+  },
+  modern: {
+    /* 现代线：孩童沿用古风版（不变），少年/成年有现代装；老年沿用古风 */
+    child: { "男":"chars/ancient-child-boy.png", "女":"chars/ancient-child-girl.png" },
+    teen:  { "男":"chars/modern-teen-boy.png",   "女":"chars/modern-teen-girl.png" },
+    adult: { "男":"chars/modern-adult-man.png",   "女":"chars/modern-adult-woman.png" },
+    elder: { "男":"chars/ancient-elder-man.png",  "女":"chars/ancient-elder-woman.png" }
+  }
+};
+const FALLBACK_CHAR = "chars/ancient-child-girl.png";
+
+function renderFigure(){
+  const eraGroup = ERA_OF[state.era] || "ancient";
+  const stage = state.stage;
+  const gender = state.gender;
+  const url = (CHAR_MAP[eraGroup] && CHAR_MAP[eraGroup][stage] && CHAR_MAP[eraGroup][stage][gender]) || FALLBACK_CHAR;
+  document.getElementById("figure").innerHTML =
+    `<img src="${url}" alt="${stage} ${gender}" loading="eager" decoding="async">`;
+}
+
+/* ================================================================
+   HUD
+================================================================ */
+const CHIP_NAME = { iq:"智", eq:"情", talent:"才", body:"体", wealth:"财", power:"势" };
+function renderChips(changed){
+  const c = document.getElementById("chips");
+  c.innerHTML = ATTRS.map(([k]) =>
+    `<span class="chip ${changed && changed[k] ? "up" : ""}">${CHIP_NAME[k]} <b>${state.attrs[k]}</b></span>`).join("");
+}
+
+/* ================================================================
+   内容库
+================================================================ */
+/* 婴幼儿时期（0-5岁）叙述 */
+const INFANT_TEXTS = [
+  { era:"any", text:"你在{occ}之家呱呱坠地。父亲粗糙的手掌托起你时，眼里有藏不住的笑意。" },
+  { era:"any", text:"周岁抓周，满床物件里你一把攥住了{item}。众人哄笑，说这娃娃日后{omen}。" },
+  { era:"any", text:"三岁那年你发了一场高热，母亲背着你连夜求医。好在底子{bodyword}，挺了过来。" },
+  { era:"any", text:"你学会了走路，摇摇晃晃地追着院里的鸡跑，摔了也不哭，爬起来接着追。" },
+  { era:"any", text:"夏夜纳凉，父亲指着星空给你讲他年轻时候的营生。你听得似懂非懂，却记住了他眼里的光。" },
+  { era:"ancient", text:"开蒙那天，私塾先生在你眉心点了一粒朱砂，念了句「学而时习之」。你跟着摇头晃脑。" },
+  { era:"modern", text:"幼儿园文艺汇演，你被画上红脸蛋唱了首歌。台下父母的掌声比谁都响。" },
+  { era:"minguo", text:"弄堂里的皮影子戏一开锣，你挤在人堆最前排，看到忘了回家吃饭。" }
+];
+const ZHUAZHOU = { ancient:["一杆毛笔","是个读书的苗子"], minguo:["一块怀表","是个守时细致的人"], modern:["一个计算器","跟数字有缘"] };
+
+/* 抉择事件 */
+const DECISIONS = [
+/* ---------- 童年 5-14 ---------- */
+{ id:"c_play_study", min:5, max:7, era:"any",
+  text:"{age}岁的夏天，蝉声聒噪。伙伴们在门外喊你下河摸鱼，桌上的功课还摊着没写完。",
+  options:[
+    { t:"先把功课做完再去玩", say:"你按捺住性子写完功课，才跑去河边。先生夸你自律。", eff:{iq:1}, tags:["disciplined"] },
+    { t:"摸鱼要紧，功课回来再说", say:"你们摸了三条鲫鱼，晒得黝黑。功课熬到半夜才补完，但那个下午的快乐是真的。", eff:{body:1,eq:1}, tags:["playful"] },
+    { t:"带着功课去河边，边玩边写", say:"你趴在石头上写字，写两笔看一眼水花。两样都没耽误，字却歪歪扭扭。", eff:{talent:1}, tags:["playful"] }
+  ]},
+{ id:"c_homework", min:7, max:9, era:"modern",
+  text:"暑假快结束了，你的暑假作业还有大半本。班里有人早就写完，有人准备最后一天通宵。",
+  options:[
+    { t:"制定计划，每天写两页", say:"你给自己排了表，开学前三天从容收尾。老师把你的作业当范本展览。", eff:{iq:1,eq:1}, tags:["disciplined"] },
+    { t:"最后三天疯狂赶工", say:"你体验了三天「生死时速」，居然也写完了。手心冒汗的感觉让你明白：拖延是要还利息的。", eff:{talent:1}, tags:["procrastinator"] },
+    { t:"抄同桌的应付了事", say:"开学抽查，你抄错行的答案当场露馅，被罚站了一节课。", eff:{eq:-1}, tags:["tricky"] }
+  ]},
+{ id:"c_old_school", min:7, max:9, era:"ancient",
+  text:"私塾里，先生要求背诵《{classic}》。同窗有人悬梁刺股，有人三天打鱼。",
+  options:[
+    { t:"悬梁刺股，日夜苦读", say:"你挑灯夜读，半年后将整本书倒背如流。先生抚须点头。", eff:{iq:2,body:-1}, tags:["studious"] },
+    { t:"熟读成诵，张弛有度", say:"你晨起诵读、午后玩耍，进度不快却扎实。", eff:{iq:1}, tags:["studious"] },
+    { t:"能溜则溜，下河摸鱼", say:"你的书背得七零八落，但水性练得十里八乡闻名。", eff:{body:1}, tags:["playful"] }
+  ]},
+{ id:"c_liyue", min:8, max:11, era:"ancient",
+  text:"先生问你愿在「礼、乐、射、御、书、数」中精修哪一门。",
+  options:[
+    { t:"礼——进退有度，处世之基", say:"你习礼仪、明进退，言谈举止渐有章法。", eff:{eq:2}, tags:["li"] },
+    { t:"乐——琴瑟在御，陶冶性情", say:"你学抚琴，指尖有了茧，心里有了山水。", eff:{talent:2}, tags:["yue","art"] },
+    { t:"射——挽弓习武，强身健体", say:"你每日挽弓五十次，臂力渐长，目光如炬。", eff:{body:2}, tags:["she","martial"] },
+    { t:"数——算筹经纬，经世致用", say:"你沉迷算学，账目货物到你手里一清二楚。", eff:{iq:2}, tags:["shu","abacus"] }
+  ]},
+{ id:"c_skill_ancient", min:9, max:12, era:"ancient",
+  text:"家里商量着让你学一门傍身的手艺。",
+  options:[
+    { t:"随父学农务，识四时耕种", say:"你跟着父亲下地，学会了看天吃饭的本事，也晒脱了两层皮。", eff:{body:1,talent:1}, tags:["farming"] },
+    { t:"拜木匠为师，学制器", say:"刨花的香气里，你练出了一手好木工。师傅说你有灵性。", eff:{talent:2}, tags:["carpenter"] },
+    { t:"去武馆习武，强身健体", say:"冬练三九，你的拳脚渐渐有了章法。", eff:{body:2}, tags:["wuxia_basic"] },
+    { t:"去药铺学徒，辨识百草", say:"你跟着坐堂郎中认药、捣药、抄方子，记下了百十种药性。", eff:{iq:1,talent:1}, tags:["herb"] }
+  ]},
+{ id:"c_skill_modern", min:9, max:12, era:"modern",
+  text:"班里同学都在上兴趣班。母亲算了算家里的开销，让你自己挑一样。",
+  options:[
+    { t:"钢琴班（学费不便宜）", say:"家里咬牙给你报了名。你练会了第一首完整的曲子，母亲听哭了。", eff:{talent:2,wealth:-1}, tags:["piano","art"], cond:{ minWealth:4 } },
+    { t:"画画班", say:"你的速写本越攒越厚，美术老师说你色感很好。", eff:{talent:2}, tags:["drawing","art"] },
+    { t:"篮球/田径，练体育", say:"你在球场上挥汗如雨，个子蹿了一大截。", eff:{body:2}, tags:["sport"] },
+    { t:"编程/奥数班", say:"你对着一行行代码和一道道难题，意外地坐得住。", eff:{iq:2}, tags:["coding"] },
+    { t:"不上了，帮家里看店/干活", say:"你把学费省了下来。放学后的柜台和田埂，是你的另一间教室。", eff:{wealth:1,body:1}, tags:["work_early"] }
+  ]},
+{ id:"c_father", min:10, max:13, era:"any",
+  text:"父亲问你要不要学着接手他的营生——「{occ}这门手艺，传给你，饿不死人。」",
+  options:[
+    { t:"认真学，这是家里的根", say:"你开始跟着父亲打下手。他的手艺，你学去了七成。", eff:{talent:1,eq:1}, tags:["inherit"] },
+    { t:"婉拒：我想走自己的路", say:"父亲沉默了一会儿，说：「也好，路是你自己的。」", eff:{iq:1}, tags:["independent"] }
+  ]},
+{ id:"c_kind", min:6, max:10, era:"any",
+  text:"雨天，你在路边发现一只受伤的流浪猫，蜷缩在墙角直哆嗦。",
+  options:[
+    { t:"抱回家，省下零嘴喂它", say:"小猫在你床头安了家。它好起来的那天，蹭了蹭你的手。", eff:{eq:1}, tags:["kind"] },
+    { t:"送到兽医那儿，但养不起", say:"你掏空了攒的零钱给它治伤，然后看着它被好心人领养。", eff:{eq:1}, tags:["kind"] },
+    { t:"只是路过", say:"你回头看了一眼，还是走了。这件事你记了很多年。", eff:{}, tags:[] }
+  ]},
+
+/* ---------- 少年 15-24 ---------- */
+{ id:"t_keju", min:15, max:17, era:"ancient",
+  text:"县里传来消息，今科开试。寒窗这些年，是骡子是马，该拉出去遛遛了。",
+  options:[
+    { t:"寒窗冲刺，志在功名", say:"你闭门谢客三月，将经义文章磨了一遍又一遍。", eff:{iq:1}, tags:["exam_ready"], cond:{ minIq:5 } },
+    { t:"自知不是读书的料，另谋出路", say:"你放下书本时反而松了口气。天大地大，不止科举一条路。", eff:{eq:1}, tags:[] },
+    { t:"家里供不起了，先谋生", say:"你把笔墨收进箱底，跟着大人开始为生计奔波。", eff:{wealth:1,body:1}, tags:["work_early"], cond:{ maxWealth:4 } }
+  ]},
+{ id:"t_master", min:16, max:19, era:"ancient",
+  text:"有四方名师路过此地开馆收徒，拜入谁门下，可能决定你一生的走向。",
+  options:[
+    { t:"拜武学宗师，仗剑江湖", say:"你扎马步、练拳桩，师傅说你是块练武的料。", eff:{body:2,talent:1}, tags:["wuxia"] , outfit:"wuxia"},
+    { t:"拜名医为师，悬壶济世", say:"你背《汤头歌》、认经络，跟着师傅出诊，见惯了生老病死。", eff:{iq:1,talent:1}, tags:["medic_path"], outfit:"medic" },
+    { t:"拜大儒为师，研习经义", say:"你在经史子集里泡着，文章渐有筋骨。", eff:{iq:2}, tags:["ru_scholar"], outfit:"scholar" },
+    { t:"随商队掌柜学做生意", say:"你跟着商队走南闯北，学会了看货、谈价、认人。", eff:{wealth:2,eq:1}, tags:["merchant_path"], outfit:"merchant" }
+  ]},
+{ id:"t_marry_early", min:16, max:19, era:"ancient",
+  text:"媒婆踏进家门，说邻乡有一门好亲事。父母之意，媒妁之言。",
+  options:[
+    { t:"听从父母之命，成家", say:"红烛高照，你与一个素未谋面的人拜了天地。日子淡而有味。", eff:{eq:1}, tags:["married"] },
+    { t:"婉拒：我还想再闯闯", say:"你说服了父母。婚事暂且搁下，你的路还想再走远些。", eff:{iq:1}, tags:["single_mind"] }
+  ]},
+{ id:"t_travel", min:17, max:20, era:"ancient",
+  text:"读万卷书，行万里路。有远行的商队/镖局愿意带上你。",
+  options:[
+    { t:"随队远行，见识山河", say:"你走过大漠孤烟、江南烟雨，眼界比出发时宽了十倍。", eff:{eq:2,body:1}, tags:["traveler"] },
+    { t:"留守故里，守着家人", say:"你选择留下。家宅安宁，米缸常满，也是一种成就。", eff:{wealth:1}, tags:["homebody"] }
+  ]},
+{ id:"t_highschool", min:15, max:16, era:"modern",
+  text:"中考成绩出来了。摆在你面前的有几条路。",
+  options:[
+    { t:"读普通高中，目标高考", say:"你背着书包走进高中校园。三年苦读，就此开始。", eff:{iq:1}, tags:["highschool"], cond:{ minIq:4 } },
+    { t:"读职校，学一门技术", say:"你选了汽修/烹饪/护理。实操课上，你的手比谁都稳。", eff:{talent:2}, tags:["vocational"] },
+    { t:"辍学打工，帮衬家里", say:"你把录取通知书折好收进抽屉，第二天就上了工位。", eff:{wealth:2,body:1}, tags:["dropout","work_early"], cond:{ maxWealth:5 } },
+    { t:"出国读高中（费用高昂）", say:"你在机场和父母挥手告别。异国的月亮，确实不太一样。", eff:{eq:1,iq:1,wealth:-3}, tags:["overseas","highschool"], cond:{ minWealth:7 } }
+  ]},
+{ id:"t_art_exam", min:16, max:17, era:"modern",
+  text:"专业课老师觉得你天赋不错，问你要不要考虑走艺考这条路。",
+  options:[
+    { t:"走艺考，拼一把热爱", say:"画室的灯常常亮到深夜。集训苦，但你眼里有光。", eff:{talent:2,wealth:-2}, tags:["art_exam","art"], cond:{ minTalent:5, minWealth:4 }, outfit:"artist" },
+    { t:"老老实实走文化课", say:"你把画笔收好，扎进题海。热爱先寄存，未来再取。", eff:{iq:1}, tags:["highschool"] }
+  ]},
+{ id:"t_gaokao", min:17, max:19, era:"modern",
+  text:"六月，高考。考场外的梧桐绿得发亮，你握笔的手心微微出汗。",
+  options:[
+    { t:"全力以赴，冲刺名校", say:"放榜那天，你的名字出现在{nameSchool}的录取名单上。", eff:{iq:1}, tags:["university"], cond:{ minIq:6 } },
+    { t:"正常发挥，有学上就好", say:"你被一所普通的大学录取。父母依然摆了三桌酒。", eff:{eq:1}, tags:["university"] },
+    { t:"考完就打工，大学以后再说", say:"你没等成绩出来就去了南方。流水线上的日子让你迅速长大。", eff:{wealth:2}, tags:["work_early"], cond:{ maxWealth:5 } }
+  ]},
+{ id:"t_minguo", min:15, max:19, era:"minguo",
+  text:"时局动荡，报上天天在变。热血青年们都在寻找自己的出路。",
+  options:[
+    { t:"去大城市闯荡，见世面", say:"你挤上开往大城市的火车。霓虹与硝烟，你都见识了。", eff:{eq:2}, tags:["city_boy"] },
+    { t:"读书救国，考取新式学堂", say:"你在油灯下啃新书，德先生与赛先生住进了心里。", eff:{iq:2}, tags:["new_school","university"] },
+    { t:"继承家业，乱世求稳", say:"你守着家里的铺子，在风雨飘摇里护住了一家人的饭碗。", eff:{wealth:1}, tags:["inherit"] }
+  ]},
+{ id:"t_love", min:16, max:20, era:"any",
+  text:"那个人出现在你的少年时代——每次目光相遇，你的心跳都会漏半拍。",
+  options:[
+    { t:"勇敢表白，哪怕被拒绝", say:"{loveResult}", eff:{eq:1}, tags:["first_love"] },
+    { t:"把心事写进日记，以学业/前途为重", say:"你把那页日记折成了纸船。多年后想起，依然温柔。", eff:{iq:1}, tags:["single_mind"] }
+  ]},
+{ id:"t_major", min:18, max:20, era:"modern",
+  text:"填志愿/定方向的时候到了。长辈说选热门的，朋友说选喜欢的。",
+  options:[
+    { t:"医学——长学制，但越老越吃香", say:"解剖楼的灯你见得最多。五年本科，只是开始。", eff:{iq:1}, tags:["major_medic"], cond:{ tag:"university" } },
+    { t:"计算机/工科——热门高薪", say:"你的代码越写越溜，头发也肉眼可见地变少。", eff:{iq:1,talent:1}, tags:["major_cs"], cond:{ tag:"university" } },
+    { t:"师范/文科——稳定清贫", say:"你说，总得有人去做点燃别人的事。", eff:{eq:1}, tags:["major_edu"], cond:{ tag:"university" } },
+    { t:"艺术/体育——把热爱当饭吃", say:"质疑声不少，但站上舞台/赛场的那一刻都值了。", eff:{talent:2}, tags:["major_art","art"] }
+  ]},
+
+/* ---------- 青年 25-34 ---------- */
+{ id:"y_career_modern", min:24, max:26, era:"modern",
+  text:"二十多岁，正式踏入社会。人生的岔路口，红绿灯闪得晃眼。",
+  options:[
+    { t:"进大厂/大公司，做螺丝钉", say:"工牌往脖子上一挂，你成了早高峰地铁里的千万分之一。", eff:{wealth:2}, tags:["whitecollar"], outfit:"suit" },
+    { t:"考公务员/事业编，求安稳", say:"{gongResult}", eff:{}, tags:["try_gong"] },
+    { t:"读研深造，再缓冲三年", say:"实验室和文献陪你又三年。学历确实涨了，头发确实少了。", eff:{iq:1,wealth:-1}, tags:["master"], cond:{ minIq:5 } },
+    { t:"自由职业/小生意，自己说了算", say:"收入忽高忽低，但时间归自己支配。你给自己的生活按下了自定义键。", eff:{talent:1,eq:1}, tags:["freelance"], outfit:"casual" }
+  ]},
+{ id:"y_startup", min:26, max:30, era:"modern",
+  text:"一个老朋友找到你，说有个创业点子，万事俱备，只缺一个你。",
+  options:[
+    { t:"梭哈！趁年轻搏一把", say:"{startupResult}", eff:{}, tags:["try_startup"], cond:{ minWealth:4 } },
+    { t:"婉拒，先积累本金和人脉", say:"你继续稳扎稳打。后来那家公司{startupAfter}。", eff:{iq:1}, tags:["steady"] }
+  ]},
+{ id:"y_switch", min:26, max:31, era:"modern",
+  text:"工作几年，你发现自己对现在的行业提不起劲。跨行意味着从零开始。",
+  options:[
+    { t:"跨专业转行，从心出发", say:"你用半年下班时间自学新技能，成功跳槽。工资降了一截，眼睛亮了回来。", eff:{talent:2,wealth:-1}, tags:["switcher"] },
+    { t:"深耕本行，做专家", say:"你把冷板凳坐热，成了组里离不了的那个人。", eff:{iq:1,wealth:1}, tags:["expert"] }
+  ]},
+{ id:"y_abroad_back", min:25, max:29, era:"modern",
+  text:"海外几年，留下有留下的体面，回来有回来的牵挂。",
+  cond:{ tag:"overseas" },
+  options:[
+    { t:"留在海外发展", say:"你拿到了工作签证。牛排管够，但梦里常出现家门口的豆浆油条。", eff:{wealth:2}, tags:["settled_abroad"] },
+    { t:"回国，把学的用上", say:"飞机落地的那一刻，你拖着行李箱深吸了一口气——还是这个味儿。", eff:{eq:1,wealth:1}, tags:["returnee"] }
+  ]},
+{ id:"y_house", min:27, max:33, era:"modern",
+  text:"身边的同龄人陆续买了房。中介的电话一天三个，房价一天一个样。",
+  options:[
+    { t:"掏空六个钱包，上车", say:"钥匙到手那晚，你在空荡荡的毛坯房里坐了两个小时，又哭又笑。", eff:{wealth:-3,power:1}, tags:["house"], cond:{ minWealth:6 } },
+    { t:"不背三十年房贷，租房理财", say:"你把首付钱做了稳健投资。账面在涨，房东也在涨租。", eff:{wealth:1}, tags:["renter"] }
+  ]},
+{ id:"y_car", min:25, max:30, era:"modern",
+  text:"驾照在抽屉里躺了几年，4S店销售的朋友圈天天刷屏。",
+  options:[
+    { t:"买！人生需要一脚油门", say:"提车第一周，你绕城开了三圈。自由的形状，是四个轮子。", eff:{wealth:-2,eq:1}, tags:["car"], cond:{ minWealth:5 } },
+    { t:"公共交通挺好，攒钱要紧", say:"你把购车款存进了理财。地铁上读完的书，比别人一年都多。", eff:{wealth:1,iq:1}, tags:["frugal"] }
+  ]},
+{ id:"y_marry", min:26, max:32, era:"any",
+  text:"婚姻大事提上日程。家里人旁敲侧击，朋友的请柬一张接一张。",
+  options:[
+    { t:"与心上人成婚", say:"婚礼不奢华，但交换戒指时你们的手都在抖。", eff:{eq:2}, tags:["married"], cond:{ anytag:["first_love","married"] } },
+    { t:"相亲，条件合适就过", say:"你们像谈项目一样谈了半年，然后把证领了。日子细水长流。", eff:{eq:1}, tags:["married"] },
+    { t:"单身万岁，专注自己", say:"你把婚礼预算花在了自己身上：一趟远行，一门新课。", eff:{talent:1,wealth:1}, tags:["single_mind"] }
+  ]},
+{ id:"y_baby", min:27, max:34, era:"any",
+  cond:{ tag:"married" },
+  text:"关于孩子，你们认真地谈了一次又一次。",
+  options:[
+    { t:"迎接新生命", say:"凌晨三点的啼哭声里，你抱着那个小小的、软软的生命，突然懂了父亲当年的眼神。", eff:{eq:1,wealth:-1}, tags:["parent"] },
+    { t:"丁克/暂缓，二人世界先过好", say:"你们把养娃的钱和时间，投资给了彼此和热爱。", eff:{wealth:1,eq:1}, tags:["dink"] }
+  ]},
+{ id:"y_official_path", min:24, max:30, era:"ancient",
+  cond:{ anytag:["exam_ready","ru_scholar"] },
+  text:"放榜之日，你挤在人群里，一眼就看到了自己的名字——{rankText}！",
+  options:[
+    { t:"入仕为官，清正立身", say:"你换上了官服。案牍劳形，但你守住了一条线：不拿百姓一文钱。", eff:{power:2,eq:-1}, tags:["official","honest"], outfit:"official" },
+    { t:"入仕为官，灵活处世", say:"你深谙衙门里的规矩，上下打点，升迁比同僚都快。", eff:{power:3,eq:1}, tags:["official","worldly"], outfit:"official" },
+    { t:"辞官不做，回乡教书", say:"你看惯了朱门酒肉，决定回乡开馆授徒。学生盈门，心里踏实。", eff:{iq:1,eq:2}, tags:["teacher"], outfit:"scholar" }
+  ]},
+{ id:"y_wuxia_path", min:24, max:29, era:"ancient",
+  cond:{ tag:"wuxia" },
+  text:"江湖上渐渐有了你的名号。有人请你押镖，有人邀你结义，也有人下了战书。",
+  options:[
+    { t:"行侠仗义，快意恩仇", say:"你劫了恶霸的粮仓分给灾民。官府通缉令上，多了你的画像。", eff:{eq:2,power:-1}, tags:["knight"] },
+    { t:"开镖局，把武功变营生", say:"你的镖旗插到哪里，哪里的山贼就给三分薄面。", eff:{wealth:2}, tags:["biaoju"], outfit:"merchant" },
+    { t:"归隐山林，不问世事", say:"你在山脚搭了间茅屋，日出练剑，日落煮茶。", eff:{body:1,eq:1}, tags:["hermit"], outfit:"cloth" }
+  ]},
+{ id:"y_medic_path", min:24, max:29, era:"any",
+  cond:{ anytag:["medic_path","herb","major_medic"] },
+  text:"多年苦学，你终于可以独当一面、坐诊行医了。",
+  options:[
+    { t:"开馆/入职，悬壶济世", say:"第一位病人康复登门道谢时，你比他还激动。", eff:{talent:1,eq:1}, tags:["doctor"], outfit:"medic" },
+    { t:"兼营药铺，医商两济", say:"你的药铺童叟无欺，回头客越来越多。", eff:{wealth:2}, tags:["doctor","merchant_path"], outfit:"medic" }
+  ]},
+{ id:"y_merchant_path", min:25, max:31, era:"ancient",
+  cond:{ anytag:["merchant_path","abacus","inherit"] },
+  text:"攒下第一桶金后，是把生意做大，还是守成过安稳日子？",
+  options:[
+    { t:"开分号，把招牌打出去", say:"三年间你的铺子开了三家分号。账房先生拨算盘的声音，是最动听的音乐。", eff:{wealth:3,eq:1}, tags:["tycoon"], outfit:"merchant" },
+    { t:"守成，稳扎稳打", say:"你不贪大。一间铺子，养活三代人，街坊都认你的招牌。", eff:{wealth:1,eq:1}, tags:["steady_biz"] }
+  ]},
+
+/* ---------- 中年 35-44 ---------- */
+{ id:"m_ceiling", min:35, max:38, era:"any",
+  text:"三十五岁上下，职业的玻璃天花板隐隐可见。往前一步难，原地不动又不甘。",
+  options:[
+    { t:"搏一次晋升/转型", say:"你主动请缨扛下最难的项目，熬了半年，位置上了半级。", eff:{power:1,iq:1,body:-1}, tags:["climber"] },
+    { t:"接受平凡，把日子过扎实", say:"你把更多时间分给了家人和自己。工资没变，笑容多了。", eff:{eq:2}, tags:["content"] }
+  ]},
+{ id:"m_layoff", min:36, max:42, era:"modern",
+  text:"行业寒冬，裁员名单里有你的名字。HR谈话只用了十分钟。",
+  options:[
+    { t:"降薪再就业，先上车再说", say:"你放下面子重新开始。新工位小了些，但你把它收拾得干净利落。", eff:{wealth:-1,eq:1}, tags:["rebound"] },
+    { t:"开滴滴/送外卖过渡，蛰伏待机", say:"方向盘握了一年，你听了上千个乘客的故事，也想清了自己的路。", eff:{body:-1,talent:1}, tags:["gig"] },
+    { t:"摆摊/小买卖，自谋生路", say:"你的小摊从一天卖三十块做到三百块。烟火气里，你重新站稳了。", eff:{wealth:1,talent:1}, tags:["stall"], cond:{ minWealth:3 } }
+  ]},
+{ id:"m_quit", min:37, max:42, era:"any",
+  text:"某个加班/操劳的深夜，你突然问自己：这样的日子，还要过多久？",
+  options:[
+    { t:"辞职/歇业一年，给自己放个假", say:"你去了趟远方，读完了一直想读的书。回来时，眼睛里的光回来了。", eff:{body:1,eq:1,wealth:-2}, tags:["gap"], cond:{ minWealth:4 } },
+    { t:"咬牙坚持，上有老下有小", say:"你把辞职信删了。第二天照常起床、挤车、干活。成年人的世界没有容易二字。", eff:{wealth:1,body:-1}, tags:["grinder"] }
+  ]},
+{ id:"m_illness", min:36, max:44, era:"any",
+  text:"体检/问诊结果不太好——一场不大不小的病，医生/郎中建议尽快系统治疗。",
+  options:[
+    { t:"全力救治，钱没了再挣", say:"治疗很苦，但你扛了过来。出院那天阳光正好。", eff:{wealth:-3,body:1}, tags:["survivor"], cond:{ minWealth:4 }, cure:true },
+    { t:"保守治疗，能扛就扛", say:"你一边调理一边硬撑。身体在走钢丝，钱包保住了。", eff:{wealth:-1,body:-1}, tags:["ill_tough"], halftreat:true },
+    { t:"不信邪，偏方养生", say:"艾灸、偏方、保健品试了一圈，病情时好时坏。", eff:{wealth:-1,body:-2}, tags:["ill_tough"], notreat:true }
+  ]},
+{ id:"m_kid_edu", min:37, max:43, era:"modern",
+  cond:{ tag:"parent" },
+  text:"孩子上学了。家长群里，有人晒奥数奖，有人晒钢琴十级。",
+  options:[
+    { t:"鸡娃——不能输在起跑线", say:"周末排满五个班。孩子的奖状贴了一墙，笑容少了一半。", eff:{wealth:-2,power:1}, tags:["tiger_parent"] },
+    { t:"快乐教育——童年只有一次", say:"你陪他捉泥鳅、看星星。他的成绩中等，眼里的光满分。", eff:{eq:2}, tags:["zen_parent"] }
+  ]},
+{ id:"m_parents", min:38, max:44, era:"any",
+  text:"父母老了。一通电话打来，说父亲/母亲病倒了。",
+  options:[
+    { t:"放下工作，回家贴身照顾", say:"你在病床前端水喂药三个月。父亲/母亲拉着你的手说：「拖累你了。」你摇头，一句话都说不出。", eff:{eq:2,wealth:-1}, tags:["filial"] },
+    { t:"请最好的护工/郎中，钱到位", say:"你出钱，专业的人出力。每周的视频电话里，老人气色尚可。", eff:{wealth:-2}, tags:["filial_money"], cond:{ minWealth:5 } },
+    { t:"忙，只能逢年过节回去看看", say:"你说服自己「没办法」。挂掉电话后，盯着天花板到天亮。", eff:{eq:-2}, tags:["regret"] }
+  ]},
+{ id:"m_hobby", min:38, max:44, era:"any",
+  text:"人到中年，你决定重新捡起一个「没用的」爱好。",
+  options:[
+    { t:"书法/古琴——静心", say:"一笔一画，一弦一柱。柴米油盐之外，你有了自己的桃花源。", eff:{talent:1,eq:1}, tags:["hobby_art","art"] },
+    { t:"跑马/健身——强身", say:"从三公里喘成狗到完赛半马，你把中年跑成了少年。", eff:{body:2}, tags:["runner"] },
+    { t:"钓鱼/种花——养性", say:"河边一坐一整天。别人笑你空军，你笑别人不懂。", eff:{body:1,eq:1}, tags:["fisher"] },
+    { t:"搞钱就是最大的爱好", say:"你把业余时间都用来研究副业。银行卡余额是最好的安慰剂。", eff:{wealth:2}, tags:["hustler"] }
+  ]},
+{ id:"m_marriage_crisis", min:38, max:44, era:"any",
+  cond:{ tag:"married" },
+  text:"结婚多年，激情褪去，争吵渐多。有天对方平静地说：「我们是不是出问题了？」",
+  options:[
+    { t:"好好谈，一起做婚姻咨询/深谈", say:"你们把多年的委屈摊开在桌上，哭了一场，然后决定继续牵着手走。", eff:{eq:2}, tags:["marriage_saved"] },
+    { t:"和平分开，各自安好", say:"签字那天很平静。出门时你们互相说了句「保重」。", eff:{eq:-1,wealth:-1}, tags:["divorced"] },
+    { t:"凑合过吧，还能离咋地", say:"你们成了同一屋檐下的室友。饭照做，话少说。", eff:{body:-1}, tags:["numb_marriage"] }
+  ]},
+{ id:"m_invest", min:38, max:44, era:"any",
+  text:"手里攒了些钱。有人劝你稳健理财，有人拉你搞票大的。",
+  options:[
+    { t:"稳健理财，睡个安稳觉", say:"收益不多，但每个晚上都睡得着。", eff:{wealth:1}, tags:["stable_invest"] },
+    { t:"激进一把，富贵险中求", say:"{investResult}", eff:{}, tags:["risky_invest"], cond:{ minWealth:5 } }
+  ]},
+
+/* ---------- 后半生 45+ ---------- */
+{ id:"l_second", min:45, max:50, era:"any",
+  text:"半生已过。有人劝你含饴弄孙享清福，你却觉得心里还有团火。",
+  options:[
+    { t:"著书立说/带徒弟，把本事传下去", say:"你把半生心得一字字写下/一句句教给年轻人。传承，是另一种长生。", eff:{iq:1,eq:1}, tags:["mentor"] },
+    { t:"退居二线，把时间还给自己", say:"你从核心位置退下来。茶喝透了，棋下慢了，觉睡足了。", eff:{body:1,eq:1}, tags:["retired_soft"] }
+  ]},
+{ id:"l_travel", min:46, max:55, era:"any",
+  text:"世界那么大，年轻时没空看的风景，现在想去看看了。",
+  options:[
+    { t:"出发！名山大川/环球旅行", say:"你站在年轻时梦想的风景里，拍了一张笑得很傻的照片。", eff:{eq:1,body:1,wealth:-2}, tags:["wanderer"], cond:{ minWealth:5 } },
+    { t:"近郊走走就好，省钱", say:"城市的公园被你走了个遍。你发现最美的风景其实不要门票。", eff:{body:1}, tags:["local_walker"] }
+  ]},
+{ id:"l_charity", min:47, max:56, era:"any",
+  text:"攒下些家业后，乡里/社区有人提议为修桥铺路/助学募些钱。",
+  options:[
+    { t:"慷慨解囊，留名不如留心", say:"桥成那天/助学金发出去那天，你没去剪彩。但心里有座碑。", eff:{wealth:-2,eq:2}, tags:["philanthropist"], cond:{ minWealth:5 } },
+    { t:"量力而行，出份心意", say:"你捐了一份体面的心意。善意不论大小。", eff:{wealth:-1,eq:1}, tags:["kind"] }
+  ]},
+{ id:"l_health", min:48, max:58, era:"any",
+  text:"体检报告上的箭头越来越多，老伙计们聊天的话题不知不觉都变成了养生。",
+  options:[
+    { t:"认真养生：规律作息+坚持锻炼", say:"晨起打拳，晚饭后散步。指标一年比一年好看。", eff:{body:2}, tags:["wellness"] },
+    { t:"该吃吃该喝喝，开心最重要", say:"你拒绝被体检报告绑架。快乐是良药——至少你这么说。", eff:{eq:1,body:-1}, tags:["carpe_diem"] }
+  ]},
+{ id:"l_grandkid", min:50, max:62, era:"any",
+  cond:{ tag:"parent" },
+  text:"子女也有了自己的孩子。小孙辈奶声奶气地喊你，心都化了。",
+  options:[
+    { t:"含饴弄孙，享受天伦", say:"你成了孩子王。背上的小家伙咯咯笑的时候，你觉得这辈子值了。", eff:{eq:2}, tags:["grandparent"] },
+    { t:"帮忙但保持距离，过好自己", say:"周末探望，平时广场舞/老友局。边界感让两代人都舒服。", eff:{eq:1,body:1}, tags:["cool_elder"] }
+  ]},
+{ id:"l_legacy", min:55, max:70, era:"any",
+  text:"夜深人静时，你开始想一个从前不愿想的问题：这一生，留下些什么？",
+  options:[
+    { t:"把家业/手艺郑重传给后辈", say:"交接那天，你把多年的心得写了满满十页纸。薪火相传。", eff:{eq:1}, tags:["legacy"], cond:{ anytag:["tycoon","carpenter","doctor","house","official","inherit"] } },
+    { t:"立好遗嘱，把身后事安排妥当", say:"你平静地安排好一切。从容，是岁月给的底气。", eff:{iq:1}, tags:["prepared"] },
+    { t:"捐出大部分积蓄/藏书/作品", say:"你说：生不带来，死不带去。让它们去更有用的地方。", eff:{wealth:-2,eq:2}, tags:["philanthropist"], cond:{ minWealth:4 } }
+  ]},
+{ id:"l_oldhome", min:60, max:75, era:"any",
+  text:"住哪儿养老，成了要认真考虑的事。",
+  options:[
+    { t:"与子女同住，热热闹闹", say:"三代同堂，饭菜香里混着孙辈的笑闹声。", eff:{eq:1}, tags:["family_elder"], cond:{ tag:"parent" } },
+    { t:"老宅独居，自在清净", say:"一方小院，几盆花草，一只老猫。清净是你想要的高级。", eff:{body:1}, tags:["solo_elder"] },
+    { t:"老友抱团/养老社区，有伴儿", say:"下棋、合唱、晒太阳。老伙计们在一起，皱纹里都透着乐呵。", eff:{eq:2,wealth:-1}, tags:["community_elder"], cond:{ minWealth:4 } }
+  ]}
+];
+
+/* 经典书名（古代背书用） */
+const CLASSICS = ["论语","孟子","诗经","大学","中庸"];
+
+/* ---------- 随机小事件 ---------- */
+const RANDOM_MINOR = [
+  { era:"any", text:"路上捡到一笔小钱。你四下张望，交给了失主/里正/警察。对方千恩万谢。", eff:{eq:1} },
+  { era:"any", text:"染了场风寒，躺了几天。病好后更懂得爱惜身体。", eff:{body:-1} },
+  { era:"any", text:"一位长辈/前辈很欣赏你，提点了几句，让你少走两年弯路。", eff:{iq:1} },
+  { era:"any", text:"老友来访，把酒言欢到深夜。有些情谊，岁月冲不淡。", eff:{eq:1} },
+  { era:"any", text:"心血来潮学了道新菜/新曲子，意外地平添了许多生活乐趣。", eff:{talent:1} },
+  { era:"any", text:"与人起了点小争执，冷战三天后你先递了台阶。成年人的体面。", eff:{eq:-1} },
+  { era:"any", text:"读到一本好书/听到一席好话，心里亮堂了好一阵子。", eff:{iq:1} },
+  { era:"ancient", text:"今年风调雨顺，收成/生意比往年都好。", eff:{wealth:1} },
+  { era:"ancient", text:"集市上你把一件旧物卖出了好价钱，眼光被夸了一路。", eff:{wealth:1} },
+  { era:"minguo", text:"物价又涨了，手里的钱不禁花。你学会了精打细算。", eff:{iq:1} },
+  { era:"modern", text:"公司/单位发了一笔意外的奖金。你犒劳了自己一顿好的。", eff:{wealth:1} },
+  { era:"modern", text:"抢到一张特价票，来了场说走就走的短途旅行。", eff:{eq:1} },
+  { era:"modern", text:"手机摔碎了屏，心疼了三天。破财免灾，破财免灾。", eff:{wealth:-1} },
+  { era:"any", text:"救助过的那只猫的后代，又出现在你家门口。缘分这东西，妙不可言。", cond:{ tag:"kind" }, eff:{eq:1} },
+  { era:"any", text:"你的一项小手艺被邻里/同事发现，渐渐有人慕名来求。", cond:{ minTalent:6 }, eff:{wealth:1} }
+];
+
+/* ---------- 随机重大事件（低概率） ---------- */
+const RANDOM_MAJOR = [
+  { id:"maj_ill", era:"any", text:"【重大变故】一场急病突如其来，病势汹汹。", ill:true },
+  { id:"maj_poor", era:"any", text:"【重大变故】家中遭了变故，积蓄去了大半。", eff:{wealth:-3} },
+  { id:"maj_war", era:"ancient", text:"【重大变故】边关战事起，家乡遭兵祸，你随乡亲逃难，九死一生。", eff:{wealth:-2,body:-2} },
+  { id:"maj_accident", era:"modern", text:"【重大变故】一场交通事故，万幸人无大碍，但也休养了好一阵。", eff:{body:-2,wealth:-1} },
+  { id:"maj_windfall", era:"modern", text:"【天降横财】老家的房子拆迁/早年的一笔投资翻了数倍！", eff:{wealth:4} },
+  { id:"maj_guiren", era:"any", text:"【贵人相助】一位有分量的人欣赏你的品行，在关键时刻拉了你一把。", eff:{power:2}, cond:{ minEq:6 } },
+  { id:"maj_loss", era:"any", text:"【重大变故】一位至亲离世。你忽然发现，来日方长是世界上最温柔的谎言。", eff:{eq:-1}, requireAge:30 }
+];
+
+/* ================================================================
+   引擎
+================================================================ */
+const A = state.attrs;
+const clamp = v => Math.max(0, Math.min(12, v));
+const eraGroup = () => ERA_OF[state.era];
+const R = Math.random;
+
+function applyEff(eff){
+  const changed = {};
+  if (!eff) return changed;
+  Object.keys(eff).forEach(k => {
+    A[k] = clamp(A[k] + eff[k]);
+    changed[k] = eff[k];
+  });
+  renderChips(changed);
+  return changed;
+}
+function deltaText(changed){
+  const parts = [];
+  Object.keys(changed || {}).forEach(k => {
+    if (!changed[k]) return;
+    const name = ATTRS.find(a => a[0] === k)[1];
+    parts.push(`<span>${name} ${changed[k] > 0 ? "+" : ""}${changed[k]}</span>`);
+  });
+  return parts.join("");
+}
+
+function condOk(cond){
+  if (!cond) return true;
+  if (cond.minWealth && A.wealth < cond.minWealth) return false;
+  if (cond.maxWealth && A.wealth > cond.maxWealth) return false;
+  if (cond.minIq && A.iq < cond.minIq) return false;
+  if (cond.minTalent && A.talent < cond.minTalent) return false;
+  if (cond.minEq && A.eq < cond.minEq) return false;
+  if (cond.tag && !state.tags.has(cond.tag)) return false;
+  if (cond.anytag && !cond.anytag.some(t => state.tags.has(t))) return false;
+  if (cond.notag && state.tags.has(cond.notag)) return false;
+  if (cond.gender && state.gender !== cond.gender) return false;
+  return true;
+}
+function eraOk(evEra){
+  return evEra === "any" || evEra === eraGroup();
+}
+function fillText(t){
+  return t.replace("{occ}", state.occ)
+          .replace("{age}", state.age)
+          .replace("{era}", state.era)
+          .replace("{classic}", CLASSICS[Math.floor(R()*CLASSICS.length)])
+          .replace("{item}", ZHUAZHOU[eraGroup()][0])
+          .replace("{omen}", ZHUAZHOU[eraGroup()][1])
+          .replace("{bodyword}", A.body >= 5 ? "硬朗" : "偏弱")
+          .replace("{nameSchool}", A.iq >= 8 ? "顶尖学府" : "一所重点大学")
+          .replace("{rankText}", A.iq + A.talent >= 14 ? "进士及第" : (A.iq >= 8 ? "举人老爷" : "秀才功名"))
+          .replace("{loveResult}", A.eq + A.talent >= 10 ? "对方红着脸点了头。年少的喜欢，干净得像山泉。" : "对方愣了愣，笑着说「我们还是做朋友吧」。你难过了三天，然后长大了。")
+          .replace("{gongResult}", A.iq + A.eq >= 12 ? "笔试面试一路过关，你上岸了。铁饭碗端稳。" : "差了两分落榜。你收拾心情，继续在社会上摸爬滚打。")
+          .replace("{startupResult}", A.eq + A.talent + A.wealth >= 18 ? "三年后公司走上正轨，你们熬过了最难的时候。" : "十八个月后项目关停。赔了些钱，赚了一身本事。")
+          .replace("{startupAfter}", R() < 0.5 ? "后来上市了，你婉拒的故事成了饭桌上的遗憾" : "没撑过第二年，你暗自庆幸")
+          .replace("{investResult}", R() < 0.5 ? "赶上了风口，账面数字让你夜里笑醒" : "市场教你做人，学费交得肉疼");
+}
+
+function story(tag, text, delta){
+  document.getElementById("storyTag").textContent = tag;
+  document.getElementById("storyText").textContent = text;
+  document.getElementById("delta").innerHTML = delta ? deltaText(delta) : "";
+  const s = document.getElementById("story");
+  s.style.animation = "none"; void s.offsetWidth; s.style.animation = "";
+}
+function showButtons(list){
+  const box = document.getElementById("options");
+  box.innerHTML = "";
+  list.forEach(b => {
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.innerHTML = b.t + (b.sub ? `<small>${b.sub}</small>` : "");
+    btn.onclick = b.fn;
+    box.appendChild(btn);
+  });
+}
+function continueBtn(text, fn){
+  showButtons([{ t: text || "继续往前走 →", fn }]);
+}
+
+/* ---------- 年龄推进与死亡判定 ---------- */
+function stageOf(age){
+  return age < 15 ? "child" : age < 25 ? "teen" : age < 35 ? "adult" : age < 65 ? "mid" : "elder";
+}
+function refreshStage(){
+  const st = stageOf(state.age);
+  if (st !== state.stage) { state.stage = st; renderFigure(); }
+}
+function setOutfit(o){
+  if (o && OUTFITS[o] && state.outfit !== o) { state.outfit = o; renderFigure(); }
+}
+
+function deathCheckPerYear(){
+  if (state.age >= 95) { die("age"); return true; }
+  let p = { ancient:0.011, minguo:0.009, modern:0.005 }[eraGroup()];
+  p += Math.max(0, state.age - 55) * 0.0009;
+  p += Math.max(0, state.age - 80) * 0.012;
+  p -= A.body * 0.0006;
+  if (state.flags_ill) p += 0.045;
+  if (state.flags_ill === "half") p -= 0.02;
+  if (R() < p) { die(state.flags_ill ? "illness" : (R() < 0.3 ? "accident" : "age")); return true; }
+  return false;
+}
+
+/* ---------- 开局 ---------- */
+document.getElementById("btnBegin").onclick = () => {
+  // 家世微调
+  const occBonus = {
+    "小商贩":{wealth:1},"商铺掌柜":{wealth:1},"个体户":{wealth:1},"企业高管":{wealth:2,power:1},
+    "县衙小吏":{power:1},"公务员":{power:1},"落第书生":{iq:1},"私塾先生":{iq:1},"教师":{iq:1},
+    "郎中":{talent:1},"医生":{iq:1},"西医大夫":{iq:1},"武将":{body:1},"农夫":{body:1},"农民":{body:1},
+    "木匠":{talent:1},"厂工":{body:1},"纱厂工人":{body:1},"黄包车夫":{body:1},"程序员":{iq:1},"军阀幕僚":{power:1},"报馆编辑":{eq:1}
+  };
+  const b = occBonus[state.occ];
+  if (b) {
+    Object.keys(b).forEach(k => A[k] = clamp(A[k] + b[k]));
+    // 总和保持固定：从未被加成的属性里等量扣回（优先扣较高的）
+    let excess = Object.values(A).reduce((x, y) => x + y, 0) - TOTAL_POINTS;
+    const donors = Object.keys(A).filter(k => !b[k]).sort((x, y) => A[y] - A[x]);
+    let guard = 0;
+    while (excess > 0 && guard < 200) {
+      const k = donors[guard % donors.length];
+      if (A[k] > 1) { A[k]--; excess--; }
+      guard++;
+    }
+  }
+
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("game").style.display = "flex";
+  renderChips(); renderFigure();
+  state.log.push({ age:0, text:`出生于${state.era}，${state.occ}之家` });
+  infantFlow(0);
+};
+
+function infantFlow(i){
+  const pool = INFANT_TEXTS.filter(t => eraOk(t.era));
+  if (i === 0) {
+    story("出生 · " + state.era, fillText(pool[0].text));
+    continueBtn("继续 →", () => infantFlow(1));
+    return;
+  }
+  if (i <= 2) {
+    const t = pool[1 + Math.floor(R() * (pool.length - 1))];
+    story("幼年 · " + (i * 2 + 1) + " 岁", fillText(t.text));
+    continueBtn("继续 →", () => infantFlow(i + 1));
+    return;
+  }
+  state.age = 5;
+  document.getElementById("ageBadge").innerHTML = `年龄 <b>5</b> 岁`;
+  nextDecision();
+}
+
+/* ---------- 抉择主循环 ---------- */
+function nextDecision(){
+  if (!state.alive) return;
+  refreshStage();
+  document.getElementById("ageBadge").innerHTML =
+    `年龄 <b>${state.age}</b> 岁 <span style="font-size:11px;color:#a08767">· ${state.era} · ${OUTFITS[state.outfit].name}</span>`;
+
+  const pool = DECISIONS.filter(e =>
+    !state.used.has(e.id) &&
+    state.age >= e.min && state.age <= e.max &&
+    eraOk(e.era) && condOk(e.cond)
+  );
+
+  if (!pool.length) {
+    // 无可用抉择 → 平推岁月
+    rollYears(state.age < 45 ? 2 + Math.floor(R()*2) : 3 + Math.floor(R()*3), () => {
+      if (state.alive) nextDecision();
+    });
+    return;
+  }
+  const ev = pool[Math.floor(R() * pool.length)];
+  state.used.add(ev.id);
+  const opts = ev.options.filter(o => condOk(o.cond));
+  story("人生抉择 · " + state.age + " 岁", fillText(ev.text));
+  showButtons(opts.map(o => ({
+    t: o.t, fn: () => chooseOption(ev, o)
+  })));
+}
+
+function chooseOption(ev, o){
+  const changed = applyEff(o.eff);
+  (o.tags || []).forEach(t => state.tags.add(t));
+  if (o.cure) state.flags_ill = null;
+  if (o.halftreat) state.flags_ill = "half";
+  if (o.notreat) state.flags_ill = "full";
+  if (o.outfit) setOutfit(o.outfit);
+  state.log.push({ age: state.age, text: o.t.replace(/（.*?）/g,"").slice(0, 24) });
+  story("结果 · " + state.age + " 岁", fillText(o.say), changed);
+
+  // 少年/青年阶段自动换装提示已含；15、25、35 节点阶段变化在 refreshStage 处理
+  continueBtn("继续往前走 →", () => {
+    const step = state.age < 45 ? 2 + Math.floor(R()*2) : 3 + Math.floor(R()*3);
+    rollYears(step, () => { if (state.alive) nextDecision(); });
+  });
+}
+
+/* ---------- 岁月推进（含随机事件） ---------- */
+function rollYears(step, done){
+  const cards = [];
+  for (let y = 1; y <= step; y++) {
+    state.age++;
+    if (deathCheckPerYear()) return;
+    // 随机事件
+    const roll = R();
+    if (roll < 0.10) {
+      const pool = RANDOM_MAJOR.filter(e => eraOk(e.era) && condOk(e.cond) && !(e.requireAge && state.age < e.requireAge) && !state.used.has(e.id));
+      if (pool.length) {
+        const ev = pool[Math.floor(R() * pool.length)];
+        state.used.add(ev.id);
+        cards.push({ tag:"变故 · " + state.age + " 岁", text: ev.text, eff: ev.eff, major:true, ill: ev.ill });
+      }
+    } else if (roll < 0.45) {
+      const pool = RANDOM_MINOR.filter(e => eraOk(e.era) && condOk(e.cond));
+      if (pool.length) {
+        const ev = pool[Math.floor(R() * pool.length)];
+        cards.push({ tag:"岁月 · " + state.age + " 岁", text: ev.text, eff: ev.eff });
+      }
+    }
+  }
+  if (!cards.length) {
+    cards.push({ tag:"岁月 · " + state.age + " 岁", text:"日子如流水，平静无波地淌过。你按部就班地长大、变老。", eff:null });
+  }
+  playCards(cards, 0, done);
+}
+
+function playCards(cards, i, done){
+  if (i >= cards.length) { done(); return; }
+  const c = cards[i];
+  const changed = applyEff(c.eff);
+  if (c.ill) state.flags_ill = "full";
+  if (c.major) state.log.push({ age: state.age, text: c.text.replace(/【.*?】/g,"").slice(0, 26) });
+  story(c.tag, fillText(c.text), changed);
+  if (c.ill) {
+    showButtons([
+      { t:"不惜代价，全力救治", sub:"财富-3，祛除病根", fn: () => {
+          if (A.wealth >= 3) {
+            const ch = applyEff({wealth:-3});
+            state.flags_ill = null;
+            story("救治 · " + state.age + " 岁", "你散尽钱财求医问药，总算把命从鬼门关拉了回来。", ch);
+          } else {
+            story("救治 · " + state.age + " 岁", "家底单薄，你只能东拼西凑勉强医治。病去如抽丝，病根未除净。", null);
+            state.flags_ill = "half";
+          }
+          continueBtn("继续 →", () => playCards(cards, i+1, done));
+        } },
+      { t:"能扛就扛，听天由命", sub:"体力-2，病根缠身（此后身故风险上升）", fn: () => {
+          const ch = applyEff({body:-2});
+          state.flags_ill = "full";
+          story("硬扛 · " + state.age + " 岁", "你咬着牙挺过了最凶险的那几天，但从此落下了病根。", ch);
+          continueBtn("继续 →", () => playCards(cards, i+1, done));
+        } }
+    ]);
+    return;
+  }
+  continueBtn("继续 →", () => playCards(cards, i + 1, done));
+}
+
+/* ---------- 结局 ---------- */
+function die(cause){
+  state.alive = false;
+  state.deathCause = cause;
+  const causeText = { illness:"病逝", accident:"意外身故", war:"死于兵祸", age:"寿终正寝" }[cause] || "寿终正寝";
+
+  // 称号评定
+  const t = state.tags, s = [];
+  const cand = [
+    [t.has("official") && A.power >= 8, "一代名臣", "居庙堂之高，守心中之尺"],
+    [t.has("knight") || (t.has("wuxia") && A.body >= 7), "江湖侠客", "仗剑走天涯，快意泯恩仇"],
+    [t.has("tycoon") && A.wealth >= 8, "富甲一方", "算盘一响，黄金万两"],
+    [t.has("doctor") && A.talent >= 6, "杏林圣手", "悬壶济世，活人无数"],
+    [t.has("mentor") || t.has("teacher"), "桃李满门", "薪火相传，斯文不坠"],
+    [t.has("art") && A.talent >= 7, "丹青妙手", "把热爱活成了一生的事业"],
+    [t.has("philanthropist"), "一方善士", "散财济世，不留姓名"],
+    [t.has("hermit") || t.has("fisher"), "田园隐士", "采菊东篱下，悠然见南山"],
+    [t.has("runner") || (t.has("sport") && A.body >= 8), "健步一生", "把身体活成了最好的本钱"],
+    [t.has("wanderer") || t.has("traveler"), "行者无疆", "见过天地，见过众生，见过自己"],
+    [t.has("filial"), "至孝之人", "你养我小，我养你老"],
+    [t.has("parent") && t.has("zen_parent"), "温暖的港湾", "孩子眼里，你是全世界最好的大人"]
+  ];
+  let title = "平凡而温热的一生", sub = "没干过惊天动地的大事，但把每一天都过得有滋有味";
+  for (const [ok, ti, su] of cand) if (ok) { title = ti; sub = su; break; }
+
+  document.getElementById("game").style.display = "none";
+  const ed = document.getElementById("ending");
+  ed.style.display = "block";
+  document.getElementById("endTitle").textContent = title;
+  document.getElementById("endAge").textContent =
+    `享年 ${state.age} 岁 · ${causeText} · 生于${state.era}`;
+  document.getElementById("endVerdict").innerHTML =
+    `你是${state.era}一个<b>${state.occ}</b>之家的孩子，性别${state.gender}。<br>` +
+    `这一生，智商 <b>${A.iq}</b> · 情商 <b>${A.eq}</b> · 天赋 <b>${A.talent}</b> · 体力 <b>${A.body}</b> · 财富 <b>${A.wealth}</b> · 权力 <b>${A.power}</b>。<br>` +
+    `盖棺论定：<b>${sub}</b>。`;
+  document.getElementById("endLog").innerHTML =
+    `<div class="li" style="color:#a08767">—— 人生长卷 · 大事记 ——</div>` +
+    state.log.map(l => `<div class="li"><span class="y">${l.age}岁</span>${l.text}</div>`).join("");
+}
+
+/* ================================================================
+   调试句柄（测试用）
+================================================================ */
+window.__life = {
+  raw: () => state,
+  redraw: () => renderFigure(),
+  state: () => ({
+    era: state.era, occ: state.occ, gender: state.gender, age: state.age,
+    attrs: { ...A }, tags: [...state.tags], outfit: state.outfit, stage: state.stage,
+    alive: state.alive, log: state.log.length
+  }),
+  pickSetup(era, occ, gender){
+    document.querySelectorAll("#eraCards .pick").forEach(d => { if (d.textContent === era) d.click(); });
+    document.querySelectorAll("#occCards .pick").forEach(d => { if (d.textContent === occ) d.click(); });
+    document.querySelectorAll("#genderCards .pick").forEach(d => { if (d.textContent === gender) d.click(); });
+  },
+  begin(){ document.getElementById("btnBegin").click(); },
+  clickFirst(){
+    const b = document.querySelector("#options .opt");
+    if (b) { b.click(); return true; }
+    return false;
+  },
+  storyText: () => document.getElementById("storyText").textContent,
+  optionsCount: () => document.querySelectorAll("#options .opt").length,
+  ending: () => ({
+    shown: document.getElementById("ending").style.display === "block",
+    title: document.getElementById("endTitle").textContent,
+    age: document.getElementById("endAge").textContent,
+    logItems: document.querySelectorAll("#endLog .li").length
+  })
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>打地鼠 · 治愈小屋</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:linear-gradient(180deg,#fdf7ec 0%,#f9eeda 55%,#f2e3c8 100%);
+    color:#7a5f45; user-select:none; overflow-x:hidden;
+    display:flex; justify-content:center; touch-action:manipulation;
+  }
+  #app { width:100%; max-width:460px; padding:22px 18px 34px; position:relative; z-index:2; }
+
+  /* 漂浮云朵 */
+  .cloud { position:fixed; background:rgba(255,255,255,.85); border-radius:999px; z-index:0;
+    filter:blur(1px); animation:drift linear infinite; }
+  .cloud::before,.cloud::after { content:""; position:absolute; background:inherit; border-radius:50%; }
+  .cloud.c1 { width:90px; height:28px; top:9%; animation-duration:46s; }
+  .cloud.c1::before { width:38px; height:38px; top:-18px; left:14px; }
+  .cloud.c1::after { width:26px; height:26px; top:-11px; right:16px; }
+  .cloud.c2 { width:64px; height:20px; top:20%; animation-duration:62s; animation-delay:-30s; opacity:.7; }
+  .cloud.c2::before { width:26px; height:26px; top:-12px; left:10px; }
+  .cloud.c2::after { width:18px; height:18px; top:-8px; right:12px; }
+  @keyframes drift { from{ left:-120px; } to{ left:110%; } }
+
+  header { text-align:center; margin-bottom:14px; }
+  h1 { font-size:34px; font-weight:800; letter-spacing:8px; color:#8b6f4e;
+    text-shadow:0 2px 0 rgba(255,255,255,.8); }
+  .subtitle { font-size:12px; color:#b29a7d; letter-spacing:4px; margin-top:4px; }
+
+  .stats { display:flex; gap:10px; justify-content:center; margin-bottom:16px; }
+  .stat {
+    background:rgba(255,255,255,.75); border:2px solid #f0dfc4; border-radius:16px;
+    padding:7px 18px; text-align:center; min-width:88px;
+    box-shadow:0 3px 0 #eeddbe;
+  }
+  .stat .label { font-size:10px; color:#b29a7d; letter-spacing:2px; }
+  .stat .value { font-size:22px; font-weight:800; color:#e08a5b; margin-top:1px; }
+  .stat .value.time { color:#7fb069; }
+
+  #timerbar { height:8px; background:rgba(255,255,255,.7); border-radius:99px;
+    border:2px solid #f0dfc4; overflow:hidden; margin-bottom:18px; }
+  #timerfill { height:100%; width:100%; border-radius:99px;
+    background:linear-gradient(90deg,#a8d5a2,#7fb069); transition:width 1s linear; }
+
+  /* 地鼠洞 */
+  #board { display:grid; grid-template-columns:repeat(3,1fr); gap:14px 10px; }
+  .hole { position:relative; aspect-ratio:1/1.02; cursor:pointer; }
+  .clip { position:absolute; inset:0; overflow:hidden; }
+  .hole-back {
+    position:absolute; left:8%; right:8%; bottom:14%; height:46%;
+    background:radial-gradient(ellipse at 50% 30%, #8a6a4e 0%, #6d5138 70%);
+    border-radius:50% 50% 46% 46% / 62% 62% 40% 40%;
+    box-shadow:inset 0 6px 12px rgba(0,0,0,.35);
+  }
+  .mole {
+    position:absolute; left:14%; right:14%; bottom:16%; height:74%;
+    transform:translateY(105%); transition:transform .18s cubic-bezier(.34,1.4,.64,1);
+    z-index:2; pointer-events:none;
+  }
+  .hole.up .mole { transform:translateY(0); }
+  .hole.hit .mole { transform:translateY(30%) scaleY(.82); transition:transform .12s ease-in; }
+  .mole svg { width:100%; height:100%; display:block; }
+  .mound {
+    position:absolute; left:2%; right:2%; bottom:2%; height:34%; z-index:3;
+    background:radial-gradient(ellipse at 50% 0%, #a8d5a2 0%, #8fc489 45%, #79ac74 100%);
+    border-radius:50% 50% 42% 42% / 78% 78% 30% 30%;
+    box-shadow:0 -2px 0 rgba(255,255,255,.5) inset, 0 4px 8px rgba(122,95,69,.18);
+  }
+  .mound::before,.mound::after { content:""; position:absolute; bottom:62%; width:5px; height:16px;
+    background:linear-gradient(#8fc489,#79ac74); border-radius:4px 4px 0 0; }
+  .mound::before { left:22%; transform:rotate(-14deg); }
+  .mound::after { right:20%; height:13px; transform:rotate(12deg); }
+
+  /* 命中特效 */
+  .fx { position:absolute; inset:0; z-index:5; pointer-events:none; }
+  .plus {
+    position:absolute; left:50%; top:18%; transform:translateX(-50%);
+    font-size:20px; font-weight:800; color:#e08a5b;
+    text-shadow:0 2px 0 #fff; animation:floatup .6s ease-out forwards;
+  }
+  .plus.gold { color:#d9a520; font-size:24px; }
+  @keyframes floatup { to { transform:translate(-50%,-46px); opacity:0; } }
+  .star { position:absolute; font-size:14px; animation:starout .55s ease-out forwards; }
+  @keyframes starout {
+    0% { transform:translate(0,0) scale(.4); opacity:1; }
+    100% { transform:translate(var(--sx),var(--sy)) scale(1.2); opacity:0; }
+  }
+
+  /* 遮罩 */
+  #overlay {
+    position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+    background:rgba(253,247,236,.82); backdrop-filter:blur(3px); padding:24px;
+  }
+  #overlay.hidden { display:none; }
+  .panel {
+    width:100%; max-width:330px; background:#fffaf1; border:3px solid #f0dfc4;
+    border-radius:26px; padding:30px 24px; text-align:center;
+    box-shadow:0 12px 40px rgba(122,95,69,.18);
+  }
+  .panel .big { font-size:26px; font-weight:800; color:#8b6f4e; letter-spacing:3px; }
+  .panel .desc { font-size:13px; color:#b29a7d; line-height:1.9; margin:12px 0 4px; }
+  .panel .final { font-size:15px; color:#7a5f45; margin:14px 0 4px; }
+  .panel .final b { font-size:30px; color:#e08a5b; }
+  .btn {
+    margin-top:18px; padding:13px 44px; border:none; border-radius:999px; cursor:pointer;
+    font-size:17px; font-weight:800; letter-spacing:4px; color:#fff;
+    background:linear-gradient(160deg,#f0b28a,#e08a5b);
+    box-shadow:0 5px 0 #c9713f, 0 10px 20px rgba(224,138,91,.3); transition:.12s;
+  }
+  .btn:active { transform:translateY(4px); box-shadow:0 1px 0 #c9713f; }
+  .mole-sample { width:110px; margin:0 auto 8px; }
+
+  .footer { text-align:center; font-size:11px; color:#c3ab8d; letter-spacing:1px; margin-top:18px; line-height:1.8; }
+  #soundBtn {
+    position:absolute; top:22px; right:18px; z-index:3; border:2px solid #f0dfc4;
+    background:rgba(255,255,255,.8); border-radius:50%; width:40px; height:40px;
+    font-size:17px; cursor:pointer; box-shadow:0 3px 0 #eeddbe;
+  }
+</style>
+</head>
+<body>
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+
+<!-- 地鼠 SVG 模板 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="mole-normal" viewBox="0 0 100 100">
+      <ellipse cx="30" cy="26" rx="11" ry="13" fill="#b98d68"/>
+      <ellipse cx="30" cy="28" rx="5.5" ry="7" fill="#e8c4a8"/>
+      <ellipse cx="70" cy="26" rx="11" ry="13" fill="#b98d68"/>
+      <ellipse cx="70" cy="28" rx="5.5" ry="7" fill="#e8c4a8"/>
+      <ellipse cx="50" cy="58" rx="32" ry="34" fill="#c89b76"/>
+      <ellipse cx="50" cy="72" rx="19" ry="16" fill="#efdcc6"/>
+      <circle cx="38" cy="48" r="4.2" fill="#4a3423"/>
+      <circle cx="39.4" cy="46.6" r="1.4" fill="#fff"/>
+      <circle cx="62" cy="48" r="4.2" fill="#4a3423"/>
+      <circle cx="63.4" cy="46.6" r="1.4" fill="#fff"/>
+      <ellipse cx="50" cy="57" rx="4.6" ry="3.6" fill="#e8967a"/>
+      <path d="M46 63 Q50 66.5 54 63" stroke="#8a6a4e" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="30" cy="58" r="5" fill="#f2b8a0" opacity=".75"/>
+      <circle cx="70" cy="58" r="5" fill="#f2b8a0" opacity=".75"/>
+      <ellipse cx="36" cy="86" rx="7" ry="5" fill="#b98d68"/>
+      <ellipse cx="64" cy="86" rx="7" ry="5" fill="#b98d68"/>
+    </symbol>
+    <symbol id="mole-gold" viewBox="0 0 100 100">
+      <ellipse cx="30" cy="26" rx="11" ry="13" fill="#dfa944"/>
+      <ellipse cx="30" cy="28" rx="5.5" ry="7" fill="#fbe3a6"/>
+      <ellipse cx="70" cy="26" rx="11" ry="13" fill="#dfa944"/>
+      <ellipse cx="70" cy="28" rx="5.5" ry="7" fill="#fbe3a6"/>
+      <ellipse cx="50" cy="58" rx="32" ry="34" fill="#f0c96a"/>
+      <ellipse cx="50" cy="72" rx="19" ry="16" fill="#fbeec9"/>
+      <circle cx="38" cy="48" r="4.2" fill="#5a4318"/>
+      <circle cx="39.4" cy="46.6" r="1.4" fill="#fff"/>
+      <circle cx="62" cy="48" r="4.2" fill="#5a4318"/>
+      <circle cx="63.4" cy="46.6" r="1.4" fill="#fff"/>
+      <ellipse cx="50" cy="57" rx="4.6" ry="3.6" fill="#e8967a"/>
+      <path d="M46 63 Q50 66.5 54 63" stroke="#a07c28" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="30" cy="58" r="5" fill="#f2b8a0" opacity=".75"/>
+      <circle cx="70" cy="58" r="5" fill="#f2b8a0" opacity=".75"/>
+      <path d="M50 4 l2.2 5.2 5.6.4 -4.3 3.6 1.4 5.4 -4.9 -3 -4.9 3 1.4 -5.4 -4.3 -3.6 5.6 -.4 z" fill="#f6dc8a"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="app">
+  <button id="soundBtn" title="音效开关">🔔</button>
+  <header>
+    <h1>打地鼠</h1>
+    <div class="subtitle">治 愈 小 屋</div>
+  </header>
+  <div class="stats">
+    <div class="stat"><div class="label">得分</div><div class="value" id="score">0</div></div>
+    <div class="stat"><div class="label">最高分</div><div class="value" id="best">0</div></div>
+    <div class="stat"><div class="label">倒计时</div><div class="value time" id="time">30</div></div>
+  </div>
+  <div id="timerbar"><div id="timerfill"></div></div>
+  <div id="board"></div>
+  <div class="footer">轻拍探出头的小地鼠 +1 分 · 金色地鼠 +5 分<br>30 秒一局,放松一下</div>
+</div>
+
+<!-- 开始 / 结束遮罩 -->
+<div id="overlay">
+  <div class="panel">
+    <div class="mole-sample"><svg viewBox="0 0 100 100"><use href="#mole-normal"/></svg></div>
+    <div class="big" id="ovTitle">打地鼠</div>
+    <div class="desc" id="ovDesc">阳光正好,小地鼠从洞里探出脑袋。<br>轻拍它们得分,金色地鼠值 5 分哦。</div>
+    <div class="final" id="ovFinal" style="display:none">本局得分<br><b id="ovScore">0</b></div>
+    <button class="btn" id="btnStart">开始游戏</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const DURATION_DEFAULT = 30;
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const timeEl = document.getElementById('time');
+  const timerFill = document.getElementById('timerfill');
+  const overlay = document.getElementById('overlay');
+  const ovTitle = document.getElementById('ovTitle');
+  const ovDesc = document.getElementById('ovDesc');
+  const ovFinal = document.getElementById('ovFinal');
+  const ovScore = document.getElementById('ovScore');
+  const btnStart = document.getElementById('btnStart');
+  const soundBtn = document.getElementById('soundBtn');
+
+  let holes = [];
+  let playing = false;
+  let score = 0;
+  let best = parseInt(localStorage.getItem('moleBest') || '0', 10);
+  let timeLeft = DURATION_DEFAULT;
+  let duration = DURATION_DEFAULT;
+  let tickTimer = null, clockTimer = null;
+  let muted = false;
+  bestEl.textContent = best;
+
+  /* ---------- 音效 ---------- */
+  let actx = null;
+  function beep(freq, dur, type, vol){
+    if (muted) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.12, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime + dur);
+    } catch(e) {}
+  }
+  soundBtn.onclick = () => { muted = !muted; soundBtn.textContent = muted ? '🔕' : '🔔'; };
+
+  /* ---------- 建洞 ---------- */
+  for (let i = 0; i < 9; i++) {
+    const h = document.createElement('div');
+    h.className = 'hole';
+    h.innerHTML = `
+      <div class="clip">
+        <div class="hole-back"></div>
+        <div class="mole"><svg viewBox="0 0 100 100"><use href="#mole-normal"/></svg></div>
+        <div class="mound"></div>
+      </div>
+      <div class="fx"></div>`;
+    h.dataset.idx = i;
+    h.addEventListener('pointerdown', () => hit(i));
+    board.appendChild(h);
+    holes.push({ el: h, active: false, gold: false, hideTimer: null });
+  }
+
+  /* ---------- 游戏流程 ---------- */
+  function start(){
+    score = 0; timeLeft = duration;
+    scoreEl.textContent = '0';
+    timeEl.textContent = timeLeft;
+    timerFill.style.width = '100%';
+    playing = true;
+    overlay.classList.add('hidden');
+    holes.forEach(h => setMole(h, false));
+    scheduleSpawn();
+    clockTimer = setInterval(() => {
+      timeLeft--;
+      timeEl.textContent = Math.max(0, timeLeft);
+      timerFill.style.width = Math.max(0, timeLeft / duration * 100) + '%';
+      if (timeLeft <= 0) end();
+    }, 1000);
+  }
+
+  function end(){
+    playing = false;
+    clearInterval(clockTimer);
+    holes.forEach(h => { if (h.hideTimer) clearTimeout(h.hideTimer); setMole(h, false); });
+    const isNewBest = score > best;
+    if (isNewBest) { best = score; bestEl.textContent = best; localStorage.setItem('moleBest', best); }
+    ovTitle.textContent = '时间到';
+    ovDesc.innerHTML = isNewBest ? '新纪录!小地鼠们都为你鼓掌。' : '辛苦了,喝口水再来一局吧。';
+    ovFinal.style.display = 'block';
+    ovScore.textContent = score;
+    btnStart.textContent = '再来一局';
+    overlay.classList.remove('hidden');
+    beep(660, .15, 'sine', .1); setTimeout(() => beep(880, .25, 'sine', .1), 160);
+  }
+
+  function scheduleSpawn(){
+    if (!playing) return;
+    const progress = 1 - timeLeft / duration;         // 0 → 1 越来越快
+    const interval = 750 - progress * 350;            // 750ms → 400ms
+    tickTimer = setTimeout(() => {
+      const count = Math.random() < (0.25 + progress * 0.3) ? 2 : 1;
+      for (let k = 0; k < count; k++) {
+        const idle = holes.filter(h => !h.active);
+        if (!idle.length) break;
+        const h = idle[Math.floor(Math.random() * idle.length)];
+        popUp(h);
+      }
+      scheduleSpawn();
+    }, interval);
+  }
+
+  function setMole(h, gold){
+    h.gold = gold;
+    h.el.querySelector('use').setAttribute('href', gold ? '#mole-gold' : '#mole-normal');
+  }
+
+  function popUp(h){
+    const progress = 1 - timeLeft / duration;
+    const stay = 1250 - progress * 550;               // 1250ms → 700ms
+    setMole(h, Math.random() < 0.12);
+    h.active = true;
+    h.el.classList.remove('hit');
+    h.el.classList.add('up');
+    h.hideTimer = setTimeout(() => {
+      h.el.classList.remove('up');
+      h.active = false;
+    }, stay);
+  }
+
+  function hit(i){
+    const h = holes[i];
+    if (!playing || !h.active || h.el.classList.contains('hit')) return;
+    clearTimeout(h.hideTimer);
+    h.active = false;
+    h.el.classList.add('hit');
+    const gain = h.gold ? 5 : 1;
+    score += gain;
+    scoreEl.textContent = score;
+    // 特效
+    const fx = h.el.querySelector('.fx');
+    const plus = document.createElement('span');
+    plus.className = 'plus' + (h.gold ? ' gold' : '');
+    plus.textContent = '+' + gain;
+    fx.appendChild(plus);
+    for (let s = 0; s < 3; s++) {
+      const star = document.createElement('span');
+      star.className = 'star';
+      star.textContent = ['✿','❀','♡'][s];
+      star.style.left = (38 + s * 12) + '%';
+      star.style.top = (26 + (s % 2) * 8) + '%';
+      star.style.setProperty('--sx', (s - 1) * 26 + 'px');
+      star.style.setProperty('--sy', (-34 - s * 8) + 'px');
+      star.style.color = ['#e8967a','#f0c96a','#a8d5a2'][s];
+      fx.appendChild(star);
+    }
+    setTimeout(() => fx.innerHTML = '', 650);
+    beep(h.gold ? 990 : 520, .09, 'sine', .14);
+    if (h.gold) setTimeout(() => beep(1320, .12, 'sine', .1), 90);
+    setTimeout(() => h.el.classList.remove('up', 'hit'), 200);
+  }
+
+  btnStart.onclick = start;
+
+  /* ---------- 调试句柄（测试用） ---------- */
+  window.__mole = {
+    start,
+    state(){ return { playing, score, best, timeLeft, upCount: holes.filter(h => h.active).length }; },
+    spawn(i, gold){
+      const h = holes[i];
+      if (h.hideTimer) clearTimeout(h.hideTimer);
+      setMole(h, !!gold);
+      h.active = true; h.el.classList.remove('hit'); h.el.classList.add('up');
+      h.hideTimer = setTimeout(() => { h.el.classList.remove('up'); h.active = false; }, 3000);
+    },
+    setDuration(s){ duration = s; }
+  };
+})();
+</script>
+</body>
+</html>
