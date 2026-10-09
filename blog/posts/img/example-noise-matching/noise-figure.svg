@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-label="输入噪声电压谱密度示意">
+  <title>输入噪声电压谱密度示意（1/f 区与白噪区）</title>
+  <rect x="6" y="6" width="468" height="288" rx="10" fill="none" stroke="#b8b0a0" stroke-width="2" stroke-dasharray="6 4"/>
+  <!-- 坐标轴 -->
+  <path d="M60 260 L440 260 M60 260 L60 30" stroke="#4a4a4a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M436 256 L444 260 L436 264 M56 36 L60 28 L64 36" stroke="#4a4a4a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- 1/f 区（低频上翘） -->
+  <path d="M60 96 C 72 176, 92 214, 132 228" stroke="#c0583a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- 白噪平坦区 -->
+  <path d="M132 228 L420 233" stroke="#3a5a8c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- 转角频率虚线 -->
+  <line x1="132" y1="228" x2="132" y2="260" stroke="#b8b0a0" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="452" y="265" font-family="serif" font-style="italic" font-size="14" fill="#4a4a4a">f</text>
+  <text x="38" y="36" font-family="serif" font-size="14" fill="#4a4a4a">S(f)</text>
+  <text x="78" y="84" font-family="serif" font-size="13" fill="#c0583a">1/f 区</text>
+  <text x="252" y="216" font-family="serif" font-size="13" fill="#3a5a8c">白噪区 4kTy/gm</text>
+  <text x="118" y="282" font-family="serif" font-style="italic" font-size="13" fill="#4a4a4a">f_c</text>
+</svg>

@@ -1,0 +1,41 @@
+[
+  {
+    "file": "terminal_command.md",
+    "title": "Terminal命令整理",
+    "date": "2026-05-01",
+    "tags": [
+      "analog",
+      "noise"
+    ],
+    "authors": "示例作者 et al.",
+    "source": "IEEE JSSC",
+    "abstract": "本文介绍了常用的gim命令。",
+    "readtime": 6
+  },
+  {
+    "file": "example_noise_matching.md",
+    "title": "低噪声运放的噪声分析与匹配策略",
+    "date": "2024-05-01",
+    "tags": [
+      "analog",
+      "noise"
+    ],
+    "authors": "示例作者 et al.",
+    "source": "IEEE JSSC",
+    "abstract": "本文介绍了低噪声运算放大器的噪声建模方法，分析了热噪声与闪烁噪声在不同工作点下的贡献比例，并讨论了输入管尺寸对噪声-功耗权衡的影响。",
+    "readtime": 6
+  },
+  {
+    "file": "example_buck_control.md",
+    "title": "Buck 变换器数字控制器设计：Type-III 补偿与环路带宽优化",
+    "date": "2023-11-12",
+    "tags": [
+      "power",
+      "control"
+    ],
+    "authors": "示例作者 et al.",
+    "source": "IEEE TPEL",
+    "abstract": "针对 Buck 变换器的数字电压模式控制，本文推导了 Type-III 补偿器的零极点配置方法，分析了相位裕度与环路带宽的设计权衡，给出了完整的 Bode 图设计流程。",
+    "readtime": 8
+  }
+]

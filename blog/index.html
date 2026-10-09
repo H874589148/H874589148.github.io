@@ -29,64 +29,11 @@
         <h1>论文分享</h1>
         <p class="blog-desc">精选论文阅读笔记，涵盖模拟/混合信号 IC、电力电子、控制理论等方向。</p>
 
-        <!-- 分类筛选 -->
-        <div class="tag-filter" id="tagFilter">
-            <button class="tag-btn active" data-tag="all" onclick="filterByTag('all')">全部</button>
-            <button class="tag-btn" data-tag="analog" onclick="filterByTag('analog')">模拟电路</button>
-            <button class="tag-btn" data-tag="power" onclick="filterByTag('power')">电力电子</button>
-            <button class="tag-btn" data-tag="control" onclick="filterByTag('control')">控制理论</button>
-            <button class="tag-btn" data-tag="noise" onclick="filterByTag('noise')">噪声与匹配</button>
-        </div>
+        <!-- 分类筛选（按钮由 posts.json 动态生成，新 tag 无需改 HTML） -->
+        <div class="tag-filter" id="tagFilter"></div>
 
-        <!-- 论文列表 -->
-        <div id="paperList" class="paper-list">
-            <!-- 示例论文卡片 1 -->
-            <article class="paper-card-item" data-tags="noise analog">
-                <div class="paper-meta">
-                    <span class="paper-year">2024</span>
-                    <span class="tag-badge analog">模拟电路</span>
-                    <span class="tag-badge noise">噪声与匹配</span>
-                </div>
-                <h2 class="paper-title">
-                    <a href="posts/example-noise-matching.html">
-                        低噪声运放的噪声分析与匹配策略
-                    </a>
-                </h2>
-                <p class="paper-authors">示例作者 et al. — <em>IEEE JSSC</em></p>
-                <p class="paper-abstract">
-                    本文介绍了低噪声运算放大器的噪声建模方法，
-                    分析了热噪声与闪烁噪声在不同工作点下的贡献比例，
-                    并讨论了输入管尺寸对噪声-功耗权衡的影响。
-                </p>
-                <div class="paper-actions">
-                    <a href="posts/example-noise-matching.html" class="btn btn-sm">阅读笔记</a>
-                    <span class="paper-readtime">约 5 分钟</span>
-                </div>
-            </article>
-
-            <!-- 示例论文卡片 2 -->
-            <article class="paper-card-item" data-tags="power control">
-                <div class="paper-meta">
-                    <span class="paper-year">2023</span>
-                    <span class="tag-badge power">电力电子</span>
-                    <span class="tag-badge control">控制理论</span>
-                </div>
-                <h2 class="paper-title">
-                    <a href="posts/example-buck-control.html">
-                        Buck 变换器数字控制器设计：Type-III 补偿与环路带宽优化
-                    </a>
-                </h2>
-                <p class="paper-authors">示例作者 et al. — <em>IEEE TPEL</em></p>
-                <p class="paper-abstract">
-                    针对 Buck 变换器的数字电压模式控制，本文推导了 Type-III 补偿器的零极点配置方法，
-                    分析了相位裕度与环路带宽的设计权衡，给出了完整的 Bode 图设计流程。
-                </p>
-                <div class="paper-actions">
-                    <a href="posts/example-buck-control.html" class="btn btn-sm">阅读笔记</a>
-                    <span class="paper-readtime">约 8 分钟</span>
-                </div>
-            </article>
-        </div>
+        <!-- 论文列表（由 posts.json 动态渲染，添加新 .md 后运行 tools/build-blog.bat） -->
+        <div id="paperList" class="paper-list"></div>
 
         <!-- 空状态 -->
         <div id="emptyState" class="empty-state" style="display:none;">
@@ -95,9 +42,10 @@
 
         <!-- 添加提示 -->
         <div class="add-hint info-box" style="margin-top:var(--space-xl);">
-            <strong>如何添加新论文：</strong>在 <code>blog/posts/</code> 目录下新建 HTML 文件，
-            并在 <code>blog/index.html</code> 的 <code>#paperList</code> 中添加对应的
-            <code>&lt;article class="paper-card-item"&gt;</code> 卡片即可。
+            <strong>如何添加新论文：</strong>在 <code>blog/posts/</code> 目录下新建 <code>.md</code> 文件
+            （文件头写 <code>title / date / tags</code> 等 front matter，写法可参考已有文章），
+            然后双击 <code>tools/build-blog.bat</code> 重建清单并刷新本页即可。
+            正文支持 Markdown 语法与 LaTeX 公式（<code>$...$</code> 行内 / <code>$$...$$</code> 独立成行）。
         </div>
     </main>
 
@@ -115,36 +63,94 @@
 
     <script src="../js/common.js"></script>
     <script>
+        /* 论文卡片与标签筛选均由 posts.json 动态渲染（新 .md 放入 posts/ 后运行 tools/build-blog.bat） */
+        var TAG_NAMES = { analog: '模拟电路', power: '电力电子', control: '控制理论', noise: '噪声与匹配' };
+        var papers = [];
         var activeTag = 'all';
         var searchQuery = '';
 
+        function esc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function tagName(t) { return TAG_NAMES[t] || t; }
+
         function filterByTag(tag) {
             activeTag = tag;
-            document.querySelectorAll('.tag-btn').forEach(function (btn) {
-                btn.classList.toggle('active', btn.dataset.tag === tag);
-            });
-            applyFilter();
+            renderTags();
+            renderPapers();
         }
 
         function filterPapers(q) {
             searchQuery = q.toLowerCase();
-            applyFilter();
+            renderPapers();
         }
 
-        function applyFilter() {
-            var cards = document.querySelectorAll('.paper-card-item');
-            var visible = 0;
-            cards.forEach(function (card) {
-                var tags = card.dataset.tags || '';
-                var tagMatch = activeTag === 'all' || tags.indexOf(activeTag) >= 0;
-                var text = card.textContent.toLowerCase();
-                var queryMatch = searchQuery === '' || text.indexOf(searchQuery) >= 0;
-                var show = tagMatch && queryMatch;
-                card.style.display = show ? '' : 'none';
-                if (show) visible++;
+        function renderTags() {
+            var seen = [];
+            papers.forEach(function (p) {
+                (p.tags || []).forEach(function (t) {
+                    if (seen.indexOf(t) < 0) seen.push(t);
+                });
             });
+            var wrap = document.getElementById('tagFilter');
+            wrap.innerHTML = '';
+            ['all'].concat(seen).forEach(function (t) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'tag-btn' + (t === activeTag ? ' active' : '');
+                btn.dataset.tag = t;
+                btn.textContent = t === 'all' ? '全部' : tagName(t);
+                btn.addEventListener('click', function () { filterByTag(t); });
+                wrap.appendChild(btn);
+            });
+        }
+
+        function renderPapers() {
+            var html = '';
+            var visible = 0;
+            papers.forEach(function (p) {
+                var tags = p.tags || [];
+                var tagMatch = activeTag === 'all' || tags.indexOf(activeTag) >= 0;
+                var hay = (p.title + ' ' + (p.authors || '') + ' ' + (p.source || '') + ' '
+                    + (p.abstract || '') + ' ' + tags.join(' ')).toLowerCase();
+                if (!tagMatch || (searchQuery !== '' && hay.indexOf(searchQuery) < 0)) return;
+                visible++;
+                var badges = tags.map(function (t) {
+                    return '<span class="tag-badge ' + esc(t) + '">' + esc(tagName(t)) + '</span>';
+                }).join('');
+                var authorLine = p.authors
+                    ? '<p class="paper-authors">' + esc(p.authors)
+                        + (p.source ? ' — <em>' + esc(p.source) + '</em>' : '') + '</p>'
+                    : '';
+                var url = 'post.html?p=' + encodeURIComponent(p.file);
+                html += '<article class="paper-card-item" data-tags="' + esc(tags.join(' ')) + '">'
+                    + '<div class="paper-meta"><span class="paper-year">' + esc(String(p.date).slice(0, 4)) + '</span>' + badges + '</div>'
+                    + '<h2 class="paper-title"><a href="' + url + '">' + esc(p.title) + '</a></h2>'
+                    + authorLine
+                    + '<p class="paper-abstract">' + esc(p.abstract || '') + '</p>'
+                    + '<div class="paper-actions"><a href="' + url + '" class="btn btn-sm">阅读笔记</a>'
+                    + '<span class="paper-readtime">约 ' + esc(p.readtime) + ' 分钟</span></div>'
+                    + '</article>';
+            });
+            document.getElementById('paperList').innerHTML = html;
             document.getElementById('emptyState').style.display = visible === 0 ? '' : 'none';
         }
+
+        fetch('posts.json')
+            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(function (data) {
+                papers = data || [];
+                renderTags();
+                renderPapers();
+            })
+            .catch(function () {
+                var empty = document.getElementById('emptyState');
+                empty.innerHTML = '清单加载失败：请先双击 <code>tools/build-blog.bat</code> 生成 <code>blog/posts.json</code>。';
+                empty.style.display = '';
+            });
     </script>
 </body>
 </html>

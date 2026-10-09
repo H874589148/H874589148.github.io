@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function () { var t = localStorage.getItem('ee-theme'); if (t) document.documentElement.setAttribute('data-theme', t); })();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>论文笔记 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/cursor.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        /* MathJax v3 配置：正文为动态插入，关闭首屏自动排版；
+           不使用 tex2svgPromise（会有辅助 MathML 双重渲染问题） */
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            svg: { fontCache: 'local' },
+            options: { enableAssistiveMml: false },
+            startup: { typeset: false }
+        };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../index.html">EE工具箱</a>
+        <span class="breadcrumb">学术分享 / <a href="index.html">论文</a> / 笔记</span>
+    </nav>
+
+    <main class="container">
+        <div class="post-body">
+            <div id="postLoading" class="empty-state">正在加载论文笔记…</div>
+
+            <div id="postError" class="empty-state" style="display:none;">
+                <p id="postErrorMsg">文章不存在。</p>
+                <p><a href="index.html" class="btn">← 返回论文列表</a></p>
+            </div>
+
+            <div id="postContent" style="display:none;">
+                <!-- 标题区 -->
+                <div style="margin-bottom: var(--space-xl);">
+                    <div class="paper-meta" id="postMeta" style="margin-bottom: var(--space-sm);"></div>
+                    <h1 id="postTitle"></h1>
+                    <p id="postAuthors" style="color:var(--color-text-muted); font-size:0.95rem;"></p>
+                    <p id="postDate" style="color:var(--color-text-muted); font-size:0.85rem;"></p>
+                </div>
+                <!-- 正文（Markdown 渲染结果） -->
+                <div id="postMarkdown"></div>
+                <!-- 返回按钮 -->
+                <div style="margin-top: var(--space-xxl);">
+                    <a href="index.html" class="btn">← 返回论文列表</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../js/cursor.js"></script>
+    <script>OutlineArrowCursor.init();</script>
+    <script src="../lib/marked.min.js"></script>
+    <script src="../js/common.js"></script>
+    <script>
+        (function () {
+            var TAG_NAMES = { analog: '模拟电路', power: '电力电子', control: '控制理论', noise: '噪声与匹配' };
+            var elLoading = document.getElementById('postLoading');
+            var elError = document.getElementById('postError');
+            var elErrorMsg = document.getElementById('postErrorMsg');
+            var elContent = document.getElementById('postContent');
+
+            function fail(msg) {
+                elLoading.style.display = 'none';
+                elContent.style.display = 'none';
+                elErrorMsg.textContent = msg;
+                elError.style.display = '';
+            }
+
+            /* URL 参数校验：仅允许 posts/ 下的 .md 文件名，拒绝路径分隔符与目录穿越 */
+            function getPostFile() {
+                var p = new URLSearchParams(location.search).get('p') || '';
+                if (!p || /[\\\/]/.test(p) || p.indexOf('..') >= 0 || !/\.md$/i.test(p)) return '';
+                return p;
+            }
+
+            /* 剥离 front matter（元数据以 posts.json 为准，此处仅需正文） */
+            function stripFrontMatter(raw) {
+                var m = /^---\r?\n[\s\S]*?\r?\n---\s*(?:\r?\n|$)/.exec(raw);
+                return m ? raw.slice(m[0].length) : raw;
+            }
+
+            /* 公式保护：渲染前把 $...$ / $$...$$ / \(...\) / \[...\] 换成占位符，
+               避免 marked 把公式中的 _ * 等字符当作 markdown 语法破坏 LaTeX */
+            var mathStash = [];
+            function protectMath(md) {
+                mathStash = [];
+                return md
+                    .replace(/\\\[([\s\S]+?)\\\]|\$\$([\s\S]+?)\$\$/g, function (m0, b1, b2) {
+                        mathStash.push(b1 !== undefined ? '\\[' + b1 + '\\]' : '$$' + b2 + '$$');
+                        return '\n\n%%MATH' + (mathStash.length - 1) + '%%\n\n';
+                    })
+                    .replace(/\\\(([\s\S]+?)\\\)|\$([^$\n]+?)\$/g, function (m0, b1, b2) {
+                        mathStash.push(b1 !== undefined ? '\\(' + b1 + '\\)' : '$' + b2 + '$');
+                        return '%%MATH' + (mathStash.length - 1) + '%%';
+                    });
+            }
+
+            function escapeHtml(s) {
+                return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            function renderMarkdown(md) {
+                var html = marked.parse(protectMath(md));
+                return html.replace(/%%MATH(\d+)%%/g, function (m0, i) {
+                    return mathStash[+i] !== undefined ? escapeHtml(mathStash[+i]) : m0;
+                });
+            }
+
+            /* md 内相对路径（图片/附件/站内链接）基准是 posts/ 目录；
+               本页位于 blog/ 下，统一补 posts/ 前缀（http/data/锚点/根路径除外） */
+            function fixRelativePaths(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var nodes = doc.querySelectorAll('img[src], a[href]');
+                for (var i = 0; i < nodes.length; i++) {
+                    var el = nodes[i];
+                    var attr = el.tagName === 'IMG' ? 'src' : 'href';
+                    var v = el.getAttribute(attr) || '';
+                    if (!v || /^(https?:|data:|mailto:|#|\/)/i.test(v)) continue;
+                    el.setAttribute(attr, 'posts/' + v);
+                }
+                return doc.body.innerHTML;
+            }
+
+            /* MathJax 排版：等待引擎就绪后清空并重排（清空防重复渲染） */
+            function typesetMath() {
+                if (!window.MathJax || !MathJax.startup || !MathJax.startup.promise) {
+                    setTimeout(typesetMath, 200);
+                    return;
+                }
+                MathJax.startup.promise.then(function () {
+                    var el = document.getElementById('postMarkdown');
+                    if (MathJax.typesetClear) MathJax.typesetClear([el]);
+                    return MathJax.typesetPromise([el]);
+                }).catch(function (e) { console.warn('MathJax 排版失败:', e); });
+            }
+
+            function render(item, body) {
+                document.getElementById('postTitle').textContent = item.title;
+                var metaHtml = '<span class="paper-year">' + String(item.date).slice(0, 4) + '</span>';
+                (item.tags || []).forEach(function (t) {
+                    metaHtml += '<span class="tag-badge ' + t + '">' + (TAG_NAMES[t] || t) + '</span>';
+                });
+                document.getElementById('postMeta').innerHTML = metaHtml;
+
+                var authorBits = [];
+                if (item.authors) authorBits.push(item.authors);
+                if (item.source) authorBits.push('<em>' + item.source + '</em>');
+                document.getElementById('postAuthors').innerHTML =
+                    authorBits.length ? '原文：' + authorBits.join(' — ') : '';
+                document.getElementById('postDate').innerHTML =
+                    '阅读时间：约 ' + item.readtime + ' 分钟 &nbsp;|&nbsp; 记录于 ' + item.date;
+
+                document.getElementById('postMarkdown').innerHTML =
+                    fixRelativePaths(renderMarkdown(body));
+
+                elLoading.style.display = 'none';
+                elContent.style.display = '';
+                document.title = item.title + ' - EE工具箱';
+                typesetMath();
+            }
+
+            function load() {
+                var file = getPostFile();
+                if (!file) return fail('链接参数无效，正确格式为 post.html?p=文件名.md');
+                fetch('posts.json')
+                    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+                    .then(function (list) {
+                        var item = null;
+                        for (var i = 0; i < list.length; i++) {
+                            if (list[i].file === file) { item = list[i]; break; }
+                        }
+                        if (!item) return fail('清单中未找到该文章，请先双击 tools/build-blog.bat 重建清单。');
+                        return fetch('posts/' + encodeURIComponent(file))
+                            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+                            .then(function (raw) { render(item, stripFrontMatter(raw)); });
+                    })
+                    .catch(function () { fail('文章加载失败，请检查网络连接或文件是否存在。'); });
+            }
+
+            load();
+        })();
+    </script>
+</body>
+</html>

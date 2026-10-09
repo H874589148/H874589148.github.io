@@ -152,3 +152,88 @@
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     margin: var(--space-lg) 0;
 }
+
+/* ===== Markdown 正文元素（post.html 渲染产物） ===== */
+.post-body h1 { font-size: 1.7rem; margin-bottom: var(--space-sm); }
+
+.post-body h3 {
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-md);
+    color: var(--color-primary);
+}
+
+.post-body img {
+    max-width: 100%;
+    display: block;
+    margin: var(--space-md) auto;
+    background: var(--color-card-bg);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    padding: var(--space-xs);
+}
+
+.post-body table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin: var(--space-md) 0;
+    font-size: 0.95rem;
+}
+
+.post-body th, .post-body td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1.5px solid var(--color-border-sketch);
+    text-align: left;
+}
+
+.post-body th {
+    background: var(--color-bg-paper);
+    font-family: var(--font-handwrite);
+    font-size: 1.02rem;
+}
+
+.post-body tr:last-child td { border-bottom: none; }
+
+.post-body code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-bg-paper);
+    border: 1px solid var(--color-border-sketch);
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+.post-body pre {
+    background: var(--color-bg-paper);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    overflow-x: auto;
+    margin: var(--space-md) 0;
+}
+
+.post-body pre code { background: none; border: none; padding: 0; font-size: 0.9rem; }
+
+.post-body blockquote {
+    border-left: 4px solid var(--color-primary);
+    background: var(--color-bg-paper);
+    margin: var(--space-md) 0;
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: var(--color-text-secondary);
+}
+
+.post-body blockquote p:last-child { margin-bottom: 0; }
+
+.post-body ol { padding-left: var(--space-xl); margin-bottom: var(--space-md); }
+
+.post-body hr {
+    border: none;
+    border-top: 2px dashed var(--color-border-sketch);
+    margin: var(--space-xl) 0;
+}
+
+.post-body a { color: var(--color-primary); }
