@@ -33,7 +33,7 @@ $$f_c = \frac{K_f g_m}{4kT\gamma C_{ox}WL}$$
 
 ## 噪声谱示意
 
-![输入噪声电压谱密度示意：低频 1/f 区与高频白噪区](img/example-noise-matching/noise-figure.svg)
+![输入噪声电压谱密度示意：低频 1/f 区与高频白噪区](img/example_noise_matching/noise-figure.svg)
 
 ## 实验结果与性能指标
 
