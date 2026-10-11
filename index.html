@@ -299,6 +299,11 @@
                 <div class="card-title">随机数生成</div>
                 <div class="card-desc">范围随机数批量生成卡片，附摇骰子动画</div>
             </a>
+            <a href="tools/sim-log/index.html" class="nav-card">
+                <div class="card-icon" id="icon-simlog"></div>
+                <div class="card-title">仿真结果规范收集</div>
+                <div class="card-desc">仿真设置一键生成规范记录：路径 / 类型 / Corner / MC / 电压 / 温度 / 前后仿，支持 Word、Markdown、LaTeX 三格式复制</div>
+            </a>
         </div>
 
         <!-- ========== 学术分享 ========== -->
@@ -330,6 +335,11 @@
                 <div class="card-icon" id="icon-24point"></div>
                 <div class="card-title">24点计算器</div>
                 <div class="card-desc">四则运算凑 24：手动输入或随机发牌，全部解法去重展示</div>
+            </a>
+            <a href="games/sight-reading/index.html" class="nav-card">
+                <div class="card-icon" id="icon-sightreading"></div>
+                <div class="card-title">识谱练习</div>
+                <div class="card-desc">看谱按键：88 键全组别 C 调基础与十五个大调，学习/测验/限时三模式</div>
             </a>
             <a href="games/index.html" class="nav-card">
                 <div class="card-icon" id="icon-game"></div>
@@ -395,8 +405,10 @@
         document.getElementById('icon-fmea').innerHTML = Icons.fmea;
         document.getElementById('icon-dice').innerHTML = Icons.dice;
         document.getElementById('icon-24point').innerHTML = Icons['24point'];
+        document.getElementById('icon-sightreading').innerHTML = Icons.sightreading;
         document.getElementById('icon-book').innerHTML = Icons.book;
         document.getElementById('icon-paper').innerHTML = Icons.paper;
+        document.getElementById('icon-simlog').innerHTML = Icons.simlog;
         document.getElementById('icon-links').innerHTML = Icons.links;
         document.getElementById('icon-game').innerHTML = Icons.game;
 
@@ -425,6 +437,7 @@
             'tools/complement-code/': '原码 反码 补码 位宽 有符号',
             'tools/gaussian/': '正态 高斯 分布 概率 置信区间 gaussian',
             'tools/random-gen/': '随机数 骰子 随机 random dice 抽取',
+            'tools/sim-log/': '仿真 结果 记录 收集 规范 corner 蒙特卡罗 monte carlo pvt tt 前仿 后仿 模板',
             'tools/circuit-sketch/': '电路 示意图 原理图 schematic 编辑器 绘图 visio 运放 连线 论文 razavi 器件',
                         'tools/truth-table/': '真值表 逻辑 布尔 表达式 门电路 卡诺 truth table logic 组合逻辑',
             'tools/transfer-function/': '传递函数 跨导 gm 小信号 电压增益 跨阻 级联 并联 耦合电容 零极点 频响 bode transfer function MNA',
@@ -433,6 +446,7 @@
             'blog/': '知识 论文 博客 笔记 blog paper 分享 精读',
             'links/': '链接 导航 资源 网站 links 友链',
             'games/24point/': '24点 扑克 速算 四则运算 凑24 加减乘除 卡牌 发牌 poker',
+            'games/sight-reading/': '识谱 视唱 五线谱 音符 钢琴 谱号 调号 键盘 练耳 sight reading note piano music',
             'games/': '游戏 小游戏 休闲 game'
         };
         (function initSearch() {

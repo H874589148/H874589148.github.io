@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仿真结果规范收集 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 仿真结果规范收集</span>
+    </nav>
+
+    <main class="container-wide">
+        <h1>仿真结果规范收集</h1>
+        <p class="tool-desc">按左侧表单填写仿真设置，右侧实时生成「字段名黑体加粗 + 值楷体斜体」的规范化记录；一键复制为 Word（富文本，粘贴后保留字体样式）、Markdown 或 LaTeX 格式，直接贴入实验记录、报告或邮件。填写内容自动保存在本机，刷新后恢复。</p>
+
+        <div class="simlog-layout">
+            <aside class="simlog-params">
+                <div class="param-block paper-card">
+                    <h3>仿真设置</h3>
+                    <div class="field">
+                        <label for="simPath">仿真路径</label>
+                        <input type="text" id="simPath" placeholder="如：../sim/amp_tb/ac/">
+                    </div>
+                    <div class="field">
+                        <label for="simType">仿真类型</label>
+                        <select id="simType">
+                            <option value="tt" selected>仅 tt（单点）</option>
+                            <option value="corner">Corner 扫描（PVT）</option>
+                            <option value="mc">Monte Carlo</option>
+                        </select>
+                    </div>
+                    <div class="field sub-field" id="cornerCountWrap" style="display:none;">
+                        <label for="cornerCount">Corner 个数</label>
+                        <input type="number" id="cornerCount" min="1" step="1" value="49">
+                    </div>
+                    <div class="field sub-field" id="mcCountWrap" style="display:none;">
+                        <label for="mcCount">MC 个数</label>
+                        <select id="mcCount">
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                            <option value="2000">2000</option>
+                            <option value="5000">5000</option>
+                            <option value="__custom__">自定义…</option>
+                        </select>
+                    </div>
+                    <div class="field sub-field" id="mcCountCustomWrap" style="display:none;">
+                        <label for="mcCountCustom">自定义 MC 个数</label>
+                        <input type="number" id="mcCountCustom" min="1" step="1" placeholder="如：300">
+                    </div>
+                    <div class="field sub-field" id="mcModeWrap" style="display:none;">
+                        <label for="mcMode">MC 模式</label>
+                        <select id="mcMode">
+                            <option value="global" selected>global（工艺）</option>
+                            <option value="local">local（失配）</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="voltPreset">电压</label>
+                        <select id="voltPreset">
+                            <option value="1.62–1.98 V" selected>1.62 – 1.98 V（±10% @ 1.8 V）</option>
+                            <option value="1.7–1.9 V">1.7 – 1.9 V</option>
+                            <option value="1.65–1.95 V">1.65 – 1.95 V</option>
+                            <option value="1.08–1.32 V">1.08 – 1.32 V（±10% @ 1.2 V）</option>
+                            <option value="2.97–3.63 V">2.97 – 3.63 V（±10% @ 3.3 V）</option>
+                            <option value="4.5–5.5 V">4.5 – 5.5 V</option>
+                            <option value="4.5 V, 5 V, 5.5 V">4.5 V, 5 V, 5.5 V（固定点）</option>
+                            <option value="1.8 V">1.8 V（固定点）</option>
+                            <option value="3.3 V">3.3 V（固定点）</option>
+                            <option value="__custom__">自定义…</option>
+                        </select>
+                    </div>
+                    <div class="field sub-field" id="voltCustomWrap" style="display:none;">
+                        <label for="voltCustom">自定义电压点</label>
+                        <input type="text" id="voltCustom" placeholder="如：1.8 或 1.7, 1.8, 1.9">
+                    </div>
+                    <div class="field">
+                        <label for="tempPreset">温度</label>
+                        <select id="tempPreset">
+                            <option value="-50–160 °C" selected>-50 – 160 °C</option>
+                            <option value="-40–150 °C">-40 – 150 °C</option>
+                            <option value="-40–125 °C">-40 – 125 °C</option>
+                            <option value="-40–85 °C">-40 – 85 °C</option>
+                            <option value="-20–85 °C">-20 – 85 °C</option>
+                            <option value="0–70 °C">0 – 70 °C</option>
+                            <option value="25 °C">25 °C（常温）</option>
+                            <option value="27 °C">27 °C（nominal）</option>
+                            <option value="125 °C">125 °C（高温）</option>
+                            <option value="__custom__">自定义…</option>
+                        </select>
+                    </div>
+                    <div class="field sub-field" id="tempCustomWrap" style="display:none;">
+                        <label for="tempCustom">自定义温度点</label>
+                        <input type="text" id="tempCustom" placeholder="如：27 或 -40, 27, 125">
+                    </div>
+                    <div class="field">
+                        <label for="simMode">仿真方式</label>
+                        <select id="simMode">
+                            <option value="前仿" selected>前仿</option>
+                            <option value="后仿">后仿</option>
+                        </select>
+                    </div>
+                    <p class="hint" id="simlogHint">电压 / 温度选「自定义…」后可直接填写任意点或范围；设置自动保存在本机，刷新后恢复。</p>
+                </div>
+            </aside>
+
+            <section class="simlog-result">
+                <div class="param-block paper-card">
+                    <h3>格式化预览</h3>
+                    <div id="simlogPreview" class="simlog-preview"></div>
+                </div>
+
+                <div class="copy-bar">
+                    <button class="btn" id="copyWordBtn" type="button">复制 Word 格式</button>
+                    <button class="btn" id="copyMdBtn" type="button">复制 Markdown</button>
+                    <button class="btn" id="copyLatexBtn" type="button">复制 LaTeX</button>
+                </div>
+                <p class="hint">「复制 Word 格式」写入富文本剪贴板：粘贴进 Word / WPS 后字段名保持黑体加粗、值保持楷体斜体；Markdown 与 LaTeX 为纯文本。</p>
+            </section>
+        </div>
+    </main>
+
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+    <div id="copyHolder" aria-hidden="true"></div>
+</body>
+</html>

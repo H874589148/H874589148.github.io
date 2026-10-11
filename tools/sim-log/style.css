@@ -1,0 +1,50 @@
+/* tools/sim-log/style.css */
+.simlog-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: var(--space-lg);
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .simlog-layout { grid-template-columns: 1fr; }
+}
+
+/* 联动子字段：缩进 + 虚线左缘标示从属于上方主字段 */
+.sub-field {
+    margin-left: var(--space-md);
+    padding-left: var(--space-md);
+    border-left: 2px dashed var(--color-border-sketch);
+}
+
+/* 预览区：字段名黑体加粗、值楷体斜体 */
+.simlog-preview {
+    line-height: 2.1;
+    font-size: 1.05rem;
+}
+.simlog-preview .simlog-label {
+    font-family: 'SimHei', 'Heiti SC', 'Microsoft YaHei', sans-serif;
+    font-weight: bold;
+}
+.simlog-preview .simlog-value {
+    font-family: 'KaiTi', 'STKaiti', 'DFKai-SB', serif;
+    font-style: italic;
+}
+.simlog-preview .simlog-empty {
+    font-family: 'KaiTi', 'STKaiti', serif;
+    font-style: normal;
+    color: var(--color-text-muted);
+}
+
+.copy-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+/* 富文本复制兜底用的离屏容器 */
+#copyHolder {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+}
