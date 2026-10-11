@@ -1,5 +1,552 @@
 [
   {
+    "file": "TCASII2022_Loop_Analysis_and_Stability_Considerations_of_Hybrid_PA_Supply_Modulators.md",
+    "title": "混合 PA 电源调制器的环路分析与稳定性：电流环放大\"等效跨导\"",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Xun Liu, Junmin Jiang, Cheng Huang, Philip K. T. Mok",
+    "source": "IEEE TCAS-II, vol. 69, no. 10, Oct. 2022, pp. 4143–4147（CUHK-Shenzhen + 南方科大 + HKUST + Iowa State；65 nm CMOS）",
+    "abstract": "混合 SM 的电压环（LA）与电流环（ia→id）相依，但文献少有完整建模。本文推导：负载总电流 ≈ (1+id/ia(s))·gm_AB·v_AB，即电流环把 Class-AB 输出级\"等效跨导\"放大 A_cur 倍 → SM 电压环 DC 增益 ×A_cur、主极点 ÷A_cur，而 UGF 与 PM 完全不变（新极点 p3 与 LHP 零点 z2 自动对消）。id/ia(s) 的增益与 UGF 决定 SWC/LA 电流分配（即效率）：UGF 1 MHz vs 100 kHz 的两个 SM 在中频段效率差 1–4%；相位裕度不足不影响稳定但电感电流振铃（15° vs 90° PM 对比）。65 nm 流片验证：buck 25 MHz + 206 nH，20 MHz LTE 包络 85% 峰值效率。",
+    "readtime": 7
+  },
+  {
+    "file": "JSSC2019_Wideband_Hybrid_Envelope_Tracking_Modulator_With_Hysteretic-Controlled_Three-Level_Switching_Converter_and_Slew-Rate_Enhanced_Linear_Amplifier.md",
+    "title": "迟滞控制三电平开关变换器 + 压摆增强线性放大器：宽带混合 ET 调制器（JSSC 扩展版）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Parisa Mahmoudidaryan, Debashis Mandal, Bertan Bakkaloglu, Sayfe Kiaei",
+    "source": "IEEE JSSC, vol. 54, no. 12, Dec. 2019, pp. 3336–3347（ASU；会议版为 ISSCC 2019 27.5；一作现就职 Qualcomm）",
+    "abstract": "ISSCC 2019 27.5 的期刊扩展版：迟滞控制三电平开关变换器（3L-SWC）+ 压摆增强 LA。JSSC 版新增三电平 vs 二电平的开关/导通损耗建模与飞电容 C_F 尺寸优化（12 nF、损耗 0.85×二电平）、压摆率直方图论证 SRE 按需启用、MCS 电路细节（GBW 随输入共模仅 8% 变化 vs 无 MCS 可达 50%）。迟滞环 >80 MHz 开关频率、每周期主环内并发调节 V_CF 免除校准环；SRE 电流差分辅助路径直注末级栅极主极点电容（SR 178→325 V/μs、−169→−307 V/μs、BW 275 MHz）。65 nm CMOS：LTE-40 MHz 93% 峰值效率 @1 W（SRE 关）、LTE-80 MHz 91%（SRE 开），仅 1 片外电感、无 AC 耦合电容。",
+    "readtime": 8
+  },
+  {
+    "file": "JSSC2019_A_Multi-Loop-Controlled_AC-Coupling_Supply_Modulator_With_a_Mode-Switching_CMOS_PA_in_an_EER_System_With_Envelope_Shaping.md",
+    "title": "多环控制 AC 耦合电源调制器 + 模式切换 CMOS PA：带包络整形的 EER 系统",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Xun Liu, Heng Zhang, Philip K. T. Mok, Howard C. Luong",
+    "source": "IEEE JSSC, vol. 54, no. 6, Jun. 2019, pp. 1553–1563（HKUST；Xun Liu 现就职 Qualcomm）",
+    "abstract": "EER 系统的相位路径难做、PA 泄漏失真、SM 要求苛刻——EER-ES 用\"原 RF 信号直接驱动 PA + 包络整形\"一次解决三个问题：低功率模式 PA 线性区恒压供电、高功率模式开关区跟踪整形包络（PA 自身充当 limiter）。SM 侧：AC 耦合拓扑借整形包络抬高最低电压、降 LA 供电与功耗，三电平开关放大器（1.2V 器件堆叠 2.4V、25MHz、纹波 <1/4）+ 多环控制（低频感 V_LS、高频感 ia，UGF 650kHz→3.3MHz）+ HPF（带宽 33.9→69.2MHz、零额外电流）。LTE-20MHz 16QAM：SM 效率 88.7%，系统 PAE 35.7%、ACLR −32.1dBc，UMC 65nm，仅 1 片外电感 1 片外电容。",
+    "readtime": 8
+  },
+  {
+    "file": "JSSC2019_A_2.5-W_40-MHz-Bandwidth_Hybrid_Supply_Modulator_With_91_Peak_Efficiency_3-V_Output_Swing_and_4-mV_Output_Ripple_at_3.6-V_Supply.md",
+    "title": "2.5W 40MHz 带宽混合电源调制器：91% 峰值效率、3V 摆幅、4mV 纹波（3.6V 供电）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Huiqiao He, Yang Kang, Tong Ge, Joseph S. Chang, Linfei Guo",
+    "source": "IEEE TPEL, vol. 34, no. 1, Jan. 2019, pp. 712–723（Nanyang Technological University，新加坡；Linfei Guo 现就职 Qualcomm）",
+    "abstract": "宽带混合电源调制器的迟滞环带宽被传播延迟而非阈值电流主导——本文证明宽带高功率场景下阈值电流 I_T 完全可以归零：延迟式迟滞控制器用高速电流比较器把 i_AB 与零电流比较（电流镜加 I_BIAS 偏移技巧），迟滞由 I_HYS=V_DD·t_D/L_O 本征决定。宽带 Class-AB 放大器三级结构（折叠共源共栅 + SF buffer + CS 输出级）配 translinear 精确静态电流控制（corner 变化 300%→20%），230MHz GBW、35MHz 处输出阻抗 <0.45Ω。40MHz 带宽、2.5W、91% 峰值效率、4mVrms 纹波，ET PA 28.5dBm PAE 41.1%（backoff 提升 >1.6×），180nm CMOS。",
+    "readtime": 7
+  },
+  {
+    "file": "JSSC2018_A_Wideband_Class-AB_Power_Amplifier_With_29-57-GHz_AMPM_Compensation_in_0.9-V_28-nm_Bulk_CMOS.md",
+    "title": "宽带 Class-AB 功率放大器的 29–57 GHz AM-PM 补偿：PMOS 变容管 + 宽带变压器四阶匹配",
+    "date": "2026-10-11",
+    "tags": [
+      "rf"
+    ],
+    "authors": "Marco Vigilante, Patrick Reynaert",
+    "source": "IEEE JSSC, vol. 53, no. 5, May 2018, pp. 1288–1301（KU Leuven ESAT-MICAS；0.9 V 28 nm bulk CMOS、无 ultra-thick top metal）",
+    "abstract": "宽带调制信号下 AM-PM 是第一瓶颈（5° AM-PM 对 64-QAM EVM 的劣化相当于 1 dB 增益压缩；单音 CW 提取的行为模型在 RF BW>100 MHz 时过度乐观）。失真源分解：非线性 C_IN（Miller 反射放大 (1+gm(Ro∥RL))）、非线性 Gm 与非纯阻负载、级联二阶非线性产生的 IM3 与记忆效应。方案：输入 PMOS varactor 对消 C_IN 失真 + 宽带变压器四阶级间匹配（双谐振峰、kQ 乘积理论、级间 k_int≈0.4）。0.9 V 28 nm：S21 29–57 GHz（65%）、|AM-PM|<1°@P_1dB（V_cnt 可调）、P_sat 15.1 dBm、峰值 PAE 24.2%；1.5/3/6 Gb/s 64-QAM 平均 Pout 10.1/8.9/5.9 dBm，EVM<−25 dB、ACPR<−30 dBc 无 DPD。",
+    "readtime": 10
+  },
+  {
+    "file": "JSSC2007_A 2W CMOS Hybrid Switching Amplitude Modulator for EDGE Polar Transmitters.md",
+    "title": "面向 EDGE 极性发射机的 2W CMOS 混合开关幅度调制器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Tae-Woo Kwak, Min-Chul Lee, Gyu-Hyeong Cho",
+    "source": "IEEE JSSC, vol. 42, no. 12, Dec. 2007, pp. 2666–2676（KAIST，大田）",
+    "abstract": "极性发射机中幅度分量带宽展宽，LDO 线性调制器效率低、纯开关方案又跟不上。本文 PWM 控制的混合开关幅度调制器：宽带缓冲线性放大器（电压源）+ 2MHz PWM 开关放大器（受控电流源），辅以前馈路径（LA 电流减半）、三阶纹波滤波器（110→40mA 纹波）与电流反馈（抑制 580kHz 谐振）。新型 Class-AB 缓冲输出级实现四象限工作与 2MHz 处低输出阻抗。4Ω 负载最大 2.25W、效率 88.3%，纹波电压 <12mVpp，闭环带宽 >10MHz，0.35μm CMOS 4.7mm²。",
+    "readtime": 7
+  },
+  {
+    "file": "ISSCC2023_T2_Bridging_RF_and_Power_An_Introduction_to_Envelope_Tracking_System_and_Building_Blocks.md",
+    "title": "连接 RF 与功率：包络跟踪系统与构建模块入门（ISSCC 教程笔记）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Ji-Seon Paek",
+    "source": "IEEE ISSCC 2023 Tutorial T2, 93 slides（釜山大学；2011–2022 任职三星电子，Galaxy Note3/S10 5G ET 商用亲历者）",
+    "abstract": "从 3GPP 标准反推 SM-IC 指标的完整方法论：功率链路预算（P_ANT 27dBm+6dB PAPR → P_sat 33–37dBm → V_DD=5V、R_opt≈2.5Ω、I_SM,max 1.28A）与噪声链路预算（FDD RX 灵敏度约束 N_SM·PSRR_PA）。八大 RF 挑战逐条配 SM 技术：2G 4-slot PVT→迟滞 buck+bypass LDO；HPUE 升压→电压容限三电平 buck-boost（无 RHP 零点）；宽带信号→C_PA 隔离与 C_f 调谐（UGBW 30→120MHz）；反向电流→动态 buck 供电切换；TPC 快速过渡→pre-/background transition；中频噪声→RFT 谐振调谐；EN-DC→SIMO；mmWave→SPT 电容交换（90 ns/V）。ET-DPD 五步评估流程；模拟 ET 带宽/效率到顶，数字 ET（SCVD 电平选择，200MHz、93.6%）是下一代。",
+    "readtime": 12
+  },
+  {
+    "file": "ISSCC2023_20.1_A_High_Common-Mode_Transient_Immunity_GaN-on-SOI_Gate_Driver_for_High_dVdt_SiC_Power_Switch.md",
+    "title": "高 CMTI 的 GaN-on-SOI 隔离栅极驱动器：驱动高 dv/dt SiC 功率开关",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Si-Yi Li, Wei-Chien Hung, Tz-Wun Wang, Ya-Ting Hsu, Ke-Horng Chen, Kuo-Lin Zheng, Ying-Hsi Lin, Shian-Ru Lin, Tsung-Yen Tsai",
+    "source": "IEEE ISSCC 2023, Session 20.1, pp. 302–304（阳明交大 + Chip-GaN + Realtek；GaN-on-SOI 工艺）",
+    "abstract": "1700V SiC 开关的 dv/dt>100 kV/μs 经隔离屏障寄生电容把共模瞬态灌进驱动器 RX、把 di/dt 振铃耦合到栅极——这篇用 GaN-on-SOI 工艺做隔离栅驱动器芯片（硅基 TX + GaN-on-SOI RX）：①TIA 包络检测 + CMCE 共模电流消除（CMT 时向两输出注入等量 ICM，净噪声为零）；②组合式低 I_Q 电平移位器 + 片上负压发生器（VEE 在 −6 V 与 V_D2_ON 间切换，低压侧自驱免电平移位器）；③QDC 四象限驱动控制：FZVS 浮动零压传感 + V_BOOT 跟踪检测 Miller 平台，平台前最大电流快充、平台后满电流抑制栅振铃。实测 CMTI +282/−211 kV/μs @225°C、传播延迟 7 ns、VEE 随温漂 15%（−40~225°C）、VIN 800→1700V 效率 >90%。",
+    "readtime": 7
+  },
+  {
+    "file": "ISSCC2021_33.9_A_Hybrid_Switching_Supply_Modulator_Achieving_130MHz_Envelope-Tracking_Bandwidth_and_10W_Output_Power_for_2G_3G_LTE_NR_RF_Power_Amplifiers.md",
+    "title": "130MHz 包络跟踪带宽与 10W 输出功率的混合开关电源调制器（2G/3G/LTE/NR PA）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Dongsu Kim, Jun-Suk Bang, Jongbeom Baek, Seungchan Park, Young-Ho Jung, Jaeyeol Han, Ik-Hwan Kim, Sung-Youb Jung, Takahiro Nomiyama, Ji-Seon Paek, Jongwoo Lee, Thomas Byunghak Cho",
+    "source": "ISSCC 2021, Session 33.9, pp. 476–477（Samsung Electronics，华城）",
+    "abstract": "5G NR n77C/n78C/n79C 载波聚合需要 >100MHz ET 带宽，而高压 PA 设计要求 5.8V 输出——二者叠加是电源调制器的极限考验。本文三路输出（2G/NR/3G-LTE PA）架构：交错 buck-boost（飞电容三电平、功率管应力 ≤V_BAT、1.7A/5.8V）+ micro buck-boost（LA 可扩展供电、轻载高效）+ 可扩展偏置/输出级 Class-AB LA（HB 模式 160MHz 带宽）+ AC 耦合电容升压至 5.8V + 预充电器维持 V_CAC + ET 过压保护。四模式峰值 ET 效率 81.4–85.5%，ET 比 APT 省 616mW，NR 130MHz ACLR −37.7dBc（无 DPD），90nm CMOS。",
+    "readtime": 6
+  },
+  {
+    "file": "ISSCC2019_27.5_A_91-Efficiency_Envelope-Tracking_Modulator_Using_Hysteresis-Controlled_Three-Level_Switching_Regulator_and_Slew-Rate-Enhanced_Linear_Amplifier_for_LTE-80MHz_Applications.md",
+    "title": "91% 效率包络跟踪调制器：迟滞控制三电平开关变换器 + 压摆增强线性放大器（LTE-80MHz）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Parisa Mahmoudidaryan, Debashis Mandal, Bertan Bakkaloglu, Sayfe Kiaei",
+    "source": "ISSCC 2019, Session 27.5, pp. 428–429（Arizona State University；NSF Connection One + Qualcomm 支持）",
+    "abstract": "混合 ETM 中 LA 补偿 SWR 慢响应而吃掉效率，AC 耦合方案又要片外电容与额外电感。本文迟滞控制三电平 SWR 替代 PWM 环：免补偿电路、飞电容电压并发传感调节（免校准环）、电感纹波与开关损耗减半、迟滞环带宽随开关频率走。LA 用 SRE + MCS + rail-to-rail + I_Q 调整，压摆率 178→325 V/μs、带宽 208→275MHz。LTE-80MHz 峰值效率 91%（SRE 关 40MHz 模式 93%），跟踪误差 <3.2%，输出噪声 −135dBm/Hz @30MHz，−4dB back-off PAE +8.1%，65nm CMOS 2.72mm²。",
+    "readtime": 6
+  },
+  {
+    "file": "ISSCC2018_An_87.1_efficiency_RF-PA_envelope-tracking_modulator_for_80MHz_LTE-Advanced_transmitter_and_31dBm_PA_output_power_for_HPUE_in_0.153m_CMOS.md",
+    "title": "80MHz LTE-Advanced 发射机 87.1% 效率 RF-PA 包络跟踪调制器（HPUE 31dBm）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Chen-Yen Ho, Shih-Mei Lin, Che-Hao Meng, Hao-Ping Hong, Sheng-Hong Yan, Ting-Hsun Kuo, Chia-Sheng Peng, Chieh-Hsun Hsiao, Hsin-Hung Chen, Da-Wei Sung, Chien-Wei Kuan",
+    "source": "ISSCC 2018, Session 27.6, pp. 432–433（MediaTek，新竹）",
+    "abstract": "LTE-A 载波聚合（CCA 最高 4×20=80MHz）与 HPUE Power Class 2 对 ET 调制器提出宽带与高功率双重需求。本文混合 AC 耦合架构：buck-boost + 双电源线（DPL）buck 两级开关变换器，配双模式高速 AC 前馈 Class-AB 线性放大器（HBM/HGM）。自补偿斜坡发生器（SCRG）整形 buck-boost 非线性、动态体偏置（DBB）与动态驱动开关（DDS）压缩功率路径电阻、自动检测选择（ADS）扩展 ET 动态范围至 13dB。20/40/60/80MHz 峰值效率 87/85.5/82.3/81.2%，4CCA E-ACLR −38.1dBc @26dBm，较 APT 省电 34.5%，0.153μm CMOS。",
+    "readtime": 6
+  },
+  {
+    "file": "ISSCC2017_2.3_A_single-inductor_dual-output_converter_with_linear-amplifier-driven_cross_regulation_for_prioritized_energy-distribution_control_of_envelope-tracking_supply_modulator.md",
+    "title": "线性放大器驱动交叉调节的单电感双输出 ET 电源调制器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Shang-Hsien Yang, Yen-Ting Lin, Yu-Sheng Ma, Hung-Wei Chen, Ke-Horng Chen, Chin-Long Wey, Ying-Hsi Lin, Shian-Ru Lin, Tsung-Yen Tsai",
+    "source": "ISSCC 2017, Session 2.3, pp. 36–37（台湾阳明交通大学 + Realtek Semiconductor）",
+    "abstract": "混合 ETSM 的迟滞开关变换器相位滞后拖累效率，而 SIMO 的交叉调节（CR）历来被视为头号缺陷。本文用单个 SIDO 变换器同时替换两个 SWR，并把 CR 反向利用为加速器：包络上升时 LA 从 V_REG 突发抽电荷，V_REG 跌落触发 PED 控制器瞬时增大占空比，电感能量优先分配给 V_REG、不受环路带宽限制地加速对 V_DD,PA 供电。2 MHz 固定开关频率下 2 W 平均输出、峰值效率 82%（SIDO 本征 81–86%），谐波抑制 −42 dB，0.5 μm CMOS。",
+    "readtime": 5
+  },
+  {
+    "file": "ISCAS1995_Novel_circuit_solutions_for_rail-to-rail_CMOS_buffer.md",
+    "title": "轨到轨 CMOS 缓冲器的新电路方案：互补输入对的三重电流控制",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "R. Caiulo, P. Malcovati, C. Bona, F. Maloberti",
+    "source": "IEEE ISCAS 1995, pp. 1980–1983（Italtel SIT + ETH Zurich + University of Pavia；CEC Esprit 8795 AMFIS 项目）",
+    "abstract": "低压低功耗趋势下 rail-to-rail 运放/缓冲器要同时解决三件事：互补输入对的 CM 范围受镜像负载失配限制、跨导随输入 CM 变化导致谐波失真、Class-AB 输出级静态电流需恒定。方案：①折叠差分对替代镜像负载扩 CM 范围，输入管一分为二输出双路驱动信号 V_A/V_B 直驱 push-pull 输出级；②电流源拆成\"固定+CM 控制+gm 控制\"三分量，按输入 CM 实时调配；③交叉偏置（一级电流增、另一级按 K 因子减）近似平方根律，gm 偏差压到 10.5%。5 V 全摆幅、105 dB DC 增益、13 MHz GBW、驱动 50 pF 电容负载。",
+    "readtime": 6
+  },
+  {
+    "file": "Envelope_Tracking_Supply_Modulator_with_Trellis-Search-Based_Switching_and_160-MHz_Capability.md",
+    "title": "基于 Trellis 搜索开关的包络跟踪电源调制器（160 MHz 能力）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Weiyu Leng, Asad A. Abidi, Sraavan R. Mundlapudi, Hooman Darabi, Debopriyo Chowdhury, Ali Afsahi, Sida Li",
+    "source": "IEEE JSSC, vol. 57, no. 3, Mar. 2022, pp. 719–733（UCLA + Broadcom；CICC 2021 会议版扩展）",
+    "abstract": "混合放大器（buck 电流反馈主放大器 + Class-AB 运放校正）是 ET 电源调制器的主流架构，迟滞控制下 buck 电流必然滞后包络，运放被迫输出过大校正电流且开关次数无保证。本文不加无源储能元件，改用 Viterbi 式 trellis search（TS）DSP 为 buck 离线寻找最优开关序列：误差电流建模为 trellis 状态、1-norm 代价加开关罚 Ipen、N=16 状态窗口近似全局最优。20 MHz 信道运放电流降 27%，调制器效率 71.2%→74.2%；160 MHz 信道因 buck 开关损耗主导退回经典迟滞控制，完整 2.5 GHz TX 效率 +7.2% @ 22.3 dBm、EVM −32.7 dB。",
+    "readtime": 8
+  },
+  {
+    "file": "Dulau 等。 - 2006 - A new gate driver integrated circuit for IGBT devi.md",
+    "title": "面向 IGBT 的高级保护栅驱动集成电路",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Laurent Dulau, Serge Pontarollo, Anthony Boimond, Jean-François Garnier, Nicole Giraudo, Olivier Terrasse",
+    "source": "IEEE TPEL, vol. 21, no. 1, Jan. 2006（STMicroelectronics，格勒诺布尔）",
+    "abstract": "IGBT 栅驱动在\"小栅电阻低损耗\"与\"大栅电阻限 di/dt、dv/dt、EMI\"之间进退两难，反馈式斜率控制又太耗硅面积。本文用 BCD 工艺集成三件套：两电平开通（先停在中间栅压一小段时间压反向恢复峰值电流）、两电平关断（先停中间电平压 L·di/dt 过冲）、有源 Miller 钳位（关断期间栅源低阻旁路，免负压电源）。1200 V/150 A 实测：关断过冲从 >600 V 降到 240 V，代价仅 Eoff 15→23 mJ。",
+    "readtime": 5
+  },
+  {
+    "file": "Direct_48-_1-V_GaN-Based_DCDC_Power_Converter_With_Double_Step-Down_Architecture_and_MasterSlave_AO2T_Control.md",
+    "title": "直接 48V→1V 的 GaN 双降压（DSD）变换器与主从 AO²T 控制",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Dong Yan, Xugang Ke, D. Brian Ma",
+    "source": "IEEE JSSC, vol. 55, no. 4, Apr. 2020（UT Dallas）",
+    "abstract": "单级直接 48→1 V 变换在 2 MHz 下导通时间仅 10.4 ns，且开关损耗约为 3.3→1 V 的 19 倍。本文采用双降压（DSD）架构——两相 Buck 共用一个飞电容，开关节点摆幅与开关耐压减半、等效导通时间延长 4 倍；控制上提出主从 AO²T：主相单电流传感器谷值电流模 + 从相\"相位镜像\"实现无时钟同步（t_delay=TSW/2 逐周期镜像），飞电容固有反馈自动均流；弹性导通时间调制把 1 A 负载阶跃的欠压从 256 mV 压到 160 mV。等效最小占空比 2.1% 创纪录。",
+    "readtime": 6
+  },
+  {
+    "file": "Compact_low-voltage_power-efficient_operational_amplifier_cells_for_VLSI.md",
+    "title": "面向 VLSI 的紧凑低电压高能效运算放大器单元（折叠网孔 class-AB 输出级）",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Klaas-Jan de Langen, Johan H. Huijsing",
+    "source": "IEEE JSSC, vol. 33, no. 10, Oct. 1998, pp. 1482–1496（Delft 理工；标准数字 1.6 μm CMOS）",
+    "abstract": "两级紧凑运放的最低电源由输出级决定：常规前馈 class-AB mesh 需 2V_GS+V_DSsat，本文把 class-AB 控制从前馈浮动电压源改成\"测流管 + 控制块 + 折叠网孔\"的反馈结构（folded mesh），最低电源降到 1V_GS+2V_DSsat≈1.8 V，且不增加噪声/失调（复用求和电路偏置电流）。配套无电阻简单 minimum selector 维持最小电流。R-R 输入版用第二个折叠网孔实现浮动电流源 + 3:1 电流开关 gm 控制，输出电流与共模无关。0.08/0.1 mm² 两款：UGF 4 MHz、PM 67°@5 pF、供电电流 184/230 μA、最低 1.8 V（R-R 版 2.5 V）。",
+    "readtime": 7
+  },
+  {
+    "file": "Chen 和 Ma - 2021 - A 10-MHz Closed-Loop EMI-Regulated GaN Switching P.md",
+    "title": "10 MHz 闭环 EMI 整定 GaN 开关变换器：仿真 Miller 平台跟踪与自适应强度栅驱动",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Yingping Chen, D. Brian Ma",
+    "source": "IEEE JSSC, vol. 56, no. 2, Feb. 2021（UT Dallas）",
+    "abstract": "EMI 与效率的世纪权衡有更优解：传导 EMI 主要由 di/dt 相位决定，压 dv/dt 只赔效率不降噪。本文提出\"仿真 Miller 平台跟踪\"——利用 GaN 无体二极管特性，在死区把下管反向二极管连接后的导通状态当成上管 Miller 平台起点的\"替身\"，配合两项误差补偿实时复现 VMP=VFW−0.5·VDSON−α·VIN；自适应强度栅驱动据此在 Miller 平台起点把栅驱动强度从弱切到强，实现低 di/dt + 高 dv/dt。10 MHz、5–40 V 输入 Buck 实测 Band B 峰值 EMI 降 19.23 dBμV，效率仅损 2.44%。",
+    "readtime": 6
+  },
+  {
+    "file": "CLIP2GAN_Toward_Bridging_Text_With_the_Latent_Space_of_GANs.md",
+    "title": "CLIP2GAN：以文本桥接 GAN 的潜空间",
+    "date": "2026-10-11",
+    "tags": [
+      "ai"
+    ],
+    "authors": "Yixuan Wang, Wengang Zhou, Jianmin Bao, Weilun Wang, Li Li, Houqiang Li",
+    "source": "IEEE TCSVT, vol. 34, no. 8, Aug. 2024（中国科大 / 微软亚洲研究院）",
+    "abstract": "文本引导图像生成/编辑通常需要大规模图文对训练；本文用 12 层映射网络桥接 CLIP 的多模态嵌入空间与 StyleGAN 的 w+ 潜空间，训练阶段只用图像（图像特征=伪文本特征）自监督重构，推理时把 CLIP 图像编码器换成文本编码器即可输入任意文本，前馈式零样本生成；配合判别器补细节与 mode-seeking 式多样性损失，FID/LPIPS 优于图文对训练的 GAN 方法与大规模扩散模型。",
+    "readtime": 6
+  },
+  {
+    "file": "Bau 等 - 2020 - CMOS Active Gate Driver for Closed-Loop d v.md",
+    "title": "面向 GaN 晶体管闭环 dv/dt 控制的全集成 CMOS 主动栅极驱动器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Plinio Bau, Marc Cousineau, Bernardo Cougo, Frédéric Richardeau, Nicolas Rouger",
+    "source": "IEEE TPEL, vol. 35, no. 12, Dec. 2020（IRT Saint Exupéry / LAPLACE-CNRS，图卢兹）",
+    "abstract": "GaN 的纳秒级开关让传统主动栅驱动（AGD）从高压漏极到低压栅极的反馈环失效——分立方案延迟与寄生电感太大，已有单片方案只敢用于 <48 V。本文用 0.18 μm CMOS 全集成\"高压传感电容 + 大带宽两级电流镜\"，反馈延迟 290–640 ps、反馈电流可超 1 A；400 V 应用峰值 dv/dt 从 −175 降到 −120 V/ns，EON 增幅仅为加大栅电阻方案的一半，di/dt 相位完全不受影响。",
+    "readtime": 6
+  },
+  {
+    "file": "Banba et al. - 1999 - A CMOS bandgap reference circuit with sub-1-V oper.md",
+    "title": "可工作于亚 1V 电源的 CMOS 带隙基准电路",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Hironori Banba, Hitoshi Shiga, Akira Umezawa, Takeshi Miyaba, Toru Tanzawa, Shigeru Atsumi, Koji Sakui",
+    "source": "IEEE JSSC, vol. 34, no. 5, May 1999（东芝）",
+    "abstract": "常规带隙基准输出为\"二极管压降 + kT/q 倍数\"的电压和，被 1.25 V 卡死。本文改为**两路电流相加**：一路正比 Vf、一路正比 VT，同流过电阻生成任意可设定的 Vref；单一反馈环实现，0.4 μm CMOS 实测 518±15 mV（3σ）、27–125 °C，仿真最低电源 0.84 V。低电压带隙的奠基之作。",
+    "readtime": 5
+  },
+  {
+    "file": "Asymmetrical_Dead-Time_Control_Driver_for_Buck_Regulator.md",
+    "title": "面向 Buck 稳压器的非对称死区控制驱动器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Chundong Wu, Wang Ling Goh, Chiang Liang Kok, Liter Siek, Yat Hei Lam, Xi Zhu, Ravinder Pal Singh",
+    "source": "IEEE TVLSI, vol. 24, no. 12, Dec. 2016（NTU 新加坡）",
+    "abstract": "把死区发生器从\"独立控制电路\"合并进驱动器本身：末级驱动两支路的沟道宽度比决定栅压摆动的相对斜率，死区由斜率差自动生成；利用功率管从饱和区滑入三极管区的过渡防止体二极管导通与直通。0.18 μm 实测 10–450 mA 负载体二极管导通 <1 ns、开环峰值效率 >97 %，驱动面积仅功率管的 1 %。",
+    "readtime": 5
+  },
+  {
+    "file": "Analysis_and_Design_Considerations_of_Integrated_3-Level_Buck_Converters.md",
+    "title": "集成三电平 Buck 变换器的分析与设计考虑",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Xun Liu, Philip K. T. Mok, Junmin Jiang, Wing-Hung Ki",
+    "source": "IEEE TCAS-I, vol. 63, no. 5, May 2016（HKUST）",
+    "abstract": "用状态空间平均法系统推导三电平 Buck 的转换比、纹波与环路增益——理想条件下环路增益与二电平完全相同（飞电容不出现）；进而量化集成实现的三大非理想因素：D1/D3 与 D2/D4 时间失配使 VCF 每周期线性漂移、飞电容 MOS 实现的寄生电容既耗功又把 VCF 推向 Vg、功率管 Cds 反而助稳；给出可近似为二电平环路增益的失配判据，UMC 65 nm 时域注入仿真与实测验证。",
+    "readtime": 7
+  },
+  {
+    "file": "A_wide_swing_1.5_V_fully_differential_op-amp_using_a_rail-to-rail_analog_CMFB_circuit.md",
+    "title": "采用轨到轨模拟 CMFB 的宽摆幅 1.5 V 全差分运算放大器",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "H. Maarefi, A. Parsa, H. Hatamkhani, D. Shiri",
+    "source": "IEEE 会议论文（KavoshCom Asia），2002",
+    "abstract": "指出常规连续时间 CMFB（源跟随器检测引入 VGS 电平移位、三极管管检测依赖器件参数、大摆幅时偏置源进三极管区）共同的上限——检测电路吃掉一个阈值以上的摆幅；提出 NMOS+PMOS 互补 CMFB，利用两路检测电压反向变化、其和恒定的性质，在 0.13 μm/1.5 V 下实现 2.4 Vpp 差分摆幅与 118 dB CMRR。",
+    "readtime": 4
+  },
+  {
+    "file": "A_programmable_1.5_V_CMOS_class-AB_operational_amplifier_with_hybrid_nested_Miller_compensation_for_120_dB_gain_and_6_MHz_UGF.md",
+    "title": "采用混合嵌套 Miller 补偿的可编程 1.5 V CMOS class-AB 运算放大器（120 dB 增益、6 MHz UGF）",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Ruud G. H. Eschauzier, Ron Hogervorst, Johan H. Huijsing",
+    "source": "IEEE JSSC, vol. 29, no. 12, Dec. 1994",
+    "abstract": "为摆脱 cascode 对电源与阈值电压的双重限制，Delft 组提出四级共源级联 + 混合嵌套 Miller 补偿（HNMC）：两级 Miller 环并置同层，嵌套层级从 NMC 的三层减到两层，四级带宽追平三级 NMC；再加 multipath 输入级直驱输出管（MHNMC）带宽再翻倍。0.8 μm CMOS 实测 120 dB/6 MHz @1.5 V/300 μA，可编程至 16 μA/1.1 V/400 kHz。",
+    "readtime": 6
+  },
+  {
+    "file": "A_low-dropout_regulator_with_power_supply_rejection_improvement_by_bandwidth-zero_tracking.md",
+    "title": "用带宽-零点跟踪改善电源抑制的低压差线性稳压器",
+    "date": "2026-10-11",
+    "tags": [
+      "analog",
+      "power"
+    ],
+    "authors": "Yan Lu, Ruo He Yao, Da Qiang Huang, Julien Su, Junmin Jiang, Wing-Hung Ki",
+    "source": "IEEE 会议论文（华南理工/香港科大/澳门大学），2014",
+    "abstract": "把 Kwok-Mok 的极零点跟踪思想从\"零点跟踪输出极点\"改为\"零点跟踪环路 UGF\"：与功率管同 VGS 的 MOS 电阻串 1 pF 电容产生随负载移动的零点，配合负反馈增强缓冲级分裂极点；0.35 μm 下 0.014 mm²、空载 20 μA、无 ESR 零点、PM≥70°，高频 PSR 显著改善。",
+    "readtime": 5
+  },
+  {
+    "file": "A_high_performance_class_AB_CMOS_rail_to_rail_voltage_follower.md",
+    "title": "高性能 class-AB CMOS 轨到轨电压跟随器",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "P. Boonyapom, V. Kasemsuwan",
+    "source": "IEEE 会议论文（KMITL，泰国），2002",
+    "abstract": "在对称 class-AB 双级共漏跟随器上引入互补电流镜（传输比 α≈1/4）构成复合管，用 α 同时提升输出跨导并对消 NMOS/PMOS 的 Vgs 失配；HSPICE 仿真显示 ±1.5 V 下驱动 250 Ω 负载、THD<0.6 %、131 MHz 带宽、输出阻抗约 6 Ω、静态功耗 2.5 mW。",
+    "readtime": 4
+  },
+  {
+    "file": "A_double_step-down_two-phase_buck_converter_for_VRM.md",
+    "title": "面向 VRM 的大降压比双降压两相 Buck 变换器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "K. Nishijima, K. Harada, T. Nakano, T. Nabeshima, T. Sato",
+    "source": "EPE 2005（欧洲电力电子与应用会议），大分大学/崇城大学",
+    "abstract": "在两相交错同步 Buck 的两相桥臂间接入一只附加电容 Ci，将输入电压自动分压一半，使转换比从 D 变为 D/2：开关换流在 Ei/2↔0 间完成、开关应力与损耗减半、纹波降低，且 Ci 的电荷守恒让两相电感电流无需任何电流检测即可自动均衡。",
+    "readtime": 5
+  },
+  {
+    "file": "A_compact_power-efficient_3_V_CMOS_rail-to-rail_input_output_operational_amplifier_for_VLSI_cell_libraries.md",
+    "title": "面向 VLSI 库单元的紧凑高效 3 V CMOS 轨到轨 I/O 运算放大器",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Ron Hogervorst, John P. Tero, Ruud G. H. Eschauzier, Johan H. Huijsing",
+    "source": "IEEE JSSC, vol. 29, no. 12, Dec. 1994",
+    "abstract": "Delft 团队的两级 3 V 轨到轨运放：三倍电流镜 gm 控制稳定输入跨导、浮动 class-AB 控制嵌入求和电路使噪声失调媲美三级结构、同构浮动电流源锁定静态电流，0.04 mm² 芯片给出 Miller 与 cascoded-Miller 两种补偿版本（4 与 11 MHz/mW）。",
+    "readtime": 7
+  },
+  {
+    "file": "A_capacitance-compensation_technique_for_improved_linearity_in_CMOS_class-AB_power_amplifiers.md",
+    "title": "改善 CMOS Class-AB 功放线性度的电容补偿技术",
+    "date": "2026-10-11",
+    "tags": [
+      "analog",
+      "power"
+    ],
+    "authors": "Chengzhou Wang, Mani Vaidyanathan, Lawrence E. Larson",
+    "source": "IEEE JSSC, vol. 39, no. 11, Nov. 2004",
+    "abstract": "指出 MOS 栅源电容在阈值附近的跳变是 CMOS class-AB PA 线性度的主导限制，用旁路 PMOS 管的互补 Cgs 变化把输入总电容\"钳平\"，两级 0.5 μm 原型实测 IM3 与 ACP1 均改善约 8 dB，24 dBm 输出下 ACP1 达 −35 dBc。",
+    "readtime": 6
+  },
+  {
+    "file": "A_Wideband_Class-AB_Power_Amplifier_With_2957-GHz_AMPM_Compensation_in_0.9-V_28-nm_Bulk_CMOS.md",
+    "title": "0.9 V 28 nm 体硅 CMOS 中带 29–57 GHz AM-PM 补偿的宽带 Class-AB 功率放大器",
+    "date": "2026-10-11",
+    "tags": [
+      "analog",
+      "power"
+    ],
+    "authors": "Marco Vigilante, Patrick Reynaert",
+    "source": "IEEE JSSC, vol. 53, no. 5, May 2018",
+    "abstract": "5G 毫米波相控阵 PA 的线性瓶颈在 AM-PM 而非 AM-AM——本文用输入 PMOS 变容管对消 NMOS 输入电容的非线性，配合变压器四阶宽带级间匹配，在 0.9 V/28 nm 下实现 29–57 GHz（65%）带宽内 P1dB 处 |AM-PM|<1.8°、EVM 优于 −25 dB 且免数字预失真。",
+    "readtime": 8
+  },
+  {
+    "file": "A_Tri-Slope_Gate_Driving_GaN_DCDC_Converter_With_Spurious_Noise_Compression_and_Ringing_Suppression_for_Automotive_Applications.md",
+    "title": "三斜率栅驱动的 GaN DC-DC 变换器：杂散噪声压缩与振铃抑制（汽车应用）",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Xugang Ke, Joseph Sankman, Yingping Chen, Lenian He, D. Brian Ma",
+    "source": "IEEE JSSC, vol. 53, no. 1, Jan. 2018",
+    "abstract": "10 MHz GaN 变换器组合\"雪崩噪声 + 三角包络调频\"的杂散噪声压缩（SNC）与按负载/输入自适应的三斜率栅驱动（TSGD），EMI 降噪 40.5 dBμV、开关节点振铃抑制 79.3%，免去输入 EMI 滤波器。",
+    "readtime": 7
+  },
+  {
+    "file": "A_Simple_Rail-to-Rail_CMOS_Voltage_Follower.md",
+    "title": "一种简单的轨到轨 CMOS 电压跟随器",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Surat Wongfoo, Weerachai Naklo, Apirak Suadet, Varakorn Kasemsuwan",
+    "source": "IEEE（会议论文）, 2006",
+    "abstract": "在对称 class-AB 跟随器上并联共源输出级，并用差分幅度检测 + 电流镜在输入越过中间范围时切换偏置域，使输出可摆到距电源轨一个过驱动电压以内；±1.5 V 供电下驱动 250 Ω 负载 THD < 0.25%。",
+    "readtime": 5
+  },
+  {
+    "file": "A_High-Frequency_Three-Level_Buck_Converter_With_Real-Time_Calibration_and_Wide_Output_Range_for_Fast-DVS.md",
+    "title": "高频三电平 Buck 变换器：实时飞跨电容校准与宽输出范围的快速 DVS 应用",
+    "date": "2026-10-11",
+    "tags": [
+      "power",
+      "control"
+    ],
+    "authors": "Xun Liu, Cheng Huang, Philip K. T. Mok",
+    "source": "IEEE JSSC, vol. 53, no. 2, Feb. 2018",
+    "abstract": "50 MHz、5 V 输入、3 W 三电平 Buck 变换器，用 DDA 实时把飞跨电容电压校准在 Vg/2，解决寄生/时序失配导致的过压与纹波恶化，65 nm 标准 2.5 V 器件上实现 0.6–4.2 V 宽输出与 23–29 ns/V 基准跟踪。",
+    "readtime": 7
+  },
+  {
+    "file": "A_Fully_Integrated_Low-Dropout_Regulator_With_Differentiator-Based_Active_Zero_Compensation.md",
+    "title": "基于微分器型有源零点的全集成无输出电容 LDO",
+    "date": "2026-10-11",
+    "tags": [
+      "analog",
+      "power"
+    ],
+    "authors": "Shi Bu, Ka Nang Leung, Yan Lu, Jianping Guo, Yanqi Zheng",
+    "source": "IEEE TCAS-I, vol. 65, no. 10, Oct. 2018",
+    "abstract": "在三段式无输出电容 LDO 中嵌入微分器产生\"有源零点\"，以 1.6 μA 静态电流维持 2.5 MHz 以上的单位增益带宽，配合自适应偏置在 0.0021 mm² 芯片内实现 25 mA 负载与 11.9 A/mm² 电流密度。",
+    "readtime": 7
+  },
+  {
+    "file": "A_Design_of_a_92.4_Efficiency_Triple_Mode_Control_DCDC_Buck_Converter_With_Low_Power_Retention_Mode_and_Adaptive_Zero_Current_Detector_for_IoT_Wearable_Applications.md",
+    "title": "面向 IoT/可穿戴应用的 92.4% 效率三模式控制 Buck 变换器：低功耗保持模式与自适应过零检测器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "Young-Jun Park, Ju-Hyun Park, Hong-Jin Kim, Hocheol Ryu, SangYun Kim, YoungGun Pu, Keum Cheol Hwang, Youngoo Yang, Minjae Lee, Kang-Yoon Lee",
+    "source": "IEEE Trans. Power Electronics, vol. 32, no. 9, Sep. 2017",
+    "abstract": "用\"保持/PFM/PWM\"三模式 + 功率管栅分割 + 自适应过零检测 + 扩频时钟四项技术，把 0.13 μm Buck 变换器的高效负载范围从 10 μA 一路拉到 20 mA，并顺带抑制射频收发机最怕的开关杂散。",
+    "readtime": 8
+  },
+  {
+    "file": "A_Delay-Line-Based_Voltage-to-Duty-Cycle_Controller_for_High-Frequency_PWM_Switching_Converters.md",
+    "title": "面向高频 PWM 开关变换器的基于延迟线电压-占空比控制器",
+    "date": "2026-10-11",
+    "tags": [
+      "power",
+      "control"
+    ],
+    "authors": "Cheng Huang, Philip K. T. Mok",
+    "source": "IEEE TCAS-II (Express Briefs), vol. 62, no. 8, Aug. 2015",
+    "abstract": "用无斜坡、无比较器的延迟线式 V2D 控制器替代传统\"斜坡-比较器\"PWM 调制器，在 100 MHz 开关频率下将可控占空比范围扩展到 0.93、功耗降低过半，从根上消除高频化的延迟噩梦。",
+    "readtime": 6
+  },
+  {
+    "file": "A_Compact_Rail-to-Rail_Class-AB_CMOS_Buffer_With_Slew-Rate_Enhancement.md",
+    "title": "紧凑型轨到轨 Class-AB CMOS 缓冲器的压摆率增强",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Chutham Sawigun, Andreas Demosthenous, Xiao Liu, Wouter A. Serdijn",
+    "source": "IEEE TCAS-II (Express Briefs), vol. 59, no. 8, Aug. 2012",
+    "abstract": "针对 DFVF class-AB 轨到轨缓冲器在大输入电压下输出驱动能力受限的架构性缺陷，提出一种仅增 1.25% 静态功耗、3% 面积的压摆率增强方案，速度提升超过 200%。",
+    "readtime": 6
+  },
+  {
+    "file": "A_Class-G_Headphone_Amplifier_in_65_nm_CMOS_Technology.md",
+    "title": "65nm Class-G 耳机放大器：开关电流注入实现平滑电源轨切换",
+    "date": "2026-10-11",
+    "tags": [
+      "analog"
+    ],
+    "authors": "A. Lollio, G. Bollati, R. Castello",
+    "source": "IEEE JSSC 2010",
+    "abstract": "耳机驱动需要在 Class-D 的效率与 Class-AB 的音质间折中。本文采用并联 Class-G 结构并以\"开关电流注入\"切换技术实现两输出级间平滑交接，把切换点推到距低压轨仅 50mV 处；同时给出 Class-G 切换失真的线性模型与环路压缩评估方法。65nm 实现 SNR 101dB、16mW 输出 THD 优于 −80dB、静态功耗 0.41mW。",
+    "readtime": 8
+  },
+  {
+    "file": "A_50MHz_5V_3W_90_efficiency_3-level_buck_converter_with_real-time_calibration_and_wide_output_range_for_fast-DVS_in_65nm_CMOS.md",
+    "title": "飞电容实时校准的 50MHz 三电平 Buck 变换器：宽输出范围与快速 DVS",
+    "date": "2026-10-11",
+    "tags": [
+      "power",
+      "control"
+    ],
+    "authors": "X. Liu, C. Huang, P. K. T. Mok",
+    "source": "IEEE VLSI Circuits 2016",
+    "abstract": "三电平 Buck 的效率与耐压优势依赖飞电容电压稳定在 Vg/2，但寄生电容与驱动时序失配会使其漂移至 0 或 Vg，带来过压应力、纹波恶化与次谐振荡风险。本文提出逐周期实时校准：全差分差动放大器检测 VCF 与 Vg/2 之差并差分修正两相占空比，且不影响主环稳定性。65nm 实现 0.6–4.2V 输出、90% 峰值效率、纹波降低 69%、参考跟踪 23–29ns/V。",
+    "readtime": 8
+  },
+  {
+    "file": "A Fully-Integrated 3-Level DC-DC Converter for Nanosecond-Scale DVFS.md",
+    "title": "面向纳秒级 DVFS 的全集成三电平 DC-DC 变换器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "W. Kim, D. Brooks, G.-Y. Wei",
+    "source": "IEEE JSSC 2012",
+    "abstract": "针对多核处理器细粒度电源管理所需的纳秒级电压切换，融合 Buck 与开关电容结构的三电平变换器以飞电容产生中间电平，使开关节点摆幅减半、等效频率加倍，从而以 1nH 片上螺旋电感实现宽输出范围。130nm 原型 0.4–1.4V/0.85A，峰值效率 77%，0.4↔1.4V 切换 20ns 内完成。",
+    "readtime": 8
+  },
+  {
+    "file": "33.2_A_600V_GaN_Active_Gate_Driver_with_Dynamic_Feedback_Delay_Compensation_Technique_Achieving_22.5_Turn-On_Energy_Saving.md",
+    "title": "600V GaN 主动栅驱动：动态反馈延迟补偿实现 22.5% 开通能量节省",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "J. Zhu, D. Yan, S. Yu, W. Sun, G. Shi, S. Liu, S. Zhang",
+    "source": "ISSCC 2021",
+    "abstract": "针对 GaN 高速开关带来的 dv/dt 串扰、EMI 与直通风险，提出分段主动栅驱动：Miller 平台期间按漏源电压上升斜率动态调节驱动电流，并以相位检测 + 电荷泵 + 压控延迟构成动态反馈延迟补偿（DFDC），逐周期自整定驱动电流切换时刻，抵消反馈环路延迟。0.5μm 600V SOI 实现 dv/dt 从 121 降至 67 V/ns 且不增加开通延迟，开通能量节省 22.5%。",
+    "readtime": 8
+  },
+  {
+    "file": "31.1_An_83.4-Peak-Efficiency_Envelope-Tracking_Supply_Modulator_Using_a_Class-G_Linear_Amplifier_and_a_Single-Inductor_Dual-Input-Dual-Output_Converter_for_200MHz_Bandwidth_5G_New_Radio_RF_Applic.md",
+    "title": "面向 5G NR 200MHz 包络跟踪的 Class-G 线性放大器与单电感双输入双输出调制器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "C. Chen, X. Li, R. Hu, L. Cheng",
+    "source": "ISSCC 2024",
+    "abstract": "针对 5G NR 200/300MHz 带宽下包络跟踪电源调制器中线性放大器源/灌电流与压降之积构成主损耗的问题，提出串联 Class-G 结构：AB 类线性放大器由两只供电调制的 LDO 与功率二极管实现高低压轨无缝切换，并以单电感双输入双输出（SIDIDO）变换器取代传统 buck-boost 来生成四条电源轨、回收灌入低压轨的电流。65nm 实现 200MHz 带宽、峰值效率 83.4%、包络 1–5V @ 5Ω||200pF。",
+    "readtime": 8
+  },
+  {
+    "file": "2014driver.md",
+    "title": "高频 Buck 变换器输出级设计：全摆幅与半摆幅栅驱动的权衡",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "T.-S. Ng, Y. Sun, V. Adrian, B.-H. Gwee, J. S. Chang",
+    "source": "IEEE ISIC 2014",
+    "abstract": "针对高频开关 DC-DC 中输出级（电平移位器 + 栅驱动 + 功率管）功耗占比最高的问题，系统对比半电压摆幅与全电压摆幅两种栅驱动方案：半摆幅虽降低驱动动态损耗，但功率管处于\"弱导通\"使导通与短路损耗上升。0.18μm 仿真表明全摆幅栅驱动的输出级效率高 7 个百分点，据此实现 5 MHz、300 mA、89% 效率的 Buck 输出级。",
+    "readtime": 6
+  },
+  {
+    "file": "17.5_A_98.2-Efficiency_Reciprocal_Direct_Charge_Recycling_Inductor-First_DC-DC_Converter.md",
+    "title": "电荷互易回收栅驱动：98.2% 峰值效率三阶 Buck 变换器",
+    "date": "2026-10-11",
+    "tags": [
+      "power"
+    ],
+    "authors": "A. Abdulslam, P. P. Mercier",
+    "source": "ISSCC 2021",
+    "abstract": "针对小型化电感式 DC-DC 中栅驱动损耗与导通损耗的权衡，利用功率管栅极充放电上升/下降时间本就有限的特性，仅以一个电感与两个开关构成互易直接电荷回收回路，把上管栅电荷经电感直接转移给下管，在不改变变换器控制与时序的前提下回收 60–80% 的栅电荷；0.18μm 实现 3MHz、峰值效率 98.2%。",
+    "readtime": 7
+  },
+  {
     "file": "example_noise_matching.md",
     "title": "低噪声运放的噪声分析与匹配策略",
     "date": "2024-05-01",
