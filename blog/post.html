@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <script>(function () { var t = localStorage.getItem('ee-theme'); if (t) document.documentElement.setAttribute('data-theme', t); })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>论文笔记 - EE工具箱</title>
+    <title>笔记 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -33,16 +33,16 @@
     <nav class="top-nav">
         <a class="back-btn" href="../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../index.html">EE工具箱</a>
-        <span class="breadcrumb">学术分享 / <a href="index.html">论文</a> / 笔记</span>
+        <span class="breadcrumb">学术分享 / <a href="index.html" id="crumbLink">知识分享</a> / 笔记</span>
     </nav>
 
     <main class="container">
         <div class="post-body">
-            <div id="postLoading" class="empty-state">正在加载论文笔记…</div>
+            <div id="postLoading" class="empty-state">正在加载笔记…</div>
 
             <div id="postError" class="empty-state" style="display:none;">
                 <p id="postErrorMsg">文章不存在。</p>
-                <p><a href="index.html" class="btn">← 返回论文列表</a></p>
+                <p><a href="index.html" id="backListBtn" class="btn">← 返回列表</a></p>
             </div>
 
             <div id="postContent" style="display:none;">
@@ -57,7 +57,7 @@
                 <div id="postMarkdown"></div>
                 <!-- 返回按钮 -->
                 <div style="margin-top: var(--space-xxl);">
-                    <a href="index.html" class="btn">← 返回论文列表</a>
+                    <a href="index.html" id="backListBtn2" class="btn">← 返回列表</a>
                 </div>
             </div>
         </div>
@@ -72,7 +72,13 @@
     <script src="../js/common.js"></script>
     <script>
         (function () {
-            var TAG_NAMES = { analog: '模拟电路', power: '电力电子', control: '控制理论', noise: '噪声与匹配' };
+            /* 两个模块共用本页：先查 posts.json（知识分享），未命中再查 papers.json（论文分享），
+               文件名跨目录唯一（build-blog.js 构建时校验重名） */
+            var MODULES = {
+                knowledge: { key: 'knowledge', name: '知识分享', crumb: '知识分享', list: 'posts.json', dir: 'posts/', listUrl: 'index.html' },
+                papers: { key: 'papers', name: '论文分享', crumb: '论文', list: 'papers.json', dir: 'papers/', listUrl: 'index.html?m=papers' }
+            };
+            var TAG_NAMES = { analog: '模拟电路', power: '电力电子', control: '控制理论', noise: '噪声与匹配', tools: '工具', motor: '电机' };
             var elLoading = document.getElementById('postLoading');
             var elError = document.getElementById('postError');
             var elErrorMsg = document.getElementById('postErrorMsg');
@@ -125,9 +131,9 @@
                 });
             }
 
-            /* md 内相对路径（图片/附件/站内链接）基准是 posts/ 目录；
-               本页位于 blog/ 下，统一补 posts/ 前缀（http/data/锚点/根路径除外） */
-            function fixRelativePaths(html) {
+            /* md 内相对路径（图片/附件/站内链接）基准是所属模块的 md 目录；
+               本页位于 blog/ 下，按命中模块统一补 posts/ 或 papers/ 前缀（http/data/锚点/根路径除外） */
+            function fixRelativePaths(html, dirPrefix) {
                 var doc = new DOMParser().parseFromString(html, 'text/html');
                 var nodes = doc.querySelectorAll('img[src], a[href]');
                 for (var i = 0; i < nodes.length; i++) {
@@ -135,7 +141,7 @@
                     var attr = el.tagName === 'IMG' ? 'src' : 'href';
                     var v = el.getAttribute(attr) || '';
                     if (!v || /^(https?:|data:|mailto:|#|\/)/i.test(v)) continue;
-                    el.setAttribute(attr, 'posts/' + v);
+                    el.setAttribute(attr, dirPrefix + v);
                 }
                 return doc.body.innerHTML;
             }
@@ -153,7 +159,17 @@
                 }).catch(function (e) { console.warn('MathJax 排版失败:', e); });
             }
 
-            function render(item, body) {
+            function render(item, body, mod) {
+                /* 面包屑与返回按钮按命中模块更新 */
+                var crumbLink = document.getElementById('crumbLink');
+                crumbLink.textContent = mod.crumb;
+                crumbLink.href = mod.listUrl;
+                var backText = '← 返回' + mod.name + '列表';
+                [document.getElementById('backListBtn'), document.getElementById('backListBtn2')].forEach(function (a) {
+                    a.textContent = backText;
+                    a.href = mod.listUrl;
+                });
+
                 document.getElementById('postTitle').textContent = item.title;
                 var metaHtml = '<span class="paper-year">' + String(item.date).slice(0, 4) + '</span>';
                 (item.tags || []).forEach(function (t) {
@@ -161,16 +177,19 @@
                 });
                 document.getElementById('postMeta').innerHTML = metaHtml;
 
+                /* 知识分享 authors 默认 Hawkeye，作者行无展示意义，仅论文分享渲染 */
                 var authorBits = [];
-                if (item.authors) authorBits.push(item.authors);
-                if (item.source) authorBits.push('<em>' + item.source + '</em>');
+                if (mod.key === 'papers') {
+                    if (item.authors) authorBits.push(item.authors);
+                    if (item.source) authorBits.push('<em>' + item.source + '</em>');
+                }
                 document.getElementById('postAuthors').innerHTML =
                     authorBits.length ? '原文：' + authorBits.join(' — ') : '';
                 document.getElementById('postDate').innerHTML =
                     '阅读时间：约 ' + item.readtime + ' 分钟 &nbsp;|&nbsp; 记录于 ' + item.date;
 
                 document.getElementById('postMarkdown').innerHTML =
-                    fixRelativePaths(renderMarkdown(body));
+                    fixRelativePaths(renderMarkdown(body), mod.dir);
 
                 elLoading.style.display = 'none';
                 elContent.style.display = '';
@@ -178,20 +197,37 @@
                 typesetMath();
             }
 
+            /* 各清单独立容错：单份缺失不致整体失败，两份都缺失才报清单加载失败 */
+            function fetchList(url) {
+                return fetch(url)
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .catch(function () { return null; });
+            }
+
             function load() {
                 var file = getPostFile();
                 if (!file) return fail('链接参数无效，正确格式为 post.html?p=文件名.md');
-                fetch('posts.json')
-                    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-                    .then(function (list) {
-                        var item = null;
-                        for (var i = 0; i < list.length; i++) {
-                            if (list[i].file === file) { item = list[i]; break; }
+                Promise.all([fetchList('posts.json'), fetchList('papers.json')])
+                    .then(function (res) {
+                        var mod = null, item = null;
+                        for (var m = 0; m < res.length && !item; m++) {
+                            var list = res[m] || [];
+                            for (var i = 0; i < list.length; i++) {
+                                if (list[i].file === file) {
+                                    item = list[i];
+                                    mod = MODULES[m === 0 ? 'knowledge' : 'papers'];
+                                    break;
+                                }
+                            }
                         }
-                        if (!item) return fail('清单中未找到该文章，请先双击 tools/build-blog.bat 重建清单。');
-                        return fetch('posts/' + encodeURIComponent(file))
+                        if (!item) {
+                            if (res[0] === null && res[1] === null)
+                                return fail('清单加载失败：请先双击 tools/build-blog.bat 生成 blog/posts.json 与 blog/papers.json。');
+                            return fail('清单中未找到该文章，请先双击 tools/build-blog.bat 重建清单。');
+                        }
+                        return fetch(mod.dir + encodeURIComponent(file))
                             .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
-                            .then(function (raw) { render(item, stripFrontMatter(raw)); });
+                            .then(function (raw) { render(item, stripFrontMatter(raw), mod); });
                     })
                     .catch(function () { fail('文章加载失败，请检查网络连接或文件是否存在。'); });
             }

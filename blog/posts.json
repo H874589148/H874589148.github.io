@@ -1,41 +1,88 @@
 [
   {
-    "file": "terminal_command.md",
+    "file": "sar_adc_noise.md",
+    "title": "SAR ADC 噪声来源全景分析与计算方法",
+    "date": "2026-10-11",
+    "tags": [
+      "analog",
+      "noise"
+    ],
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "系统梳理逐次逼近型（SAR）ADC 的全部噪声来源——量化噪声、采样 kT/C、比较器判决噪声、CDAC 与参考电压噪声、电荷注入与时钟馈通、1/f 噪声、时钟抖动与电源耦合；逐项给出机理推导与计算公式，配合 12-bit 数值示例给出从分项预算到 ENOB 的完整计算流程与抑制手段对照。",
+    "readtime": 15
+  },
+  {
+    "file": "metal_em.md",
+    "title": "半导体金属互连 EM（电迁移 Electromigration）：电流对 EM 的影响、是否线性、加速因子",
+    "date": "2026-08-20",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Hawkeye",
+    "source": "pdk",
+    "abstract": "本文介绍了半导体工艺里面金属的 EM 导致阻抗增加，电流对 EM 的影响是什么？线性的吗？有加速因子吗？",
+    "readtime": 6
+  },
+  {
+    "file": "simulaton_convergence.md",
+    "title": "model 仿真不收敛 debug flow（Virtuoso）",
+    "date": "2026-03-15",
+    "tags": [
+      "analog",
+      "tools"
+    ],
+    "authors": "Hawkeye",
+    "source": "Tools",
+    "abstract": "本文介绍了常用的仿真不收敛 debug flow（Virtuoso）。",
+    "readtime": 6
+  },
+  {
+    "file": "motor_principles.md",
+    "title": "电机分类及工作原理科普",
+    "date": "2025-08-31",
+    "tags": [
+      "motor"
+    ],
+    "authors": "Hawkeye",
+    "source": "internet",
+    "abstract": "本文介绍了电机分类及工作原理科普。",
+    "readtime": 6
+  },
+  {
+    "file": "motor_control.md",
+    "title": "电机 PWM 与 SVPWM 控制方法详解",
+    "date": "2025-08-31",
+    "tags": [
+      "motor"
+    ],
+    "authors": "Hawkeye",
+    "source": "internet",
+    "abstract": "本文介绍了电机 PWM 与 SVPWM 控制方法。",
+    "readtime": 6
+  },
+  {
+    "file": "command_terminal.md",
     "title": "Terminal命令整理",
-    "date": "2026-05-01",
+    "date": "2024-07-31",
     "tags": [
-      "analog",
-      "noise"
+      "tools"
     ],
-    "authors": "示例作者 et al.",
-    "source": "IEEE JSSC",
-    "abstract": "本文介绍了常用的gim命令。",
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "本文介绍了常用的terminl命令。",
     "readtime": 6
   },
   {
-    "file": "example_noise_matching.md",
-    "title": "低噪声运放的噪声分析与匹配策略",
-    "date": "2024-05-01",
+    "file": "command_gvim.md",
+    "title": "gvim命令整理",
+    "date": "2024-07-31",
     "tags": [
-      "analog",
-      "noise"
+      "tools"
     ],
-    "authors": "示例作者 et al.",
-    "source": "IEEE JSSC",
-    "abstract": "本文介绍了低噪声运算放大器的噪声建模方法，分析了热噪声与闪烁噪声在不同工作点下的贡献比例，并讨论了输入管尺寸对噪声-功耗权衡的影响。",
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "本文介绍了常用的gvim命令。",
     "readtime": 6
-  },
-  {
-    "file": "example_buck_control.md",
-    "title": "Buck 变换器数字控制器设计：Type-III 补偿与环路带宽优化",
-    "date": "2023-11-12",
-    "tags": [
-      "power",
-      "control"
-    ],
-    "authors": "示例作者 et al.",
-    "source": "IEEE TPEL",
-    "abstract": "针对 Buck 变换器的数字电压模式控制，本文推导了 Type-III 补偿器的零极点配置方法，分析了相位裕度与环路带宽的设计权衡，给出了完整的 Bode 图设计流程。",
-    "readtime": 8
   }
 ]

@@ -9,6 +9,16 @@
     font-size: 0.9rem;
 }
 
+/* 模块切换链接（知识分享 ↔ 论文分享） */
+.mod-switch a {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--color-text-muted);
+    white-space: nowrap;
+}
+.mod-switch a:hover { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
 /* 标签筛选 */
 .tag-filter {
     display: flex;

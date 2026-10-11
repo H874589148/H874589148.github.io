@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <script>(function () { var t = localStorage.getItem('ee-theme'); if (t) document.documentElement.setAttribute('data-theme', t); })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>论文分享 - EE工具箱</title>
+    <title>知识分享 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -18,32 +18,33 @@
     <nav class="top-nav">
         <a class="back-btn" href="../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../index.html">EE工具箱</a>
-        <span class="breadcrumb">学术分享 / 论文</span>
+        <span class="breadcrumb" id="crumb">学术分享 / 知识分享</span>
         <span class="nav-spacer"></span>
+        <span class="mod-switch" id="modSwitch"></span>
         <div class="search-wrap">
-            <input type="text" id="searchInput" placeholder="搜索论文标题、关键词..." oninput="filterPapers(this.value)">
+            <input type="text" id="searchInput" placeholder="搜索知识分享标题、关键词..." oninput="filterPapers(this.value)">
         </div>
     </nav>
 
     <main class="container">
-        <h1>论文分享</h1>
-        <p class="blog-desc">精选论文阅读笔记，涵盖模拟/混合信号 IC、电力电子、控制理论等方向。</p>
+        <h1 id="pageTitle">知识分享</h1>
+        <p class="blog-desc" id="pageDesc">技术笔记与知识整理：电路、算法、工具链经验随写随发。</p>
 
-        <!-- 分类筛选（按钮由 posts.json 动态生成，新 tag 无需改 HTML） -->
+        <!-- 分类筛选（按钮由清单动态生成，新 tag 无需改 HTML） -->
         <div class="tag-filter" id="tagFilter"></div>
 
-        <!-- 论文列表（由 posts.json 动态渲染，添加新 .md 后运行 tools/build-blog.bat） -->
+        <!-- 文章列表（由清单动态渲染，添加新 .md 后运行 tools/build-blog.bat） -->
         <div id="paperList" class="paper-list"></div>
 
         <!-- 空状态 -->
         <div id="emptyState" class="empty-state" style="display:none;">
-            <p>没有找到匹配的论文。</p>
+            <p>没有找到匹配的文章。</p>
         </div>
 
         <!-- 添加提示 -->
-        <div class="add-hint info-box" style="margin-top:var(--space-xl);">
-            <strong>如何添加新论文：</strong>在 <code>blog/posts/</code> 目录下新建 <code>.md</code> 文件
-            （文件头写 <code>title / date / tags</code> 等 front matter，写法可参考已有文章），
+        <div class="add-hint info-box" id="addHint" style="margin-top:var(--space-xl);">
+            <strong>如何添加新知识笔记：</strong>在 <code>blog/posts/</code> 目录下新建 <code>.md</code> 文件
+            （文件头写 <code>title / date / tags</code> 等 front matter，<code>authors</code> 默认 Hawkeye 无需填写），
             然后双击 <code>tools/build-blog.bat</code> 重建清单并刷新本页即可。
             正文支持 Markdown 语法与 LaTeX 公式（<code>$...$</code> 行内 / <code>$$...$$</code> 独立成行）。
         </div>
@@ -63,11 +64,42 @@
 
     <script src="../js/common.js"></script>
     <script>
-        /* 论文卡片与标签筛选均由 posts.json 动态渲染（新 .md 放入 posts/ 后运行 tools/build-blog.bat） */
-        var TAG_NAMES = { analog: '模拟电路', power: '电力电子', control: '控制理论', noise: '噪声与匹配' };
+        /* 两个模块共用本页：?m=papers 显示论文分享，缺省为知识分享（与 post.html 的 MODULES 保持一致） */
+        var MODULES = {
+            knowledge: {
+                key: 'knowledge', name: '知识分享', crumb: '知识分享',
+                list: 'posts.json', dir: 'posts/',
+                desc: '技术笔记与知识整理：电路、算法、工具链经验随写随发。',
+                hint: '<strong>如何添加新知识笔记：</strong>在 <code>blog/posts/</code> 目录下新建 <code>.md</code> 文件（文件头写 <code>title / date / tags</code> 等 front matter，<code>authors</code> 默认 Hawkeye 无需填写），然后双击 <code>tools/build-blog.bat</code> 重建清单并刷新本页即可。正文支持 Markdown 语法与 LaTeX 公式（<code>$...$</code> 行内 / <code>$$...$$</code> 独立成行）。'
+            },
+            papers: {
+                key: 'papers', name: '论文分享', crumb: '论文',
+                list: 'papers.json', dir: 'papers/',
+                desc: '精选论文阅读笔记，涵盖模拟/混合信号 IC、电力电子、控制理论等方向。',
+                hint: '<strong>如何添加新论文：</strong>在 <code>blog/papers/</code> 目录下新建 <code>.md</code> 文件（文件头写 <code>title / date / tags / authors / source / abstract</code> 等 front matter，写法可参考已有文章），然后双击 <code>tools/build-blog.bat</code> 重建清单并刷新本页即可。正文支持 Markdown 语法与 LaTeX 公式（<code>$...$</code> 行内 / <code>$$...$$</code> 独立成行）。'
+            }
+        };
+        var TAG_NAMES = { analog: '模拟电路', power: '电力电子', control: '控制理论', noise: '噪声与匹配', tools: '工具', motor: '电机' };
+        /* ?m=papers 进入论文分享；兼容旧单数 ?m=paper */
+        var modParam = new URLSearchParams(location.search).get('m');
+        if (modParam === 'paper') modParam = 'papers';
+        var mod = MODULES[modParam] || MODULES.knowledge;
         var papers = [];
         var activeTag = 'all';
         var searchQuery = '';
+
+        function applyModuleUI() {
+            document.title = mod.name + ' - EE工具箱';
+            document.getElementById('crumb').innerHTML = '学术分享 / ' + mod.crumb;
+            document.getElementById('pageTitle').textContent = mod.name;
+            document.getElementById('pageDesc').textContent = mod.desc;
+            document.getElementById('addHint').innerHTML = mod.hint;
+            document.getElementById('searchInput').placeholder = '搜索' + mod.name + '标题、关键词...';
+            var other = MODULES[mod.key === 'knowledge' ? 'papers' : 'knowledge'];
+            document.getElementById('modSwitch').innerHTML =
+                '<a href="index.html?m=' + other.key + '">→ ' + other.name + '</a>';
+        }
+        applyModuleUI();
 
         function esc(s) {
             return String(s == null ? '' : s)
@@ -121,7 +153,8 @@
                 var badges = tags.map(function (t) {
                     return '<span class="tag-badge ' + esc(t) + '">' + esc(tagName(t)) + '</span>';
                 }).join('');
-                var authorLine = p.authors
+                /* 知识分享 authors 默认 Hawkeye，卡片上无展示意义，仅论文分享渲染作者行 */
+                var authorLine = (mod.key === 'papers' && p.authors)
                     ? '<p class="paper-authors">' + esc(p.authors)
                         + (p.source ? ' — <em>' + esc(p.source) + '</em>' : '') + '</p>'
                     : '';
@@ -139,7 +172,7 @@
             document.getElementById('emptyState').style.display = visible === 0 ? '' : 'none';
         }
 
-        fetch('posts.json')
+        fetch(mod.list)
             .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(function (data) {
                 papers = data || [];
@@ -148,7 +181,7 @@
             })
             .catch(function () {
                 var empty = document.getElementById('emptyState');
-                empty.innerHTML = '清单加载失败：请先双击 <code>tools/build-blog.bat</code> 生成 <code>blog/posts.json</code>。';
+                empty.innerHTML = '清单加载失败：请先双击 <code>tools/build-blog.bat</code> 生成 <code>blog/' + mod.list + '</code>。';
                 empty.style.display = '';
             });
     </script>

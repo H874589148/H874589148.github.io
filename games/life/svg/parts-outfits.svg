@@ -1,0 +1,304 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<!--
+  人生长卷 · 服装部件库
+  ============================================
+  每套服装两档：
+    of-<名>-a  成人档（teen/adult/mid/elder 共用，按 adult 骨架：肩132 髋200）
+    of-<名>-y  童装档（child 专用：肩164 髋222，领口不高于 y=152）
+  内部图层顺序：袖 → 衣身 → 下摆/裙 → 腰带 → 领口 → 纹饰。
+  裤色不在服装内：腿(.leg-main)填充色由引擎按 OUTFITS 表动态设置，
+  长袍下摆直接盖住腿，短打露出的小腿即裤色。
+  清单（15 套）：cloth布衣 shortcoat短褐 scholar儒衫 wuxia劲装 silk绸衫
+  official官服 medic青囊 straw蓑衣 fine彩衣(女) qipao旗袍(女)
+  student学生装 suit西装 work工装 sport运动服 casual休闲装
+-->
+<g id="of-cloth-a">
+  <path d="M78,136 Q64,144 62,172 Q72,180 84,174 L84,140 Z" fill="#8f9678" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,136 Q136,144 138,172 Q128,180 116,174 L116,140 Z" fill="#8f9678" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,192 L124,192 L126,242 Q100,251 74,242 Z" fill="#79825f" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,134 Q100,126 122,134 L124,198 Q100,206 76,198 Z" fill="#8f9678" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,190 L124,190 L124,200 L76,200 Z" fill="#6b5a44" stroke="#4a382c" stroke-width="2"/>
+  <path d="M84,132 L100,150 L116,132 L112,128 L100,140 L88,128 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+  <path d="M92,162 L90,188 M108,162 L110,188" fill="none" stroke="#4a382c" stroke-width="1.5" opacity="0.3"/>
+</g>
+<g id="of-cloth-y">
+  <path d="M74,174 Q62,182 60,206 Q70,214 82,208 L84,178 Z" fill="#8f9678" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q138,182 140,206 Q130,214 118,208 L116,178 Z" fill="#8f9678" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,220 L124,220 L126,258 Q100,266 74,258 Z" fill="#79825f" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,164 Q100,156 124,164 L126,222 Q100,230 74,222 Z" fill="#8f9678" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,218 L122,218 L122,227 L78,227 Z" fill="#6b5a44" stroke="#4a382c" stroke-width="2"/>
+  <path d="M86,162 L100,177 L114,162 L110,158 L100,168 L90,158 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-shortcoat-a">
+  <path d="M78,136 Q66,144 64,170 Q74,178 84,172 L84,140 Z" fill="#ab9a74" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,136 Q134,144 136,170 Q126,178 116,172 L116,140 Z" fill="#ab9a74" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,190 L123,190 L125,232 Q100,240 75,232 Z" fill="#9a8a64" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,134 Q100,126 122,134 L124,196 Q100,204 76,196 Z" fill="#ab9a74" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100,132 L100,196" stroke="#8a7a58" stroke-width="2.5"/>
+  <rect x="85" y="158" width="12" height="10" fill="#8a7a58" stroke="#6b5844" stroke-width="1.5"/>
+  <rect x="104" y="172" width="13" height="10" fill="#8a7a58" stroke="#6b5844" stroke-width="1.5"/>
+  <path d="M78,188 L122,188 L122,198 L78,198 Z" fill="#7a5c40" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-shortcoat-y">
+  <path d="M74,174 Q63,182 61,204 Q71,212 82,206 L84,178 Z" fill="#ab9a74" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q137,182 139,204 Q129,212 118,206 L116,178 Z" fill="#ab9a74" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,218 L123,218 L125,248 Q100,255 75,248 Z" fill="#9a8a64" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,164 Q100,156 124,164 L126,220 Q100,228 74,220 Z" fill="#ab9a74" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100,160 L100,220" stroke="#8a7a58" stroke-width="2.5"/>
+  <rect x="86" y="182" width="11" height="9" fill="#8a7a58" stroke="#6b5844" stroke-width="1.5"/>
+  <path d="M78,215 L122,215 L122,224 L78,224 Z" fill="#7a5c40" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-scholar-a">
+  <path d="M78,136 Q62,146 60,178 Q72,186 84,180 L84,140 Z" fill="#7d94a8" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,136 Q138,146 140,178 Q128,186 116,180 L116,140 Z" fill="#7d94a8" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,192 L124,192 L128,284 Q100,293 72,284 Z" fill="#67809a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M74,238 L72,280 M126,238 L128,280" fill="none" stroke="#4a382c" stroke-width="2" opacity="0.4"/>
+  <path d="M78,134 Q100,126 122,134 L120,200 Q100,208 80,200 Z" fill="#7d94a8" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,190 L124,190 L124,200 L76,200 Z" fill="#4e5a68" stroke="#4a382c" stroke-width="2"/>
+  <path d="M84,200 L82,224 M116,200 L118,224" stroke="#4e5a68" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M84,132 L100,150 L116,132 L112,128 L100,140 L88,128 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+  <path d="M90,160 L88,186 M110,160 L112,186" fill="none" stroke="#4a382c" stroke-width="1.5" opacity="0.3"/>
+</g>
+<g id="of-scholar-y">
+  <path d="M74,174 Q60,184 58,212 Q70,220 82,214 L84,178 Z" fill="#7d94a8" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q140,184 142,212 Q130,220 118,214 L116,178 Z" fill="#7d94a8" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,220 L124,220 L127,272 Q100,280 73,272 Z" fill="#67809a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,164 Q100,156 124,164 L126,222 Q100,230 74,222 Z" fill="#7d94a8" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,218 L122,218 L122,227 L78,227 Z" fill="#4e5a68" stroke="#4a382c" stroke-width="2"/>
+  <path d="M86,162 L100,177 L114,162 L110,158 L100,168 L90,158 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-wuxia-a">
+  <path d="M80,136 Q70,142 70,166 L84,170 L84,140 Z" fill="#63605a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M120,136 Q130,142 130,166 L116,170 L116,140 Z" fill="#63605a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M70,160 L84,164 M116,164 L130,160" stroke="#42403a" stroke-width="3"/>
+  <path d="M78,190 L122,190 L124,228 Q100,237 76,228 Z" fill="#514e48" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M80,134 Q100,126 120,134 L122,196 Q100,203 78,196 Z" fill="#63605a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100,132 L100,190" stroke="#42403a" stroke-width="2"/>
+  <path d="M76,188 L124,188 L124,202 L76,202 Z" fill="#8a3d3d" stroke="#4a382c" stroke-width="2"/>
+  <rect x="95" y="191" width="10" height="8" fill="#d4b96a" stroke="#4a382c" stroke-width="1.5"/>
+</g>
+<g id="of-wuxia-y">
+  <path d="M75,174 Q66,180 66,200 L80,204 L82,178 Z" fill="#63605a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M125,174 Q134,180 134,200 L120,204 L118,178 Z" fill="#63605a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,216 L123,216 L125,244 Q100,252 75,244 Z" fill="#514e48" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,164 Q100,157 123,164 L125,218 Q100,226 75,218 Z" fill="#63605a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100,162 L100,216" stroke="#42403a" stroke-width="2"/>
+  <path d="M77,213 L123,213 L123,225 L77,225 Z" fill="#8a3d3d" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-silk-a">
+  <path d="M78,138 Q62,148 60,180 Q72,188 84,182 L84,142 Z" fill="#b08d60" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,138 Q138,148 140,180 Q128,188 116,182 L116,142 Z" fill="#b08d60" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,136 Q100,127 122,136 L126,280 Q100,290 74,280 Z" fill="#b08d60" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M85,132 Q100,148 115,132 L112,128 Q100,142 88,128 Z" fill="#96754c" stroke="#4a382c" stroke-width="2"/>
+  <path d="M76,190 L124,190 L124,200 L76,200 Z" fill="#7a4a34" stroke="#4a382c" stroke-width="2"/>
+  <circle cx="88" cy="166" r="4" fill="none" stroke="#96754c" stroke-width="2"/>
+  <circle cx="112" cy="166" r="4" fill="none" stroke="#96754c" stroke-width="2"/>
+  <circle cx="100" cy="224" r="4" fill="none" stroke="#96754c" stroke-width="2"/>
+  <path d="M76,240 L74,276 M124,240 L126,276" fill="none" stroke="#4a382c" stroke-width="2" opacity="0.4"/>
+</g>
+<g id="of-silk-y">
+  <path d="M74,176 Q60,186 58,214 Q70,222 82,216 L84,180 Z" fill="#b08d60" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,176 Q140,186 142,214 Q130,222 118,216 L116,180 Z" fill="#b08d60" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,164 Q100,156 124,164 L127,258 Q100,267 73,258 Z" fill="#b08d60" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M86,162 Q100,176 114,162 L111,158 Q100,170 89,158 Z" fill="#96754c" stroke="#4a382c" stroke-width="2"/>
+  <path d="M78,216 L122,216 L122,225 L78,225 Z" fill="#7a4a34" stroke="#4a382c" stroke-width="2"/>
+  <circle cx="90" cy="192" r="3.5" fill="none" stroke="#96754c" stroke-width="2"/>
+  <circle cx="110" cy="192" r="3.5" fill="none" stroke="#96754c" stroke-width="2"/>
+</g>
+<g id="of-official-a">
+  <path d="M78,138 Q62,148 60,180 Q72,188 84,182 L84,142 Z" fill="#9a4a4c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,138 Q138,148 140,180 Q128,188 116,182 L116,142 Z" fill="#9a4a4c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,136 Q100,127 122,136 L126,282 Q100,292 74,282 Z" fill="#9a4a4c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M85,132 Q100,148 115,132 L112,128 Q100,142 88,128 Z" fill="#803c3e" stroke="#4a382c" stroke-width="2"/>
+  <path d="M76,188 L124,188 L124,202 L76,202 Z" fill="#3a3448" stroke="#4a382c" stroke-width="2"/>
+  <rect x="93" y="190" width="14" height="10" rx="2" fill="#d4b96a" stroke="#4a382c" stroke-width="1.5"/>
+  <rect x="88" y="148" width="24" height="22" rx="2" fill="#d4b96a" stroke="#4a382c" stroke-width="2"/>
+  <path d="M94,164 Q100,154 106,164 Q100,168 94,164 Z" fill="none" stroke="#4a382c" stroke-width="1.5"/>
+  <path d="M76,240 L74,278 M124,240 L126,278" fill="none" stroke="#4a382c" stroke-width="2" opacity="0.4"/>
+</g>
+<g id="of-official-y">
+  <path d="M74,176 Q60,186 58,214 Q70,222 82,216 L84,180 Z" fill="#9a4a4c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,176 Q140,186 142,214 Q130,222 118,216 L116,180 Z" fill="#9a4a4c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,164 Q100,156 124,164 L127,254 Q100,263 73,254 Z" fill="#9a4a4c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M86,162 Q100,176 114,162 L111,158 Q100,170 89,158 Z" fill="#803c3e" stroke="#4a382c" stroke-width="2"/>
+  <path d="M78,214 L122,214 L122,226 L78,226 Z" fill="#3a3448" stroke="#4a382c" stroke-width="2"/>
+  <rect x="94" y="216" width="12" height="8" rx="2" fill="#d4b96a" stroke="#4a382c" stroke-width="1.5"/>
+  <rect x="89" y="178" width="22" height="20" rx="2" fill="#d4b96a" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-medic-a">
+  <path d="M78,136 Q62,146 60,176 Q72,184 84,178 L84,140 Z" fill="#e6e0ce" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,136 Q138,146 140,176 Q128,184 116,178 L116,140 Z" fill="#e6e0ce" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,192 L123,192 L127,278 Q100,287 73,278 Z" fill="#dcd4bc" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,134 Q100,126 122,134 L120,200 Q100,207 80,200 Z" fill="#e6e0ce" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,192 L124,192 L124,199 L76,199 Z" fill="#7a8a6a" stroke="#4a382c" stroke-width="2"/>
+  <path d="M86,199 L84,222 M114,199 L116,222" stroke="#7a8a6a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M84,132 L100,150 L116,132 L112,128 L100,140 L88,128 Z" fill="#cfc8b2" stroke="#4a382c" stroke-width="2"/>
+  <path d="M90,160 L88,186 M110,160 L112,186" fill="none" stroke="#4a382c" stroke-width="1.5" opacity="0.3"/>
+</g>
+<g id="of-medic-y">
+  <path d="M74,174 Q60,184 58,210 Q70,218 82,212 L84,178 Z" fill="#e6e0ce" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q140,184 142,210 Q130,218 118,212 L116,178 Z" fill="#e6e0ce" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,220 L124,220 L127,268 Q100,276 73,268 Z" fill="#dcd4bc" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M76,164 Q100,156 124,164 L126,222 Q100,230 74,222 Z" fill="#e6e0ce" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,218 L122,218 L122,225 L78,225 Z" fill="#7a8a6a" stroke="#4a382c" stroke-width="2"/>
+  <path d="M86,162 L100,177 L114,162 L110,158 L100,168 L90,158 Z" fill="#cfc8b2" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-straw-a">
+  <path d="M78,140 Q66,148 64,172 Q74,180 84,174 L84,144 Z" fill="#6e6250" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,140 Q134,148 136,172 Q126,180 116,174 L116,144 Z" fill="#6e6250" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M58,206 L142,206 L138,244 Q100,254 62,244 Z" fill="#8a7448" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M62,216 Q100,226 138,216 M64,228 Q100,238 136,228" fill="none" stroke="#6b5a38" stroke-width="1.5" opacity="0.6"/>
+  <path d="M70,138 Q100,126 130,138 L134,158 Q100,146 66,158 Z" fill="#a08a5c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M64,154 Q100,142 136,154 L140,180 Q100,166 60,180 Z" fill="#a08a5c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M58,176 Q100,162 142,176 L146,210 Q100,194 54,210 Z" fill="#8a7448" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M66,164 Q80,158 94,164 M106,164 Q120,158 134,164 M60,188 Q78,180 96,186 M104,186 Q122,180 140,188" fill="none" stroke="#6b5a38" stroke-width="1.5" opacity="0.6"/>
+  <path d="M62,206 Q100,220 138,206" fill="none" stroke="#6b5a38" stroke-width="3" stroke-linecap="round"/>
+</g>
+<g id="of-straw-y">
+  <path d="M74,176 Q63,184 61,204 Q71,212 82,206 L84,178 Z" fill="#6e6250" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,176 Q137,184 139,204 Q129,212 118,206 L116,178 Z" fill="#6e6250" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M62,222 L138,222 L134,252 Q100,261 66,252 Z" fill="#8a7448" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M72,172 Q100,162 128,172 L132,190 Q100,178 68,190 Z" fill="#a08a5c" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M66,186 Q100,172 134,186 L138,212 Q100,196 62,212 Z" fill="#8a7448" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M74,194 Q88,188 98,194 M102,194 Q116,188 128,194" fill="none" stroke="#6b5a38" stroke-width="1.5" opacity="0.6"/>
+  <path d="M64,210 Q100,222 136,210" fill="none" stroke="#6b5a38" stroke-width="3" stroke-linecap="round"/>
+</g>
+<g id="of-fine-a">
+  <path d="M82,138 Q64,148 60,184 Q72,192 84,186 L84,142 Z" fill="#c68a98" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M118,138 Q136,148 140,184 Q128,192 116,186 L116,142 Z" fill="#c68a98" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M84,196 L116,196 L124,284 Q100,293 76,284 Z" fill="#a96e80" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M88,210 Q86,248 84,278 M100,212 L100,286 M112,210 Q114,248 116,278" fill="none" stroke="#8a5a6a" stroke-width="1.5" opacity="0.5"/>
+  <path d="M82,136 Q100,128 118,136 L118,200 Q100,207 82,200 Z" fill="#c68a98" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M80,192 L120,192 L120,200 L80,200 Z" fill="#6e5a6a" stroke="#4a382c" stroke-width="2"/>
+  <path d="M92,200 Q88,232 84,252 M108,200 Q112,232 116,252" fill="none" stroke="#6e5a6a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M86,132 L100,149 L114,132 L110,128 L100,139 L90,128 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+  <path d="M68,148 Q100,130 132,148 Q144,156 140,166" fill="none" stroke="#e0c8a8" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+</g>
+<g id="of-fine-y">
+  <path d="M74,176 Q58,186 54,212 Q66,220 78,214 L80,180 Z" fill="#c68a98" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,176 Q142,186 146,212 Q134,220 122,214 L120,180 Z" fill="#c68a98" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M84,222 L116,222 L123,268 Q100,276 77,268 Z" fill="#a96e80" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M88,234 L86,262 M100,236 L100,270 M112,234 L114,262" fill="none" stroke="#8a5a6a" stroke-width="1.5" opacity="0.5"/>
+  <path d="M78,164 Q100,157 122,164 L124,224 Q100,231 76,224 Z" fill="#c68a98" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M80,219 L120,219 L120,227 L80,227 Z" fill="#6e5a6a" stroke="#4a382c" stroke-width="2"/>
+  <path d="M88,162 L100,176 L112,162 L108,158 L100,167 L92,158 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-qipao-a">
+  <path d="M84,136 Q76,142 76,158 L88,160 L86,140 Z" fill="#5a4a6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M116,136 Q124,142 124,158 L112,160 L114,140 Z" fill="#5a4a6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M84,134 Q100,127 116,134 L118,280 Q100,286 82,280 Z" fill="#5a4a6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M92,126 L92,136 Q100,140 108,136 L108,126 Q100,131 92,126 Z" fill="#5a4a6e" stroke="#4a382c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M100,138 L110,180" stroke="#d4b96a" stroke-width="2.5"/>
+  <circle cx="103" cy="146" r="1.8" fill="#d4b96a"/>
+  <circle cx="107" cy="158" r="1.8" fill="#d4b96a"/>
+  <circle cx="110" cy="170" r="1.8" fill="#d4b96a"/>
+  <path d="M82,274 Q100,280 118,274" fill="none" stroke="#d4b96a" stroke-width="2"/>
+  <path d="M117,240 L118,276" stroke="#4a382c" stroke-width="1.5" opacity="0.4"/>
+</g>
+<g id="of-qipao-y">
+  <path d="M76,164 Q100,157 124,164 L126,252 Q100,259 74,252 Z" fill="#5a4a6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M93,156 L93,166 Q100,169 107,166 L107,156 Q100,160 93,156 Z" fill="#5a4a6e" stroke="#4a382c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M100,168 L108,200" stroke="#d4b96a" stroke-width="2"/>
+  <circle cx="102" cy="174" r="1.5" fill="#d4b96a"/>
+  <circle cx="105" cy="186" r="1.5" fill="#d4b96a"/>
+  <path d="M75,246 Q100,252 125,246" fill="none" stroke="#d4b96a" stroke-width="2"/>
+</g>
+<g id="of-student-a">
+  <path d="M80,136 Q70,142 70,168 L84,172 L84,140 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M120,136 Q130,142 130,168 L116,172 L116,140 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,190 L122,190 L124,248 Q100,256 76,248 Z" fill="#39445a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M80,132 Q100,125 120,132 L122,196 Q100,203 78,196 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M92,124 L92,134 L108,134 L108,124 Q100,128 92,124 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M100,134 L100,246" stroke="#2f3846" stroke-width="2"/>
+  <circle cx="100" cy="150" r="1.6" fill="#c9b48c"/>
+  <circle cx="100" cy="168" r="1.6" fill="#c9b48c"/>
+  <circle cx="100" cy="186" r="1.6" fill="#c9b48c"/>
+  <rect x="83" y="158" width="11" height="13" fill="none" stroke="#2f3846" stroke-width="1.5"/>
+  <rect x="106" y="158" width="11" height="13" fill="none" stroke="#2f3846" stroke-width="1.5"/>
+</g>
+<g id="of-student-y">
+  <path d="M74,174 Q65,180 65,202 L79,206 L81,178 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q135,180 135,202 L121,206 L119,178 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,216 L123,216 L125,252 Q100,259 75,252 Z" fill="#39445a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,164 Q100,157 123,164 L125,218 Q100,226 75,218 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M93,157 L93,166 L107,166 L107,157 Q100,161 93,157 Z" fill="#3f4a5e" stroke="#4a382c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M100,166 L100,252" stroke="#2f3846" stroke-width="2"/>
+  <circle cx="100" cy="180" r="1.5" fill="#c9b48c"/>
+  <circle cx="100" cy="198" r="1.5" fill="#c9b48c"/>
+</g>
+<g id="of-suit-a">
+  <path d="M88,130 L100,152 L112,130 L108,127 L100,140 L92,127 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+  <path d="M100,152 L96,160 L100,188 L104,160 Z" fill="#7a3a3a" stroke="#4a382c" stroke-width="1.5"/>
+  <path d="M80,136 Q70,142 70,168 L84,172 L84,140 Z" fill="#525e6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M120,136 Q130,142 130,168 L116,172 L116,140 Z" fill="#525e6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,192 L122,192 L124,242 Q100,250 76,242 Z" fill="#424c5a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M80,132 Q100,125 120,132 L122,198 Q100,205 78,198 Z" fill="#525e6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M80,132 L92,135 L100,152 L84,151 Z" fill="#424c5a" stroke="#4a382c" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M120,132 L108,135 L100,152 L116,151 Z" fill="#424c5a" stroke="#4a382c" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="100" cy="192" r="1.8" fill="#c9b48c"/>
+  <circle cx="100" cy="204" r="1.8" fill="#c9b48c"/>
+</g>
+<g id="of-suit-y">
+  <path d="M88,160 L100,180 L112,160 L108,157 L100,168 L92,157 Z" fill="#f2ead8" stroke="#4a382c" stroke-width="2"/>
+  <path d="M74,176 Q64,182 64,204 Q74,210 84,206 L84,180 Z" fill="#525e6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,176 Q136,182 136,204 Q126,210 116,206 L116,180 Z" fill="#525e6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,214 L123,214 L125,250 Q100,257 75,250 Z" fill="#424c5a" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,164 Q100,157 123,164 L125,218 Q100,226 75,218 Z" fill="#525e6e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,164 L89,166 L100,180 L85,180 Z" fill="#424c5a" stroke="#4a382c" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M123,164 L111,166 L100,180 L115,180 Z" fill="#424c5a" stroke="#4a382c" stroke-width="2" stroke-linejoin="round"/>
+</g>
+<g id="of-work-a">
+  <path d="M78,136 Q68,142 68,168 L84,172 L84,140 Z" fill="#6e8ea2" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M122,136 Q132,142 132,168 L116,172 L116,140 Z" fill="#6e8ea2" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,190 L123,190 L125,246 Q100,254 75,246 Z" fill="#5a7889" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,134 Q100,126 122,134 L124,196 Q100,203 76,196 Z" fill="#6e8ea2" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100,132 L100,196" stroke="#4c566a" stroke-width="2"/>
+  <rect x="83" y="156" width="13" height="14" fill="#5a7889" stroke="#4a382c" stroke-width="1.5"/>
+  <rect x="104" y="156" width="13" height="14" fill="#5a7889" stroke="#4a382c" stroke-width="1.5"/>
+  <path d="M78,190 L122,190 L122,199 L78,199 Z" fill="#4c566a" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-work-y">
+  <path d="M74,174 Q65,180 65,202 L79,206 L81,178 Z" fill="#6e8ea2" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q135,180 135,202 L121,206 L119,178 Z" fill="#6e8ea2" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,216 L123,216 L125,250 Q100,257 75,250 Z" fill="#5a7889" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,164 Q100,157 123,164 L125,218 Q100,226 75,218 Z" fill="#6e8ea2" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100,162 L100,218" stroke="#4c566a" stroke-width="2"/>
+  <rect x="84" y="184" width="12" height="12" fill="#5a7889" stroke="#4a382c" stroke-width="1.5"/>
+</g>
+<g id="of-sport-a">
+  <path d="M80,136 Q68,142 66,164 L84,170 L84,140 Z" fill="#c46a52" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M120,136 Q132,142 134,164 L116,170 L116,140 Z" fill="#c46a52" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M66,158 Q74,162 84,162 M134,158 Q126,162 116,162" stroke="#f2ead8" stroke-width="3"/>
+  <path d="M78,190 L122,190 L124,244 Q100,252 76,244 Z" fill="#b35a44" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,190 L122,190" stroke="#f2ead8" stroke-width="3"/>
+  <path d="M80,132 Q100,125 120,132 L122,196 Q100,203 78,196 Z" fill="#c46a52" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M84,148 L84,192 M116,148 L116,192" stroke="#f2ead8" stroke-width="2.5"/>
+  <path d="M92,126 L92,134 Q100,138 108,134 L108,126 Q100,130 92,126 Z" fill="#c46a52" stroke="#4a382c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M100,134 L100,196" stroke="#f2ead8" stroke-width="2"/>
+</g>
+<g id="of-sport-y">
+  <path d="M74,174 Q64,180 62,200 L80,206 L82,178 Z" fill="#c46a52" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q136,180 138,200 L120,206 L118,178 Z" fill="#c46a52" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,214 L123,214 L125,248 Q100,255 75,248 Z" fill="#b35a44" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,164 Q100,157 123,164 L125,218 Q100,226 75,218 Z" fill="#c46a52" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M84,176 L84,214 M116,176 L116,214" stroke="#f2ead8" stroke-width="2.5"/>
+  <path d="M100,162 L100,218" stroke="#f2ead8" stroke-width="2"/>
+</g>
+<g id="of-casual-a">
+  <path d="M80,136 Q70,142 70,166 L84,170 L84,140 Z" fill="#8fa88e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M120,136 Q130,142 130,166 L116,170 L116,140 Z" fill="#8fa88e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,190 L122,190 L124,240 Q100,248 76,240 Z" fill="#769275" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M78,134 Q100,126 122,134 L124,196 Q100,203 76,196 Z" fill="#8fa88e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M86,132 Q100,143 114,132" fill="none" stroke="#5e7060" stroke-width="3"/>
+  <rect x="104" y="154" width="13" height="13" fill="none" stroke="#5e7060" stroke-width="1.5"/>
+  <path d="M78,188 L122,188 L122,197 L78,197 Z" fill="#5e7060" stroke="#4a382c" stroke-width="2"/>
+</g>
+<g id="of-casual-y">
+  <path d="M74,174 Q64,180 64,202 L80,206 L82,178 Z" fill="#8fa88e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M126,174 Q136,180 136,202 L120,206 L118,178 Z" fill="#8fa88e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,216 L123,216 L125,248 Q100,255 75,248 Z" fill="#769275" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M77,164 Q100,157 123,164 L125,218 Q100,226 75,218 Z" fill="#8fa88e" stroke="#4a382c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M87,162 Q100,172 113,162" fill="none" stroke="#5e7060" stroke-width="3"/>
+  <path d="M78,214 L122,214 L122,223 L78,223 Z" fill="#5e7060" stroke="#4a382c" stroke-width="2"/>
+</g>
+</svg>
