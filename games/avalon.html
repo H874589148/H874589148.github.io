@@ -133,6 +133,15 @@
   .rules-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:11px; }
   .rules-table th,.rules-table td { border:1px solid rgba(139,147,168,.25); padding:4px 6px; text-align:center; }
   .rules-table th { color:#d8c47f; }
+
+  /* 身份公示 */
+  .reveal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0 4px; }
+  .reveal-item { border-radius:8px; padding:8px 4px; text-align:center; border:1px solid; }
+  .reveal-item .seatno { font-size:10px; opacity:.8; }
+  .reveal-item .rname2 { font-size:13px; font-weight:700; margin-top:2px; }
+  .reveal-item.good { background:linear-gradient(160deg,#1f4f8a,#12315c); border-color:rgba(111,177,255,.4); }
+  .reveal-item.evil { background:linear-gradient(160deg,#7c1f2b,#4a0f18); border-color:rgba(255,125,138,.4); }
+  .role-card.locked { pointer-events:none; }
 </style>
 </head>
 <body>
@@ -164,6 +173,7 @@
     </div>
     <button class="btn btn-gold" id="btnToMission">进入发车阶段</button>
     <button class="btn btn-ghost" id="btnReshuffle">↻ 重新洗牌分配</button>
+    <button class="btn btn-gold" id="btnNewGame" style="display:none">开始新一局</button>
   </div>
 
   <!-- 屏 3：发车 -->
@@ -213,6 +223,8 @@
         <button class="btn btn-gold" id="btnShowResult">点击查看任务结果</button>
       </div>
     </div>
+
+    <button class="btn btn-ghost" id="btnRevealAll">🏁 本局结束 · 公示全部身份</button>
   </div>
 </div>
 
@@ -220,6 +232,7 @@
 <div id="overlay">
   <div class="result-box">
     <div id="resultContent"></div>
+    <button class="btn btn-gold" id="btnViewCards" style="display:none;margin-top:14px">进入翻牌界面细看</button>
     <button class="btn btn-gold" id="btnNextRound" style="display:none;margin-top:14px">下一轮发车</button>
     <button class="btn btn-ghost" id="btnCloseOverlay" style="display:none">留在本页</button>
   </div>
@@ -257,7 +270,8 @@ const S = {
   teamSize: 2,
   failThreshold: 1,
   votes: [],          // true=成功 false=失败
-  pendingVote: null
+  pendingVote: null,
+  revealMode: false
 };
 
 const $ = id => document.getElementById(id);
@@ -295,6 +309,11 @@ $("btnReshuffle").onclick = ()=>{ if(confirm("重新洗牌？当前已销毁的�
 function assignRoles(){
   S.roles = shuffle([...CONFIGS[S.playerCount]]);
   S.destroyed = 0;
+  S.revealMode = false;
+  document.querySelector("#s-roles .panel-title").textContent = "身份牌 · 点击自己的序号查看身份，再点一次销毁";
+  $("btnToMission").style.display = "block";
+  $("btnReshuffle").style.display = "block";
+  $("btnNewGame").style.display = "none";
   const g = $("roleGrid"); g.innerHTML="";
   S.roles.forEach((role,i)=>{
     const info = ROLE_INFO[role];
@@ -311,7 +330,7 @@ function assignRoles(){
         </div>
       </div>`;
     card.onclick = ()=>{
-      if(card.classList.contains("destroyed")) return;
+      if(S.revealMode || card.classList.contains("destroyed")) return;
       if(!card.classList.contains("revealed")){
         card.classList.add("revealed");
       }else{
@@ -408,6 +427,7 @@ $("btnShowResult").onclick=()=>{
   $("overlay").classList.add("show");
   $("btnNextRound").style.display="none";
   $("btnCloseOverlay").style.display="none";
+  $("btnViewCards").style.display="none";
   $("resultContent").innerHTML=`<div class="shuffling">任务卡洗混中 …</div>`;
   setTimeout(()=>{
     const fails=S.votes.filter(v=>!v).length;
@@ -431,6 +451,43 @@ $("btnNextRound").onclick=()=>{
   resetVoteUI();
 };
 $("btnCloseOverlay").onclick=()=>$("overlay").classList.remove("show");
+
+/* ============ 身份公示 ============ */
+$("btnRevealAll").onclick=()=>{
+  if(!S.roles.length) return;
+  if(confirm("确定本局已结束？公示后所有人身份将全部公开。")) openRevealOverlay();
+};
+function openRevealOverlay(){
+  let html=`<div style="font-size:13px;color:#8b93a8;letter-spacing:2px">身份公示</div><div class="reveal-grid">`;
+  S.roles.forEach((role,i)=>{
+    const info=ROLE_INFO[role];
+    html+=`<div class="reveal-item ${info.camp}"><div class="seatno">${i+1}号</div><div class="rname2">${role}</div></div>`;
+  });
+  html+=`</div>`;
+  $("resultContent").innerHTML=html;
+  $("btnNextRound").style.display="none";
+  $("btnViewCards").style.display="block";
+  $("btnCloseOverlay").style.display="block";
+  $("overlay").classList.add("show");
+}
+$("btnViewCards").onclick=()=>{
+  S.revealMode=true;
+  $("overlay").classList.remove("show");
+  show("s-roles");
+  document.querySelectorAll("#roleGrid .role-card").forEach(c=>{
+    c.classList.remove("destroyed");
+    c.classList.add("revealed","locked");
+  });
+  document.querySelector("#s-roles .panel-title").textContent="身份公示 · 本局已结束";
+  $("destroyHint").textContent="本局身份已全部公开。确认完毕后可点击「开始新一局」。";
+  $("btnToMission").style.display="none";
+  $("btnReshuffle").style.display="none";
+  $("btnNewGame").style.display="block";
+};
+$("btnNewGame").onclick=()=>{
+  S.revealMode=false;
+  show("s-setup");
+};
 </script>
 </body>
 </html>
