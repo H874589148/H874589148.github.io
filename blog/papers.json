@@ -362,19 +362,6 @@
     "readtime": 6
   },
   {
-    "file": "A_Wideband_Class-AB_Power_Amplifier_With_2957-GHz_AMPM_Compensation_in_0.9-V_28-nm_Bulk_CMOS.md",
-    "title": "0.9 V 28 nm 体硅 CMOS 中带 29–57 GHz AM-PM 补偿的宽带 Class-AB 功率放大器",
-    "date": "2026-10-11",
-    "tags": [
-      "analog",
-      "power"
-    ],
-    "authors": "Marco Vigilante, Patrick Reynaert",
-    "source": "IEEE JSSC, vol. 53, no. 5, May 2018",
-    "abstract": "5G 毫米波相控阵 PA 的线性瓶颈在 AM-PM 而非 AM-AM——本文用输入 PMOS 变容管对消 NMOS 输入电容的非线性，配合变压器四阶宽带级间匹配，在 0.9 V/28 nm 下实现 29–57 GHz（65%）带宽内 P1dB 处 |AM-PM|<1.8°、EVM 优于 −25 dB 且免数字预失真。",
-    "readtime": 8
-  },
-  {
     "file": "A_Tri-Slope_Gate_Driving_GaN_DCDC_Converter_With_Spurious_Noise_Compression_and_Ringing_Suppression_for_Automotive_Applications.md",
     "title": "三斜率栅驱动的 GaN DC-DC 变换器：杂散噪声压缩与振铃抑制（汽车应用）",
     "date": "2026-10-11",

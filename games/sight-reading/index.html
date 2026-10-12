@@ -22,7 +22,7 @@
     <main class="container">
         <header class="sr-header">
             <h1>识谱练习</h1>
-            <p class="tool-desc">看谱按键 · 37 个章节覆盖 88 键全部组别与十五个大调 · 学习 / 自由测验 / 限时挑战</p>
+            <p class="tool-desc">看谱按键 · 40 个章节覆盖 88 键与十五个大调 · 自选题量 / 跨组综合练习</p>
         </header>
 
         <!-- ===== 视图 1：章节选择 ===== -->
@@ -74,9 +74,19 @@
                 <div id="scoreBox"></div>
             </div>
 
+            <div class="paper-card range-controls" id="rangeControls" hidden>
+                <label>最低音 <select id="rangeLow"></select></label>
+                <label>最高音 <select id="rangeHigh"></select></label>
+                <button type="button" class="btn" id="rangeCentral">中央音区</button>
+                <button type="button" class="btn" id="rangeFull">全88键</button>
+                <p id="rangeMessage" role="status"></p>
+            </div>
             <div class="paper-card kb-overview">
-                <div class="kb-overview-title">88 键总览 · 高亮为本章音域</div>
+                <div class="kb-overview-title">88 键总览 · 点击选择键盘组别</div>
+                <p class="range-legend">上方范围条＝出题区间 · 琴键高亮＝当前键盘视窗</p>
                 <div id="kb88Box"></div>
+                <div class="view-toolbar"><span id="viewLabel"></span><button type="button" class="btn" id="btnDefaultView">回到默认音域</button></div>
+                <div id="groupButtons" class="group-buttons" role="group" aria-label="选择键盘组别"></div>
             </div>
 
             <div class="paper-card control-row">
@@ -84,14 +94,23 @@
                 <button type="button" class="btn mode-btn" id="mode-free" aria-pressed="false">自由测验</button>
                 <button type="button" class="btn mode-btn" id="mode-timed" aria-pressed="false">限时挑战</button>
                 <span class="control-item"><label for="volume">音量</label><input type="range" id="volume" min="0" max="100" value="70"></span>
-                <span class="control-item"><label for="labelSel">键位标注</label>
-                    <select id="labelSel" aria-label="键位标注方式">
-                        <option value="off">关</option>
-                        <option value="name" selected>音名</option>
-                        <option value="sol">唱名</option>
-                    </select>
-                </span>
-                <button type="button" class="btn" id="btnRegen">换一题</button>
+                <span class="control-item"><label for="pageCount">每页音符</label><select id="pageCount"><option value="auto">自动</option></select></span>
+                <span class="control-item" id="learnKeyItem" hidden><label for="learnKey">学习调号</label><select id="learnKey"></select></span>
+                <div class="label-control">
+                    <button type="button" class="btn" id="labelToggle" aria-expanded="false" aria-controls="labelPanel">键位标注 ▾</button>
+                    <div class="label-panel" id="labelPanel" hidden>
+                        <fieldset id="labelFields">
+                            <legend>键位标注（可组合）</legend>
+                            <label><input type="radio" name="keyLabel" value="name" checked>音名</label>
+                            <label><input type="radio" name="keyLabel" value="sol">唱名</label>
+                            <label><input type="radio" name="keyLabel" value="off">无标注</label>
+                            <label><input type="checkbox" id="showMapping" checked>显示电脑映射字母</label>
+                            <label><input type="checkbox" id="showHints" checked>显示提示标记（主音及调内音）</label>
+                        </fieldset>
+                    </div>
+                </div>
+                <button type="button" class="btn" id="btnRegen">换一页</button>
+                <button type="button" class="btn btn-primary" id="btnChallenge" hidden>开始挑战</button>
             </div>
 
             <div class="paper-card kb-local" id="kbLocalBox"></div>
@@ -101,13 +120,15 @@
             <p><strong>玩法与规则说明：</strong></p>
             <ul>
                 <li><strong>学习模式</strong>：按局部键盘（或电脑键盘）任意琴键，谱面上显示对应音符并标注音名与唱名，同时发声。</li>
-                <li><strong>自由测验</strong>：每页 10 个音符，从左到右逐个按对即消失，按错抖动提示不扣分；整页完成后自动出下一页。</li>
-                <li><strong>限时挑战</strong>：60 秒内按对越多分越高，每页 8 个音符，成绩自动记录为本章最佳。</li>
-                <li><strong>章节体系</strong>：第一部分 C 调覆盖 88 键全部 9 个组别（大字二组 A0–B0 至小字五组 C8）；第二、三部分为升号调 / 降号调大调，每调含高音、低音谱号各一章，音域为主音到七级音的一个八度。</li>
+                <li><strong>自由测验</strong>：每页数量可设为自动或 1–10；按谱表系统自上而下、系统内从左到右逐音作答，答完整页自动翻页。固定题量在窄屏分行显示。</li>
+                <li><strong>限时挑战</strong>：60 秒内每答对一音得 1 分，错误不扣分；自动题量最多 8 音，也可指定 1–10 音。同章节、音域、题量和标注配置分别记录最佳成绩。开始后难度设置锁定，可取消本局再调整。</li>
+                <li><strong>章节体系</strong>：三部分独立编号，共 10 / 15 / 15 章。C 调覆盖全部 9 个组别；升、降号部分各含 7 调的高低谱号章。每部分最后一章为综合练习，支持自选 A0–C8 内的出题区间；同页跨组、每页一个调号，大谱表每列仍只弹一个音。</li>
                 <li><strong>八度记谱</strong>：小字三组及以上用 <em>8va / 15ma</em>（谱面写在下方八度，实音升高）、大字一组及以下用 <em>8vb</em>（实音降低），按键判定一律按实音；虚线八度线即标记范围。</li>
                 <li><strong>调号</strong>：谱面升降号按调号作用于对应音级，如 G 大调的 F 音需按 F♯（黑键）；测验只出现调内音级。</li>
-                <li><strong>电脑键盘映射</strong>：白键从左到右 <span class="kbd-key">A</span><span class="kbd-key">S</span><span class="kbd-key">D</span><span class="kbd-key">F</span><span class="kbd-key">G</span><span class="kbd-key">H</span><span class="kbd-key">J</span>，黑键从左到右 <span class="kbd-key">W</span><span class="kbd-key">E</span><span class="kbd-key">T</span><span class="kbd-key">Y</span><span class="kbd-key">U</span>，键位随章节音域自动平移，键盘上已标出对应字母。</li>
+                <li><strong>电脑键盘映射</strong>：白键从左到右 <span class="kbd-key">A</span><span class="kbd-key">S</span><span class="kbd-key">D</span><span class="kbd-key">F</span><span class="kbd-key">G</span><span class="kbd-key">H</span><span class="kbd-key">J</span>，黑键从左到右 <span class="kbd-key">W</span><span class="kbd-key">E</span><span class="kbd-key">T</span><span class="kbd-key">Y</span><span class="kbd-key">U</span>，键位随所选视窗平移。隐藏映射字母不影响输入；在设置面板、输入框内输入时不触发琴键。</li>
                 <li><strong>不完整组别</strong>：大字二组仅 A0–B0 三键、小字五组仅 C8 单键，局部键盘以 12 键视窗展示，窗外琴键置灰不可按。</li>
+                <li><strong>选区与标注</strong>：总览和组别按钮只切换键盘，不改变当前题目；错八度也计错。音名/唱名、映射字母、主音及调内音提示可独立设置。</li>
+                <li><strong>刻谱字形</strong>：使用 Bravura 1.392 标准音乐字形，Copyright © 2019 Steinberg Media Technologies GmbH，<a href="vendor/bravura/OFL.txt">SIL Open Font License 1.1</a>。</li>
             </ul>
         </div>
     </main>
@@ -116,9 +137,11 @@
     <div class="overlay" id="startOverlay" hidden>
         <div class="paper-card" role="dialog" aria-modal="true" aria-labelledby="startTitle">
             <div class="overlay-title" id="startTitle">60 秒限时挑战</div>
-            <p class="overlay-sub">每页 8 个音符，按对即消失，时间到结算得分。</p>
+            <p class="overlay-sub">按对即消失，时间到结算；本局题量、区间及提示设置将锁定。</p>
+            <p class="overlay-sub" id="startConfig"></p>
             <div class="overlay-actions">
                 <button type="button" class="btn btn-primary" id="btnTimedStart">开始</button>
+                <button type="button" class="btn" id="btnStartCancel">返回设置</button>
             </div>
         </div>
     </div>
@@ -130,13 +153,16 @@
             <div class="overlay-score" id="resultScore">0 分</div>
             <p class="overlay-sub" id="resultAcc"></p>
             <p class="overlay-sub" id="resultBest"></p>
+            <p class="overlay-sub" id="resultConfig"></p>
             <div class="overlay-actions">
                 <button type="button" class="btn btn-primary" id="btnAgain">再来一局</button>
                 <button type="button" class="btn" id="btnBack2">返回章节</button>
+                <button type="button" class="btn" id="btnResultClose">调整设置</button>
             </div>
         </div>
     </div>
 
+    <script src="../../js/common.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

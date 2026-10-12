@@ -4,6 +4,63 @@
    谱面/键盘为干净刻谱风 SVG，页面骨架沿用全站手绘风
    ============================================================ */
 
+/* 键盘独立语义色：暗色主题也不反转黑白琴键。 */
+.sr-page {
+    --sr-white: #faf7ee;
+    --sr-black: #282831;
+    --sr-white-ink: #35333a;
+    --sr-black-ink: #fff6e4;
+    --sr-key-border: #77747b;
+    --sr-marker: #b44b32;
+    --sr-marker-dark: #ffa98a;
+    --sr-pressed: #80b2d5;
+}
+[data-theme="dark"] .sr-page {
+    --sr-white: #ded9cd;
+    --sr-black: #202027;
+    --sr-white-ink: #302f35;
+    --sr-black-ink: #fff6e4;
+    --sr-key-border: #89828b;
+    --sr-pressed: #81b9de;
+}
+.sr-page [hidden] { display: none !important; }
+.sr-page .container { max-width: 1000px; }
+.sr-page main, .sr-page section, .sr-page .paper-card, .ch-track,
+.practice-top > *, .control-row > * { min-width: 0; }
+.sr-page .paper-card { margin-bottom: 16px; }
+.sr-page .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.music-glyph { fill: var(--color-text); stroke: none; }
+.range-controls, .view-toolbar, .group-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.range-controls label { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.range-controls select { max-width: 100%; }
+.sr-page select { background: var(--color-card-bg); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; padding: 5px; }
+#rangeMessage { flex-basis: 100%; font-size: 0.85rem; color: var(--color-text-secondary); }
+.range-legend { font-size: 0.8rem; color: var(--color-text-secondary); }
+.range-bar { fill: var(--color-primary); }
+.view-toolbar { justify-content: space-between; margin: 8px 0; font-size: 0.85rem; }
+.sr-page .group-btn { padding: 4px 8px; font-size: 0.8rem; }
+.group-btn[aria-pressed="true"] { background: var(--color-accent-light); border-color: var(--color-accent); }
+[data-overview-m] { cursor: pointer; }
+.kb88-svg text, .kb88-svg circle, .key text, .key circle { pointer-events: none; }
+.label-control { position: relative; }
+.label-panel { position: absolute; z-index: 12; right: 0; top: 100%; width: 268px; max-width: calc(100vw - 40px); background: var(--color-card-bg); border: 2px solid var(--color-border); border-radius: 8px; box-shadow: var(--shadow-sm); padding: 10px; }
+.label-panel fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.label-panel label { display: block; padding: 5px 0; font-size: 0.88rem; }
+.label-panel legend { font-size: 0.85rem; color: var(--color-text-secondary); }
+.key:focus-visible rect { stroke: var(--color-primary); stroke-width: 3; }
+.sr-page .kbw { fill: var(--sr-white); stroke: var(--sr-key-border); }
+.sr-page .kbb { fill: var(--sr-black); stroke: var(--sr-key-border); }
+.sr-page .kbw.hl { fill: var(--color-accent-light); }
+.sr-page .kbb.hl { fill: var(--color-accent); }
+.sr-page .key.pressed rect { fill: var(--sr-pressed); }
+.sr-page .kb-name, .sr-page .kb-sol, .sr-page .kb-map, .sr-page .kb88-c { fill: var(--sr-white-ink); }
+.sr-page .key-b text { fill: var(--sr-black-ink); font-size: 12px; }
+.sr-page .tonic-tag, .sr-page .scale-dot, .sr-page .tonic-dot { fill: var(--sr-marker); }
+.sr-page .key-b .tonic-tag, .sr-page .key-b .scale-dot { fill: var(--sr-marker-dark); }
+.sr-page .tonic-tag { font-size: 10px; }
+.sr-page .overlay { overflow-y: auto; padding: 12px 0; }
+.sr-page .overlay .paper-card { max-height: 90dvh; overflow-y: auto; }
+
 /* ---------- 章节选择页 ---------- */
 .sr-tabs {
     display: flex;
@@ -257,11 +314,12 @@
 /* ---------- 局部键盘 ---------- */
 .kb-local {
     padding: var(--space-md);
-    overflow-x: auto;
+    min-width: 0;
 }
 
     .kb-local .kb-local-svg {
-        min-width: 434px;
+        width: 100%;
+        min-width: 0;
         max-width: 100%;
         height: auto;
         display: block;
@@ -337,9 +395,9 @@
 }
 
 .ottava-mark {
-    font-family: var(--font-handwrite);
+    font-family: Georgia, serif;
     font-style: italic;
-    font-size: 19px;
+    font-size: 13px;
     fill: var(--color-accent);
 }
 
@@ -546,9 +604,14 @@
         width: 100%;
     }
 
-    .chapter-card {
-        width: 190px;
-    }
+    .sr-page .container { padding-left: 10px; padding-right: 10px; }
+    .sr-page .paper-card { padding: 10px; }
+    .sr-page .control-row { gap: 8px; }
+    .sr-page .top-nav { gap: 8px; flex-wrap: wrap; }
+    .sr-page .breadcrumb { overflow-wrap: anywhere; }
+    .ch-arrow { width: 28px; height: 32px; }
+    .sr-page .label-panel { position: static; width: 100%; }
+    .label-control:has(.label-panel:not([hidden])) { flex-basis: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
