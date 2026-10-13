@@ -1,6 +1,6 @@
 ---
 title: gvim命令整理
-date: 2024-07-31
+date: 2024-08-21
 tags: [tools]
 abstract: 本文介绍了常用的gvim命令。
 readtime: 6

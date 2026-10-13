@@ -1,6 +1,6 @@
 ---
 title: Noise-Shaping SAR ADC：经典论文脉络、实现思路与前沿进展
-date: 2026-10-12
+date: 2026-07-16
 tags: [analog, noise]
 abstract: 系统梳理噪声整形 SAR（NS SAR）ADC 的两大结构主线（EF 误差反馈 / CIFF 前馈），按时间线精读 5 篇经典（Fredenburg 2012 开山、Chen 2015 全被动、Shu 2016 失配误差整形、Li 2018 NTF 零点优化），再按技术方向追踪前沿（动态放大器 FIA、高阶被动整形、kT/C 噪声消除、混合 CT-DT），每篇附原文链接与"学到什么"的提炼，并给出推荐阅读路线。
 readtime: 14

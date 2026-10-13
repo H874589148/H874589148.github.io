@@ -1,80 +1,5 @@
 [
   {
-    "file": "noise_shaping_sar.md",
-    "title": "Noise-Shaping SAR ADC：经典论文脉络、实现思路与前沿进展",
-    "date": "2026-10-12",
-    "tags": [
-      "analog",
-      "noise"
-    ],
-    "authors": "Hawkeye",
-    "source": "",
-    "abstract": "系统梳理噪声整形 SAR（NS SAR）ADC 的两大结构主线（EF 误差反馈 / CIFF 前馈），按时间线精读 5 篇经典（Fredenburg 2012 开山、Chen 2015 全被动、Shu 2016 失配误差整形、Li 2018 NTF 零点优化），再按技术方向追踪前沿（动态放大器 FIA、高阶被动整形、kT/C 噪声消除、混合 CT-DT），每篇附原文链接与\"学到什么\"的提炼，并给出推荐阅读路线。",
-    "readtime": 14
-  },
-  {
-    "file": "in_amp_topologies.md",
-    "title": "仪表放大器（IA）常见结构整理：三运放、两运放、电流反馈与电容耦合",
-    "date": "2026-10-12",
-    "tags": [
-      "analog"
-    ],
-    "authors": "Hawkeye",
-    "source": "",
-    "abstract": "围绕\"小差模 + 大共模\"这一仪表放大器的根本任务，对比四类常见结构：经典三运放 IA（增益 = 1+2R/RG，第一级只放大差模）、两运放 IA（省功耗但路径不对称、高频 CMRR 差）、电流反馈型 IA（gm 级压流转电流、CMRR 不再押注电阻匹配、大增益下带宽不塌）、电容耦合/斩波稳定 IA（CCIA，电容隔断大共模、配 chopper 消除失调与 1/f）；给出 CMRR 预算分解、输入共模范围陷阱与选型对照表。",
-    "readtime": 9
-  },
-  {
-    "file": "gm_id_methodology.md",
-    "title": "gm/ID 设计法思路分享：用一个数字管所有折中的晶体管尺寸设计流程",
-    "date": "2026-10-12",
-    "tags": [
-      "analog"
-    ],
-    "authors": "Hawkeye",
-    "source": "",
-    "abstract": "深亚微米工艺下平方律公式早已失真，教科书\"Vov 设计法\"与实际仿真结果对不上。gm/ID 设计法把晶体管的所有折中——速度、增益、噪声、失配、摆幅——压缩到一个无量纲数字 gm/ID（跨导效率）上，再用仿真预生成的查找表（LUT）完成尺寸综合：规格→gm→选 gm/ID→查 ID/W 定 W→查 fT 与 gm/gds 验证。本文梳理其物理图像、四步流程、数值实例与常见误区，并附经典文献链接。",
-    "readtime": 12
-  },
-  {
-    "file": "five_transistor_ota_interview.md",
-    "title": "模拟 IC 设计面试之 5 管 OTA：高频问题与推导全集",
-    "date": "2026-10-12",
-    "tags": [
-      "analog"
-    ],
-    "authors": "Hawkeye",
-    "source": "",
-    "abstract": "5 管 OTA（差分对 + 电流镜负载 + 尾电流源）是模拟面试出现率最高的电路，没有之一。本文按面试问答组织：增益为什么是 gm1(ro2||ro4) 而非 2gm1、GBW 与主极点、镜像节点的 pole-zero doublet 如何毁掉建立时间、输入共模范围与输出摆幅的边界推导、VDS3≠VDS4 引起的系统性失调、PSRR+/PSRR− 为什么不对称、输入参考噪声的四管贡献、SR=ID5/CL、CMRR 与尾阻抗，最后附\"参数扰动\"追问速查表。",
-    "readtime": 13
-  },
-  {
-    "file": "chopper_principles.md",
-    "title": "Chopper（斩波）工作原理：用调制/解调把失调与 1/f 噪声搬出信号带",
-    "date": "2026-10-12",
-    "tags": [
-      "analog",
-      "noise"
-    ],
-    "authors": "Hawkeye",
-    "source": "",
-    "abstract": "从\"信号与失调同频带、滤波无法分离\"这一根本矛盾出发，推导斩波稳定的完整机制：输入调制器把信号搬到斩波频率 f_ch，放大后再解调回基带——信号被调制两次等于不调制，放大器的失调与 1/f 噪声只被调制一次而搬到 f_ch 处被低通滤除。对比自稳零（auto-zero）的采样混叠代价，归纳纹波、残余失调、输入阻抗等非理想因素与 RRL 纹波抑制、嵌套斩波等进阶手段。",
-    "readtime": 8
-  },
-  {
-    "file": "cdac_rdac_segmentation.md",
-    "title": "DAC 低位电容换成电阻串（RDAC）能省面积吗——10-bit CDAC 与 5-bit CDAC + 5-bit RDAC 的失配/面积对比分析",
-    "date": "2026-10-12",
-    "tags": [
-      "analog",
-      "noise"
-    ],
-    "authors": "Hawkeye",
-    "source": "",
-    "abstract": "回答一个分段 DAC 的经典疑问：实现相同 DNL/INL，10-bit 全 CDAC 中第 5 位电容（32 个 C_u 并联）与 5+5 混合 DAC 中第 5 位电容（高段 1 个 C'_u）的失配与面积要求相同吗？推导表明：不相同——5+5 中 bit5 失去 32 并联平均，失配敏感度恶化 √32 倍，要同样 DNL 需把 C'_u 面积放大 32 倍；两结构按\"匹配需求刚好达标\"设计时电容总面积恰好持平。RDAC 混合真正的面积收益来自解除\"工艺最小电容下限\"造成的被迫过设计，外加电容比 512:1→16:1 的比例精度改善与低位段天然单调性；代价是段间增益匹配、阻容温漂失配与 RC 建立。",
-    "readtime": 11
-  },
-  {
     "file": "aliasing_time_domain.md",
     "title": "频谱混叠（Aliasing）是什么：从\"采样点骗局\"到时域直观理解",
     "date": "2026-10-12",
@@ -87,21 +12,33 @@
     "readtime": 7
   },
   {
-    "file": "adc_dnl_inl_test_time.md",
-    "title": "ADC DNL/INL 测试时间核算：斜坡法 vs 码密度法（10-bit 300 kSPS 实例）——附\"均匀分布经函数映射后的 PDF 求解\"",
-    "date": "2026-10-12",
+    "file": "in_amp_topologies.md",
+    "title": "仪表放大器（IA）常见结构整理：三运放、两运放、电流反馈与电容耦合",
+    "date": "2026-10-11",
     "tags": [
       "analog"
     ],
     "authors": "Hawkeye",
     "source": "",
-    "abstract": "以 10-bit 300 kSPS ADC 为实例，完整推导斜坡直方图法与正弦码密度法测 DNL/INL 所需的样本数与测试时间：统计基础（命中数涨落 σ_DNL=1/√m）、斜坡斜率选择（s=f_s·Δ/m）、码密度分布（浴缸形 p(y)=1/(π√(A²−y²))，按密度最低的过零码定样本数）、相干采样约束（f_in=M·f_s/N）。结论：两种方法均为亚秒级（0.34 s vs 0.44 s），真正的选择依据是信号源精度（斜坡线性度 vs 正弦 THD）。附录给出\"已知 y=f(x)、x 在区间内均匀分布，求 y 的概率密度函数\"的完整推导与三个实例。",
-    "readtime": 11
+    "abstract": "围绕\"小差模 + 大共模\"这一仪表放大器的根本任务，对比四类常见结构：经典三运放 IA（增益 = 1+2R/RG，第一级只放大差模）、两运放 IA（省功耗但路径不对称、高频 CMRR 差）、电流反馈型 IA（gm 级压流转电流、CMRR 不再押注电阻匹配、大增益下带宽不塌）、电容耦合/斩波稳定 IA（CCIA，电容隔断大共模、配 chopper 消除失调与 1/f）；给出 CMRR 预算分解、输入共模范围陷阱与选型对照表。",
+    "readtime": 9
+  },
+  {
+    "file": "metal_em.md",
+    "title": "半导体金属互连 EM（电迁移 Electromigration）：电流对 EM 的影响、是否线性、加速因子",
+    "date": "2026-08-19",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Hawkeye",
+    "source": "pdk",
+    "abstract": "本文介绍了半导体工艺里面金属的 EM 导致阻抗增加，电流对 EM 的影响是什么？线性的吗？有加速因子吗？",
+    "readtime": 6
   },
   {
     "file": "sar_adc_noise.md",
     "title": "SAR ADC 噪声来源全景分析与计算方法",
-    "date": "2026-10-11",
+    "date": "2026-08-09",
     "tags": [
       "analog",
       "noise"
@@ -112,16 +49,67 @@
     "readtime": 15
   },
   {
-    "file": "metal_em.md",
-    "title": "半导体金属互连 EM（电迁移 Electromigration）：电流对 EM 的影响、是否线性、加速因子",
-    "date": "2026-08-20",
+    "file": "five_transistor_ota_interview.md",
+    "title": "模拟 IC 设计面试之 5 管 OTA：高频问题与推导全集",
+    "date": "2026-08-04",
     "tags": [
       "analog"
     ],
     "authors": "Hawkeye",
-    "source": "pdk",
-    "abstract": "本文介绍了半导体工艺里面金属的 EM 导致阻抗增加，电流对 EM 的影响是什么？线性的吗？有加速因子吗？",
-    "readtime": 6
+    "source": "",
+    "abstract": "5 管 OTA（差分对 + 电流镜负载 + 尾电流源）是模拟面试出现率最高的电路，没有之一。本文按面试问答组织：增益为什么是 gm1(ro2||ro4) 而非 2gm1、GBW 与主极点、镜像节点的 pole-zero doublet 如何毁掉建立时间、输入共模范围与输出摆幅的边界推导、VDS3≠VDS4 引起的系统性失调、PSRR+/PSRR− 为什么不对称、输入参考噪声的四管贡献、SR=ID5/CL、CMRR 与尾阻抗，最后附\"参数扰动\"追问速查表。",
+    "readtime": 13
+  },
+  {
+    "file": "cdac_rdac_segmentation.md",
+    "title": "DAC 低位电容换成电阻串（RDAC）能省面积吗——10-bit CDAC 与 5-bit CDAC + 5-bit RDAC 的失配/面积对比分析",
+    "date": "2026-07-31",
+    "tags": [
+      "analog",
+      "noise"
+    ],
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "回答一个分段 DAC 的经典疑问：实现相同 DNL/INL，10-bit 全 CDAC 中第 5 位电容（32 个 C_u 并联）与 5+5 混合 DAC 中第 5 位电容（高段 1 个 C'_u）的失配与面积要求相同吗？推导表明：不相同——5+5 中 bit5 失去 32 并联平均，失配敏感度恶化 √32 倍，要同样 DNL 需把 C'_u 面积放大 32 倍；两结构按\"匹配需求刚好达标\"设计时电容总面积恰好持平。RDAC 混合真正的面积收益来自解除\"工艺最小电容下限\"造成的被迫过设计，外加电容比 512:1→16:1 的比例精度改善与低位段天然单调性；代价是段间增益匹配、阻容温漂失配与 RC 建立。",
+    "readtime": 11
+  },
+  {
+    "file": "adc_dnl_inl_test_time.md",
+    "title": "ADC DNL/INL 测试时间核算：斜坡法 vs 码密度法（10-bit 300 kSPS 实例）——附\"均匀分布经函数映射后的 PDF 求解\"",
+    "date": "2026-07-20",
+    "tags": [
+      "analog"
+    ],
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "以 10-bit 300 kSPS ADC 为实例，完整推导斜坡直方图法与正弦码密度法测 DNL/INL 所需的样本数与测试时间：统计基础（命中数涨落 σ_DNL=1/√m）、斜坡斜率选择（s=f_s·Δ/m）、码密度分布（浴缸形 p(y)=1/(π√(A²−y²))，按密度最低的过零码定样本数）、相干采样约束（f_in=M·f_s/N）。结论：两种方法均为亚秒级（0.34 s vs 0.44 s），真正的选择依据是信号源精度（斜坡线性度 vs 正弦 THD）。附录给出\"已知 y=f(x)、x 在区间内均匀分布，求 y 的概率密度函数\"的完整推导与三个实例。",
+    "readtime": 11
+  },
+  {
+    "file": "noise_shaping_sar.md",
+    "title": "Noise-Shaping SAR ADC：经典论文脉络、实现思路与前沿进展",
+    "date": "2026-07-16",
+    "tags": [
+      "analog",
+      "noise"
+    ],
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "系统梳理噪声整形 SAR（NS SAR）ADC 的两大结构主线（EF 误差反馈 / CIFF 前馈），按时间线精读 5 篇经典（Fredenburg 2012 开山、Chen 2015 全被动、Shu 2016 失配误差整形、Li 2018 NTF 零点优化），再按技术方向追踪前沿（动态放大器 FIA、高阶被动整形、kT/C 噪声消除、混合 CT-DT），每篇附原文链接与\"学到什么\"的提炼，并给出推荐阅读路线。",
+    "readtime": 14
+  },
+  {
+    "file": "chopper_principles.md",
+    "title": "Chopper（斩波）工作原理：用调制/解调把失调与 1/f 噪声搬出信号带",
+    "date": "2026-04-13",
+    "tags": [
+      "analog",
+      "noise"
+    ],
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "从\"信号与失调同频带、滤波无法分离\"这一根本矛盾出发，推导斩波稳定的完整机制：输入调制器把信号搬到斩波频率 f_ch，放大后再解调回基带——信号被调制两次等于不调制，放大器的失调与 1/f 噪声只被调制一次而搬到 f_ch 处被低通滤除。对比自稳零（auto-zero）的采样混叠代价，归纳纹波、残余失调、输入阻抗等非理想因素与 RRL 纹波抑制、嵌套斩波等进阶手段。",
+    "readtime": 8
   },
   {
     "file": "simulaton_convergence.md",
@@ -137,9 +125,21 @@
     "readtime": 6
   },
   {
+    "file": "motor_control.md",
+    "title": "电机 PWM 与 SVPWM 控制方法详解",
+    "date": "2025-05-16",
+    "tags": [
+      "motor"
+    ],
+    "authors": "Hawkeye",
+    "source": "internet",
+    "abstract": "本文介绍了电机 PWM 与 SVPWM 控制方法。",
+    "readtime": 6
+  },
+  {
     "file": "motor_principles.md",
     "title": "电机分类及工作原理科普",
-    "date": "2025-08-31",
+    "date": "2025-05-15",
     "tags": [
       "motor"
     ],
@@ -149,15 +149,27 @@
     "readtime": 6
   },
   {
-    "file": "motor_control.md",
-    "title": "电机 PWM 与 SVPWM 控制方法详解",
-    "date": "2025-08-31",
+    "file": "gm_id_methodology.md",
+    "title": "gm/ID 设计法思路分享：用一个数字管所有折中的晶体管尺寸设计流程",
+    "date": "2024-10-09",
     "tags": [
-      "motor"
+      "analog"
     ],
     "authors": "Hawkeye",
-    "source": "internet",
-    "abstract": "本文介绍了电机 PWM 与 SVPWM 控制方法。",
+    "source": "",
+    "abstract": "深亚微米工艺下平方律公式早已失真，教科书\"Vov 设计法\"与实际仿真结果对不上。gm/ID 设计法把晶体管的所有折中——速度、增益、噪声、失配、摆幅——压缩到一个无量纲数字 gm/ID（跨导效率）上，再用仿真预生成的查找表（LUT）完成尺寸综合：规格→gm→选 gm/ID→查 ID/W 定 W→查 fT 与 gm/gds 验证。本文梳理其物理图像、四步流程、数值实例与常见误区，并附经典文献链接。",
+    "readtime": 12
+  },
+  {
+    "file": "command_gvim.md",
+    "title": "gvim命令整理",
+    "date": "2024-08-21",
+    "tags": [
+      "tools"
+    ],
+    "authors": "Hawkeye",
+    "source": "",
+    "abstract": "本文介绍了常用的gvim命令。",
     "readtime": 6
   },
   {
@@ -170,18 +182,6 @@
     "authors": "Hawkeye",
     "source": "",
     "abstract": "本文介绍了常用的terminl命令。",
-    "readtime": 6
-  },
-  {
-    "file": "command_gvim.md",
-    "title": "gvim命令整理",
-    "date": "2024-07-31",
-    "tags": [
-      "tools"
-    ],
-    "authors": "Hawkeye",
-    "source": "",
-    "abstract": "本文介绍了常用的gvim命令。",
     "readtime": 6
   }
 ]

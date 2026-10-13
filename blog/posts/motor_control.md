@@ -1,6 +1,6 @@
 ---
 title: 电机 PWM 与 SVPWM 控制方法详解
-date: 2025-08-31
+date: 2025-05-16
 tags: [motor]
 authors: Hawkeye
 source: internet

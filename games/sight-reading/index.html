@@ -74,21 +74,7 @@
                 <div id="scoreBox"></div>
             </div>
 
-            <div class="paper-card range-controls" id="rangeControls" hidden>
-                <label>最低音 <select id="rangeLow"></select></label>
-                <label>最高音 <select id="rangeHigh"></select></label>
-                <button type="button" class="btn" id="rangeCentral">中央音区</button>
-                <button type="button" class="btn" id="rangeFull">全88键</button>
-                <p id="rangeMessage" role="status"></p>
-            </div>
-            <div class="paper-card kb-overview">
-                <div class="kb-overview-title">88 键总览 · 点击选择键盘组别</div>
-                <p class="range-legend">上方范围条＝出题区间 · 琴键高亮＝当前键盘视窗</p>
-                <div id="kb88Box"></div>
-                <div class="view-toolbar"><span id="viewLabel"></span><button type="button" class="btn" id="btnDefaultView">回到默认音域</button></div>
-                <div id="groupButtons" class="group-buttons" role="group" aria-label="选择键盘组别"></div>
-            </div>
-
+            <!-- 小屏优先：谱面 / 控制行 / 局部键盘相邻成组，音域总览与组别选择置底作参考 -->
             <div class="paper-card control-row">
                 <button type="button" class="btn mode-btn active" id="mode-learn" aria-pressed="true">学习模式</button>
                 <button type="button" class="btn mode-btn" id="mode-free" aria-pressed="false">自由测验</button>
@@ -114,6 +100,21 @@
             </div>
 
             <div class="paper-card kb-local" id="kbLocalBox"></div>
+
+            <div class="paper-card range-controls" id="rangeControls" hidden>
+                <label>最低音 <select id="rangeLow"></select></label>
+                <label>最高音 <select id="rangeHigh"></select></label>
+                <button type="button" class="btn" id="rangeCentral">中央音区</button>
+                <button type="button" class="btn" id="rangeFull">全88键</button>
+                <p id="rangeMessage" role="status"></p>
+            </div>
+            <div class="paper-card kb-overview">
+                <div class="kb-overview-title">88 键总览 · 点击选择键盘组别</div>
+                <p class="range-legend">上方范围条＝出题区间 · 琴键高亮＝当前键盘视窗</p>
+                <div id="kb88Box"></div>
+                <div class="view-toolbar"><span id="viewLabel"></span><button type="button" class="btn" id="btnDefaultView">回到默认音域</button></div>
+                <div id="groupButtons" class="group-buttons" role="group" aria-label="选择键盘组别"></div>
+            </div>
         </section>
 
         <div class="info-box sr-info">

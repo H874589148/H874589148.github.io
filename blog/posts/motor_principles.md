@@ -1,6 +1,6 @@
 ---
 title: 电机分类及工作原理科普
-date: 2025-08-31
+date: 2025-05-15
 tags: [motor]
 authors: Hawkeye
 source: internet

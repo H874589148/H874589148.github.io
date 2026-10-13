@@ -1,6 +1,6 @@
 ---
 title: 半导体金属互连 EM（电迁移 Electromigration）：电流对 EM 的影响、是否线性、加速因子
-date: 2026-08-20
+date: 2026-08-19
 tags: [analog]
 authors: Hawkeye
 source: pdk
