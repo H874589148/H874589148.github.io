@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeFormatter · 代码格式化高亮工具</title>
+<style>
+  :root {
+    --bg: #0e1014;
+    --bg-card: #161a22;
+    --bg-pane: #1b1f29;
+    --bg-code: #282c34;
+    --border: #2a3140;
+    --text: #d7dce4;
+    --text-dim: #8b93a3;
+    --accent1: #4f8cff;
+    --accent2: #9d6bff;
+    --ok: #3fb950;
+    --tk-k: #c678dd;   /* keyword */
+    --tk-s: #98c379;   /* string */
+    --tk-c: #7f848e;   /* comment */
+    --tk-n: #d19a66;   /* number */
+    --tk-f: #61afef;   /* function */
+    --tk-t: #e5c07b;   /* type */
+    --tk-b: #56b6c2;   /* builtin */
+    --tk-prop: #e06c75;/* property / attr */
+    --tk-p: #abb2bf;   /* plain */
+    --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(79,140,255,.10), transparent 60%),
+      radial-gradient(1000px 500px at 90% 110%, rgba(157,107,255,.08), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex; flex-direction: column;
+    padding: 20px 24px 14px;
+    gap: 14px;
+  }
+
+  /* ===== Header ===== */
+  header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .logo {
+    font-size: 20px; font-weight: 700; letter-spacing: .3px;
+    background: linear-gradient(92deg, var(--accent1), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    white-space: nowrap;
+  }
+  .logo small { font-size: 12px; font-weight: 500; color: var(--text-dim); -webkit-text-fill-color: var(--text-dim); margin-left: 10px; letter-spacing: 0; }
+  .spacer { flex: 1; }
+
+  select, button {
+    font-family: inherit; font-size: 13px; color: var(--text);
+    background: var(--bg-pane); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer;
+    transition: border-color .15s, background .15s, transform .05s;
+    outline: none;
+  }
+  select:hover, button:hover { border-color: #3d4658; background: #202634; }
+  button:active { transform: translateY(1px); }
+  button.primary {
+    background: linear-gradient(92deg, var(--accent1), var(--accent2));
+    border: none; color: #fff; font-weight: 600;
+    box-shadow: 0 2px 14px rgba(79,140,255,.25);
+  }
+  button.primary:hover { filter: brightness(1.1); background: linear-gradient(92deg, var(--accent1), var(--accent2)); }
+  select { appearance: none; padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b93a3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+
+  /* ===== Main panes ===== */
+  main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-height: 0; }
+  .pane {
+    display: flex; flex-direction: column; min-height: 0;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0,0,0,.35);
+  }
+  .pane-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    background: var(--bg-pane); flex-shrink: 0;
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .dots i:nth-child(1){ background:#ff5f57; } .dots i:nth-child(2){ background:#febc2e; } .dots i:nth-child(3){ background:#28c840; }
+  .pane-title { font-size: 12.5px; color: var(--text-dim); font-weight: 600; letter-spacing: .4px; }
+  .pane-bar .right { margin-left: auto; font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .lang-badge {
+    font-size: 11px; font-weight: 700; color: #0e1014;
+    background: linear-gradient(92deg, var(--accent1), var(--accent2));
+    padding: 2px 9px; border-radius: 99px; letter-spacing: .3px;
+  }
+
+  textarea#input {
+    flex: 1; resize: none; border: none; outline: none;
+    background: var(--bg-code); color: var(--tk-p);
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+    padding: 14px 16px; tab-size: 2; white-space: pre; overflow: auto;
+    caret-color: var(--accent1);
+  }
+  textarea#input::placeholder { color: #5c6470; }
+
+  .preview-wrap {
+    flex: 1; display: flex; min-height: 0; overflow: auto;
+    background: var(--bg-code);
+  }
+  .gutter {
+    position: sticky; left: 0; flex-shrink: 0;
+    padding: 14px 10px 14px 0; text-align: right; user-select: none;
+    background: var(--bg-code);
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+    color: #4b5263; border-right: 1px solid var(--border);
+    min-width: 46px;
+  }
+  .gutter span { display: block; padding-right: 8px; }
+  pre#preview {
+    flex: 1; padding: 14px 16px; min-width: 0;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+    color: var(--tk-p); white-space: pre; tab-size: 2;
+  }
+  .tk-k { color: var(--tk-k); } .tk-s { color: var(--tk-s); }
+  .tk-c { color: var(--tk-c); font-style: italic; } .tk-n { color: var(--tk-n); }
+  .tk-f { color: var(--tk-f); } .tk-t { color: var(--tk-t); }
+  .tk-b { color: var(--tk-b); } .tk-prop { color: var(--tk-prop); }
+  .tk-pre { color: var(--tk-k); }
+
+  /* ===== Footer ===== */
+  footer {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px 14px;
+  }
+  footer .hint { font-size: 12px; color: var(--text-dim); margin-left: auto; }
+
+  /* ===== Toast ===== */
+  #toast {
+    position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%) translateY(20px);
+    background: #202634; border: 1px solid var(--border); color: var(--text);
+    padding: 10px 18px; border-radius: 10px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: all .25s ease;
+    box-shadow: 0 8px 30px rgba(0,0,0,.5); z-index: 99;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.ok { border-color: rgba(63,185,80,.5); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2e3547; border-radius: 6px; border: 2px solid var(--bg-code); }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">&lt;/&gt; CodeFormatter<small>格式化 · 高亮 · 一键复制</small></div>
+  <div class="spacer"></div>
+  <select id="langSelect" title="语言">
+    <option value="auto">自动检测语言</option>
+    <option value="javascript">JavaScript / TypeScript</option>
+    <option value="python">Python</option>
+    <option value="cpp">C / C++</option>
+    <option value="java">Java</option>
+    <option value="json">JSON</option>
+    <option value="html">HTML / XML</option>
+    <option value="css">CSS</option>
+    <option value="sql">SQL</option>
+    <option value="bash">Bash / Shell</option>
+  </select>
+  <button id="btnFormat" title="格式化代码（JSON 美化 / 清理空白）">✨ 格式化</button>
+  <button id="btnSample">载入示例</button>
+  <button id="btnClear">清空</button>
+</header>
+
+<main>
+  <section class="pane">
+    <div class="pane-bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="pane-title">输入 · 在此粘贴代码</span>
+      <span class="right" id="inputStats">0 行 · 0 字符</span>
+    </div>
+    <textarea id="input" spellcheck="false" placeholder="在此粘贴或输入代码…&#10;&#10;支持 JavaScript / Python / C++ / Java / JSON / HTML / CSS / SQL / Bash，&#10;右侧实时渲染语法高亮。"></textarea>
+  </section>
+
+  <section class="pane">
+    <div class="pane-bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="pane-title">预览 · 语法高亮</span>
+      <span class="right"><span class="lang-badge" id="langBadge">JS</span></span>
+    </div>
+    <div class="preview-wrap" id="previewWrap">
+      <div class="gutter" id="gutter"><span>1</span></div>
+      <pre id="preview"></pre>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <button class="primary" id="btnCopyWord">📋 复制到 Word（带高亮格式）</button>
+  <button id="btnCopyMd">📄 复制 Markdown 代码块</button>
+  <span class="hint">复制到 Word 后可直接粘贴，保留配色与等宽字体 · Markdown 格式自动包裹 ``` 代码围栏</span>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= 语言定义 ================= */
+const LANGS = {
+  javascript: {
+    name: "JavaScript", badge: "JS", md: "javascript",
+    lineComment: "//", blockComment: ["/*", "*/"],
+    strings: ['"', "'", "`"],
+    keywords: "const let var function return if else for while do switch case default break continue new typeof instanceof in of class extends super this null undefined true false async await try catch finally throw yield import export from delete void static get set".split(" "),
+    builtins: "console window document Math JSON Object Array String Number Boolean Promise Set Map WeakMap Date RegExp Error TypeError Symbol parseInt parseFloat isNaN isFinite setTimeout setInterval clearTimeout clearInterval fetch require module exports process globalThis NaN Infinity localStorage sessionStorage".split(" "),
+  },
+  python: {
+    name: "Python", badge: "PY", md: "python",
+    lineComment: "#", blockComment: null,
+    strings: ['"', "'"], triples: ['"""', "'''"],
+    keywords: "def class return if elif else for while break continue pass import from as with lambda try except finally raise yield global nonlocal assert del is in not and or True False None async await match case".split(" "),
+    builtins: "print len range str int float list dict set tuple bool type isinstance enumerate zip map filter sorted reversed open input super self cls Exception ValueError TypeError KeyError IndexError __init__ __name__ __main__".split(" "),
+  },
+  cpp: {
+    name: "C / C++", badge: "C++", md: "cpp",
+    lineComment: "//", blockComment: ["/*", "*/"],
+    strings: ['"', "'"], preprocessor: "#",
+    keywords: "auto break case catch class const constexpr continue default delete do double else enum explicit extern float for goto if inline int long mutable namespace new noexcept operator private protected public register return short signed sizeof static struct switch template this throw typedef typename union unsigned using virtual void volatile while bool char wchar_t nullptr true false override final friend virtual".split(" "),
+    builtins: "std cout cin endl printf scanf malloc free memcpy strlen size_t NULL vector string map unordered_map set pair make_pair unique_ptr shared_ptr".split(" "),
+  },
+  java: {
+    name: "Java", badge: "JAVA", md: "java",
+    lineComment: "//", blockComment: ["/*", "*/"],
+    strings: ['"', "'"],
+    keywords: "abstract boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while true false null var record sealed".split(" "),
+    builtins: "String System Math Object Integer Long Double Boolean List ArrayList HashMap Map Set HashSet Optional StringBuilder Exception RuntimeException Override".split(" "),
+  },
+  json: {
+    name: "JSON", badge: "JSON", md: "json",
+    lineComment: null, blockComment: null,
+    strings: ['"'],
+    keywords: ["true", "false", "null"],
+    builtins: [],
+    jsonMode: true,
+  },
+  html: {
+    name: "HTML / XML", badge: "HTML", md: "html",
+    htmlMode: true, md_name: "html",
+  },
+  css: {
+    name: "CSS", badge: "CSS", md: "css",
+    lineComment: null, blockComment: ["/*", "*/"],
+    strings: ['"', "'"],
+    keywords: "important inherit initial unset auto none block flex grid inline absolute relative fixed sticky hidden visible solid dashed".split(" "),
+    builtins: [],
+    cssMode: true,
+  },
+  sql: {
+    name: "SQL", badge: "SQL", md: "sql",
+    lineComment: "--", blockComment: ["/*", "*/"],
+    strings: ['"', "'", "`"],
+    keywords: "SELECT FROM WHERE INSERT INTO VALUES UPDATE SET DELETE CREATE TABLE ALTER DROP INDEX VIEW JOIN LEFT RIGHT INNER OUTER FULL ON GROUP BY ORDER HAVING LIMIT OFFSET AS DISTINCT UNION ALL AND OR NOT NULL IN LIKE BETWEEN EXISTS CASE WHEN THEN ELSE END PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK CONSTRAINT DATABASE SCHEMA IF BEGIN COMMIT ROLLBACK TRANSACTION GRANT REVOKE DESC ASC COUNT SUM AVG MAX MIN".split(" "),
+    builtins: [],
+    caseInsensitive: true,
+  },
+  bash: {
+    name: "Bash / Shell", badge: "SH", md: "bash",
+    lineComment: "#", blockComment: null,
+    strings: ['"', "'", "`"],
+    keywords: "if then else elif fi for while until do done case esac function in select time coproc return exit break continue local readonly declare export shift trap eval exec source alias unalias set unset".split(" "),
+    builtins: "echo printf cd ls pwd mkdir rm cp mv touch chmod chown grep sed awk find xargs cat head tail sort uniq wc tee curl wget git sudo apt yum brew pip npm".split(" "),
+  },
+};
+
+const COLORS = {
+  k: "#c678dd", s: "#98c379", c: "#7f848e", n: "#d19a66",
+  f: "#61afef", t: "#e5c07b", b: "#56b6c2", prop: "#e06c75",
+  pre: "#c678dd", p: "#abb2bf", tag: "#e06c75", punct: "#89a0b3",
+};
+
+/* ================= 工具函数 ================= */
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* ================= 通用词法分析 ================= */
+function tokenizeGeneric(src, def) {
+  const ci = !!def.caseInsensitive;
+  const kw = new Set((def.keywords || []).map(w => ci ? w.toLowerCase() : w));
+  const bi = new Set((def.builtins || []).map(w => ci ? w.toLowerCase() : w));
+  const out = [];
+  let i = 0;
+  const n = src.length;
+  const push = (cls, text) => { if (text) out.push({ cls, text }); };
+
+  while (i < n) {
+    const ch = src[i];
+
+    // 块注释
+    if (def.blockComment && src.startsWith(def.blockComment[0], i)) {
+      const end = src.indexOf(def.blockComment[1], i + def.blockComment[0].length);
+      const j = end === -1 ? n : end + def.blockComment[1].length;
+      push("c", src.slice(i, j)); i = j; continue;
+    }
+    // 行注释
+    if (def.lineComment && src.startsWith(def.lineComment, i)) {
+      let j = src.indexOf("\n", i); if (j === -1) j = n;
+      push("c", src.slice(i, j)); i = j; continue;
+    }
+    // 预处理指令（C/C++）
+    if (def.preprocessor && ch === def.preprocessor && (i === 0 || src[i - 1] === "\n")) {
+      let j = src.indexOf("\n", i); if (j === -1) j = n;
+      push("pre", src.slice(i, j)); i = j; continue;
+    }
+    // 三引号字符串（Python）
+    if (def.triples) {
+      let matched = false;
+      for (const tq of def.triples) {
+        if (src.startsWith(tq, i)) {
+          const end = src.indexOf(tq, i + 3);
+          const j = end === -1 ? n : end + 3;
+          push("s", src.slice(i, j)); i = j; matched = true; break;
+        }
+      }
+      if (matched) continue;
+    }
+    // 字符串
+    if (def.strings && def.strings.includes(ch)) {
+      let j = i + 1;
+      while (j < n) {
+        if (src[j] === "\\") { j += 2; continue; }
+        if (src[j] === ch) { j++; break; }
+        if (src[j] === "\n" && ch !== "`") break;
+        j++;
+      }
+      let text = src.slice(i, j);
+      // JSON 模式：字符串后跟冒号 → 键名
+      if (def.jsonMode) {
+        let k = j; while (k < n && /\s/.test(src[k])) k++;
+        push(src[k] === ":" ? "prop" : "s", text);
+      } else {
+        push("s", text);
+      }
+      i = j; continue;
+    }
+    // 数字
+    if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(src[i + 1] || ""))) {
+      const m = /^(0[xXbBoO][0-9a-fA-F_]+|\d[\d_]*(\.\d+)?([eE][+-]?\d+)?[fFlLuU]*)/.exec(src.slice(i));
+      if (m) { push("n", m[0]); i += m[0].length; continue; }
+    }
+    // 标识符 / 关键字
+    if (/[A-Za-z_$]/.test(ch)) {
+      const m = /^[A-Za-z_$][\w$-]*/.exec(src.slice(i));
+      const w = m[0];
+      const wTest = ci ? w.toLowerCase() : w;
+      let k = i + w.length;
+      while (k < n && (src[k] === " " || src[k] === "\t")) k++;
+      if (kw.has(wTest)) push("k", w);
+      else if (bi.has(wTest)) push("b", w);
+      else if (def.cssMode && src[k] === ":") push("prop", w);
+      else if (src[k] === "(") push("f", w);
+      else if (/^[A-Z]/.test(w) && !ci) push("t", w);
+      else push("p", w);
+      i += w.length; continue;
+    }
+    // 其他字符（运算符 / 标点 / 空白）
+    push("p", ch); i++;
+  }
+  return out;
+}
+
+/* ================= HTML 词法分析 ================= */
+function tokenizeHTML(src) {
+  const out = [];
+  let i = 0;
+  const n = src.length;
+  const push = (cls, text) => { if (text) out.push({ cls, text }); };
+  while (i < n) {
+    // 注释
+    if (src.startsWith("<!--", i)) {
+      const end = src.indexOf("-->", i + 4);
+      const j = end === -1 ? n : end + 3;
+      push("c", src.slice(i, j)); i = j; continue;
+    }
+    // 标签
+    if (src[i] === "<" && /[A-Za-z/!]/.test(src[i + 1] || "")) {
+      let j = i + 1;
+      push("punct", "<");
+      // 闭合斜杠 / 声明
+      if (src[j] === "/" || src[j] === "!") { push("punct", src[j]); j++; }
+      // 标签名
+      const tm = /^[A-Za-z][\w:-]*/.exec(src.slice(j));
+      if (tm) { push("tag", tm[0]); j += tm[0].length; }
+      // 属性区
+      while (j < n && src[j] !== ">") {
+        if (src[j] === '"' || src[j] === "'") {
+          const q = src[j]; let k = j + 1;
+          while (k < n && src[k] !== q) k++;
+          k = Math.min(k + 1, n);
+          push("s", src.slice(j, k)); j = k;
+        } else if (/[A-Za-z-]/.test(src[j]) && /[A-Za-z-][\w-]*(?==)/.test(src.slice(j))) {
+          const am = /^[A-Za-z-][\w-]*/.exec(src.slice(j));
+          push("prop", am[0]); j += am[0].length;
+        } else {
+          push("p", src[j]); j++;
+        }
+      }
+      if (src[j] === ">") { push("punct", ">"); j++; }
+      i = j; continue;
+    }
+    // 文本
+    let j = src.indexOf("<", i); if (j === -1) j = n;
+    push("p", src.slice(i, j)); i = j;
+  }
+  return out;
+}
+
+function tokenize(src, lang) {
+  const def = LANGS[lang];
+  if (!def) return [{ cls: "p", text: src }];
+  if (def.htmlMode) return tokenizeHTML(src);
+  return tokenizeGeneric(src, def);
+}
+
+/* ================= 语言自动检测 ================= */
+function detectLang(src) {
+  const s = src.trim();
+  if (!s) return "javascript";
+  if (/^[[{]/.test(s)) {
+    try { JSON.parse(s); return "json"; } catch (e) {
+      if (/^[[{]/.test(s) && /"[^"\n]+"\s*:/.test(s)) return "json";
+    }
+  }
+  if (/<\/?(html|head|body|div|span|p|a|img|script|style|section|article|table|ul|ol|li|h[1-6]|form|input|button|!doctype)\b/i.test(s)) return "html";
+  if (/#include\s*[<"]|\bstd::|\bint\s+main\s*\(|->|::\w+\s*\(/.test(s) && /;/.test(s)) return "cpp";
+  if (/\bpublic\s+(class|static|void)|System\.out\.print|\bprivate\s+\w+\s+\w+\s*[=(;]/.test(s)) return "java";
+  if (/\b(SELECT|INSERT\s+INTO|CREATE\s+TABLE|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b/i.test(s) && /\b(FROM|VALUES|WHERE|SET)\b/i.test(s)) return "sql";
+  if (/^#!\/.*(bash|sh|zsh)\b|\|\s*(grep|awk|sed)\b|\$\{\w+\}|\b(echo|chmod|mkdir|sudo)\s/.test(s)) return "bash";
+  if (/^\s*(@media|@import|[.#]?[\w-]+(\s*[>+~,]\s*[\w.#-]+)*\s*\{)/m.test(s) && /[\w-]+\s*:\s*[^;{}]+;/.test(s) && !/=>|function\s*\(/.test(s)) return "css";
+  if ((/\bdef\s+\w+\s*\(|^\s*(from\s+\w+\s+)?import\s+\w+/m.test(s) || /\bprint\s*\(|\belif\b|\bself\b/.test(s)) && !/=>|function\s|const\s|let\s|var\s/.test(s)) return "python";
+  return "javascript";
+}
+
+/* ================= 渲染 ================= */
+const input = document.getElementById("input");
+const preview = document.getElementById("preview");
+const gutter = document.getElementById("gutter");
+const langBadge = document.getElementById("langBadge");
+const langSelect = document.getElementById("langSelect");
+const inputStats = document.getElementById("inputStats");
+
+let currentLang = "javascript";
+let lastTokens = [];
+
+function renderTokens(tokens) {
+  let html = "";
+  for (const t of tokens) html += `<span class="tk-${t.cls}">${esc(t.text)}</span>`;
+  return html;
+}
+
+function render() {
+  const src = input.value;
+  const selected = langSelect.value;
+  currentLang = selected === "auto" ? detectLang(src) : selected;
+  langBadge.textContent = LANGS[currentLang].badge;
+
+  lastTokens = src ? tokenize(src, currentLang) : [];
+  preview.innerHTML = renderTokens(lastTokens) || '<span style="color:#5c6470;font-style:italic;">// 预览区：粘贴代码后实时显示高亮结果</span>';
+
+  const lines = src === "" ? 1 : src.split("\n").length;
+  let g = "";
+  for (let i = 1; i <= lines; i++) g += `<span>${i}</span>`;
+  gutter.innerHTML = g;
+
+  inputStats.textContent = `${lines} 行 · ${src.length} 字符`;
+}
+
+/* ================= 格式化 ================= */
+function formatCode() {
+  const src = input.value;
+  if (!src.trim()) { toast("没有可格式化的内容"); return; }
+  const lang = langSelect.value === "auto" ? detectLang(src) : langSelect.value;
+  if (lang === "json") {
+    try {
+      input.value = JSON.stringify(JSON.parse(src), null, 2);
+      toast("JSON 已格式化", true);
+    } catch (e) {
+      toast("JSON 解析失败：" + e.message);
+      return;
+    }
+  } else {
+    // 通用清理：去行尾空白、tab 转 2 空格、收敛多余空行
+    input.value = src
+      .replace(/\t/g, "  ")
+      .split("\n").map(l => l.replace(/[ ]+$/g, "")).join("\n")
+      .replace(/\n{3,}/g, "\n\n");
+    toast("已清理空白与缩进", true);
+  }
+  render();
+}
+
+/* ================= 复制 ================= */
+function buildWordHTML(tokens) {
+  let inner = "";
+  for (const t of tokens) {
+    const color = COLORS[t.cls] || COLORS.p;
+    const italic = t.cls === "c" ? "font-style:italic;" : "";
+    inner += `<span style="color:${color};${italic}">${esc(t.text)}</span>`;
+  }
+  return `<div style="background-color:#282c34;padding:14px 18px;border-radius:8px;">` +
+    `<pre style="margin:0;padding:0;font-family:Consolas,'Courier New',monospace;font-size:10.5pt;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;color:#abb2bf;">${inner}</pre></div>`;
+}
+
+async function copyWord() {
+  if (!input.value) { toast("请先粘贴代码"); return; }
+  const tokens = tokenize(input.value, currentLang);
+  const html = buildWordHTML(tokens);
+  const plain = input.value;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      "text/html": new Blob([html], { type: "text/html" }),
+      "text/plain": new Blob([plain], { type: "text/plain" }),
+    })]);
+    toast("已复制高亮富文本，直接粘贴到 Word 即可", true);
+  } catch (e) {
+    // 回退方案：选区复制
+    const div = document.createElement("div");
+    div.contentEditable = "true";
+    div.innerHTML = html;
+    div.style.cssText = "position:fixed;left:-9999px;top:0;";
+    document.body.appendChild(div);
+    const range = document.createRange();
+    range.selectNodeContents(div);
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (_) {}
+    sel.removeAllRanges(); div.remove();
+    toast(ok ? "已复制高亮富文本，直接粘贴到 Word 即可" : "复制失败，请检查浏览器剪贴板权限", ok);
+  }
+}
+
+async function copyMarkdown() {
+  if (!input.value) { toast("请先粘贴代码"); return; }
+  const md = "```" + LANGS[currentLang].md + "\n" + input.value.replace(/\n+$/, "") + "\n```";
+  try {
+    await navigator.clipboard.writeText(md);
+    toast("已复制 Markdown 代码块", true);
+  } catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = md;
+    ta.style.cssText = "position:fixed;left:-9999px;top:0;";
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove();
+    toast(ok ? "已复制 Markdown 代码块" : "复制失败，请检查浏览器剪贴板权限", ok);
+  }
+}
+
+/* ================= Toast ================= */
+const toastEl = document.getElementById("toast");
+let toastTimer = null;
+function toast(msg, ok) {
+  toastEl.textContent = msg;
+  toastEl.className = ok ? "show ok" : "show";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toastEl.className = ""; }, 2200);
+}
+
+/* ================= 示例 ================= */
+const SAMPLE = `// 快速排序示例 —— 试试「复制到 Word」
+function quickSort(arr) {
+  if (arr.length <= 1) return arr;
+
+  const pivot = arr[Math.floor(arr.length / 2)];
+  const left  = arr.filter(x => x < pivot);
+  const mid   = arr.filter(x => x === pivot);
+  const right = arr.filter(x => x > pivot);
+
+  return [...quickSort(left), ...mid, ...quickSort(right)];
+}
+
+const data = [42, 7, 19, 73, 3, 58, 26];
+console.log("排序结果:", quickSort(data)); // [3, 7, 19, 26, 42, 58, 73]
+
+/**
+ * 防抖函数
+ * @param {Function} fn 目标函数
+ * @param {number} delay 延迟毫秒数
+ */
+function debounce(fn, delay = 300) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}`;
+
+/* ================= 事件绑定 ================= */
+let debounceTimer = null;
+input.addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(render, 120);
+});
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const s = input.selectionStart, t = input.selectionEnd;
+    input.value = input.value.slice(0, s) + "  " + input.value.slice(t);
+    input.selectionStart = input.selectionEnd = s + 2;
+    render();
+  }
+});
+// 左右滚动同步（行高一致，天然对齐，无需 JS 同步）
+langSelect.addEventListener("change", render);
+document.getElementById("btnFormat").addEventListener("click", formatCode);
+document.getElementById("btnCopyWord").addEventListener("click", copyWord);
+document.getElementById("btnCopyMd").addEventListener("click", copyMarkdown);
+document.getElementById("btnClear").addEventListener("click", () => { input.value = ""; render(); input.focus(); });
+document.getElementById("btnSample").addEventListener("click", () => { input.value = SAMPLE; render(); });
+
+// 初始化：载入示例展示效果
+input.value = SAMPLE;
+render();
+</script>
+</body>
+</html>
