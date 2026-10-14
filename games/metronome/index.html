@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>节拍器 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="metro-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">趣味游戏 / 节拍器</span>
+    </nav>
+    <main class="container">
+        <header class="metro-header">
+            <div><h1>节拍器</h1><p class="tool-desc">40&ndash;208 BPM 可调 &middot; 拍号 / 重音 / 细分 / 音色 &middot; 空格键开始停止</p></div>
+        </header>
+
+        <!-- ===== 舞台：摆锤 + 拍点灯 + 开始停止 ===== -->
+        <div class="paper-card metro-stage">
+            <div class="pendulum-stage" aria-hidden="true">
+                <div class="pendulum" id="pendulum">
+                    <div class="pendulum-rod"></div>
+                    <div class="pendulum-bob"></div>
+                </div>
+                <div class="pendulum-pivot"></div>
+                <div class="pendulum-base"></div>
+            </div>
+            <div class="beat-dots" id="beatDots" role="status" aria-label="拍点指示"></div>
+            <button type="button" class="btn btn-primary metro-toggle" id="toggleBtn">开始</button>
+        </div>
+
+        <!-- ===== 速度 ===== -->
+        <div class="paper-card tool-section">
+            <h2>速度</h2>
+            <div class="bpm-display">
+                <span class="bpm-num" id="bpmNum">120</span>
+                <span class="bpm-unit">BPM</span>
+                <span class="bpm-term" id="bpmTerm">Moderato · 中板</span>
+            </div>
+            <div class="slider-row bpm-row">
+                <button type="button" class="btn btn-step" id="bpmDown" aria-label="减慢速度">&minus;</button>
+                <input type="range" id="bpmSlider" min="40" max="208" step="1" value="120" aria-label="节拍速度 BPM">
+                <button type="button" class="btn btn-step" id="bpmUp" aria-label="加快速度">&#xff0b;</button>
+            </div>
+            <div class="chip-row" id="tempoPresets" role="group" aria-label="常用速度预设"></div>
+        </div>
+
+        <!-- ===== 拍号与重音 ===== -->
+        <div class="paper-card tool-section">
+            <h2>拍号与重音</h2>
+            <div class="meter-row">
+                <div class="beats-ctrl" role="group" aria-label="每小节拍数">
+                    <button type="button" class="btn btn-step" id="beatsDown" aria-label="减少拍数">&minus;</button>
+                    <span class="beats-num"><span id="beatsNum">4</span> 拍 / 小节</span>
+                    <button type="button" class="btn btn-step" id="beatsUp" aria-label="增加拍数">&#xff0b;</button>
+                </div>
+                <label class="accent-check" id="accentWrap">
+                    <input type="checkbox" id="accentChk" checked>
+                    首拍重音
+                </label>
+            </div>
+            <div class="chip-row" id="tsPresets" role="group" aria-label="拍号预设"></div>
+        </div>
+
+        <!-- ===== 细分节奏 ===== -->
+        <div class="paper-card tool-section">
+            <h2>细分节奏</h2>
+            <p class="hint">每拍再细分的脉冲数；细分音更轻更短。</p>
+            <div class="chip-row" id="subdivRow" role="group" aria-label="细分节奏"></div>
+        </div>
+
+        <!-- ===== 音色与音量 ===== -->
+        <div class="paper-card tool-section">
+            <h2>音色与音量</h2>
+            <div class="chip-row" id="soundRow" role="group" aria-label="音色选择"></div>
+            <div class="slider-row vol-row">
+                <span class="vol-label">音量</span>
+                <input type="range" id="volSlider" min="0" max="100" step="1" value="80" aria-label="音量">
+                <span class="slider-val" id="volVal">80</span>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>使用说明：</strong></p>
+            <ul>
+                <li>空格键 = 开始 / 停止；&uarr; / &darr; = 速度 &plusmn;1 BPM（滑块、按钮等控件聚焦时不劫持按键）。</li>
+                <li>「首拍重音」开启后，每小节第 1 拍音调更高、音量更大，拍点用红色区分；每小节 1 拍时该选项不可用。</li>
+                <li>拍号 6/8 按乐理惯例映射为「2 拍 / 小节 + 三连音细分」。</li>
+                <li>播放中可直接调节速度、拍数、细分与音色，下一拍即生效；所有设置自动保存，下次打开自动还原。</li>
+                <li>切换后台标签页时节拍继续发声，回到页面视觉自动跟上。</li>
+            </ul>
+        </div>
+    </main>
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

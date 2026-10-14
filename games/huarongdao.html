@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>華容道 · 三国经典谜题</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family:"Kaiti SC","STKaiti","KaiTi","楷体","Noto Serif SC",serif;
+    background:#17110c;
+    color:#e8d9b8;
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    overflow-x:hidden;
+    user-select:none; -webkit-user-select:none;
+    touch-action:manipulation;
+  }
+  /* 背景：墨色山水 */
+  .bg-ink {
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(120,60,30,.28), transparent 60%),
+      radial-gradient(ellipse 70% 45% at 50% 115%, rgba(60,40,25,.5), transparent 65%),
+      #17110c;
+  }
+  .bg-ink svg { position:absolute; bottom:0; left:0; width:100%; opacity:.16; }
+
+  header { position:relative; z-index:1; text-align:center; padding:18px 12px 6px; }
+  .title-row { display:flex; align-items:center; justify-content:center; gap:14px; }
+  h1 {
+    font-size:clamp(38px,9vw,58px); letter-spacing:.18em; font-weight:700;
+    background:linear-gradient(180deg,#f3e2b0 20%,#caa050 60%,#9a6f2e);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 2px 12px rgba(0,0,0,.5);
+  }
+  .seal {
+    width:44px;height:44px;border-radius:8px; flex:0 0 auto;
+    background:linear-gradient(145deg,#a3271e,#7c1a12);
+    color:#f6e7c8; font-size:15px; line-height:1.1; font-weight:700;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.55), inset 0 0 6px rgba(0,0,0,.4);
+    transform:rotate(-4deg); padding:3px;
+  }
+  .subtitle { margin-top:4px; font-size:clamp(13px,3.4vw,16px); color:#b39a6d; letter-spacing:.32em; }
+
+  /* 关卡卷轴 */
+  .levels {
+    position:relative; z-index:1; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    padding:12px 10px 4px; max-width:520px;
+  }
+  .lv-btn {
+    font-family:inherit; cursor:pointer; border:1px solid #6d5426;
+    background:linear-gradient(180deg,#3a2b18,#2a1f10);
+    color:#d9c391; font-size:15px; letter-spacing:.08em;
+    padding:7px 13px; border-radius:6px;
+    box-shadow:0 2px 5px rgba(0,0,0,.4);
+    transition:all .15s;
+  }
+  .lv-btn:hover { border-color:#caa050; color:#f0dfae; }
+  .lv-btn.active {
+    background:linear-gradient(180deg,#8e2a1f,#6d1d14);
+    color:#f8e9c4; border-color:#d8ab5a;
+    box-shadow:0 0 12px rgba(200,80,40,.35);
+  }
+
+  /* 状态栏 */
+  .stats {
+    position:relative; z-index:1; display:flex; gap:18px; justify-content:center; align-items:center;
+    margin:10px 0 4px; font-size:16px; color:#cbb27f; flex-wrap:wrap;
+  }
+  .stats b { color:#f0dfae; font-size:18px; }
+  .icon-btn {
+    font-family:inherit; cursor:pointer; border:1px solid #6d5426; border-radius:6px;
+    background:linear-gradient(180deg,#3a2b18,#2a1f10); color:#d9c391;
+    font-size:14px; padding:5px 12px; letter-spacing:.1em;
+  }
+  .icon-btn:hover { border-color:#caa050; color:#f0dfae; }
+  .icon-btn:disabled { opacity:.4; cursor:default; }
+
+  /* 棋盘与木框 */
+  .stage { position:relative; z-index:1; padding:0 0 26px; }
+  .frame {
+    position:relative;
+    padding:14px 14px 30px;
+    border-radius:10px;
+    background:
+      linear-gradient(135deg,#4a331c,#2e1f10 40%,#3d2a15 70%,#241708);
+    box-shadow:0 14px 40px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,220,150,.15);
+    border:1px solid #5d4423;
+  }
+  .frame::before {
+    content:""; position:absolute; inset:6px; border:1px solid rgba(216,171,90,.35); border-radius:7px; pointer-events:none;
+  }
+  #board {
+    position:relative;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(255,240,200,.05), transparent 55%),
+      linear-gradient(160deg,#2b2013,#241a0e);
+    border-radius:4px;
+    box-shadow:inset 0 0 22px rgba(0,0,0,.75);
+    touch-action:none;
+  }
+  .grid-line { position:absolute; background:rgba(216,171,90,.10); pointer-events:none; }
+  .exit-gap {
+    position:absolute; bottom:6px; text-align:center;
+    color:#caa050; font-size:13px; letter-spacing:.4em;
+    pointer-events:none;
+  }
+  .exit-arrow { font-size:15px; letter-spacing:0; display:block; margin-top:-3px; animation:bob 1.6s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0);opacity:.6} 50%{transform:translateY(3px);opacity:1} }
+
+  /* 棋子 */
+  .piece {
+    position:absolute; z-index:2;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:7px; cursor:grab;
+    border:1px solid rgba(230,190,110,.55);
+    box-shadow:0 3px 8px rgba(0,0,0,.55), inset 0 1px 1px rgba(255,235,180,.25), inset 0 -3px 6px rgba(0,0,0,.35);
+    transition:left .16s ease, top .16s ease, box-shadow .15s;
+    color:#f3e3b5;
+    font-weight:700;
+    text-shadow:0 1px 3px rgba(0,0,0,.6);
+  }
+  .piece.dragging { transition:none; cursor:grabbing; z-index:5; box-shadow:0 10px 22px rgba(0,0,0,.7), inset 0 1px 1px rgba(255,235,180,.3); }
+  .piece .ch { pointer-events:none; }
+  .piece.cao   { background:linear-gradient(160deg,#9c2f22,#6d1a10 70%); }
+  .piece.guan  { background:linear-gradient(160deg,#1f6a46,#0f4028 70%); }
+  .piece.zhang { background:linear-gradient(160deg,#413a33,#211c17 70%); }
+  .piece.zhao  { background:linear-gradient(160deg,#4d7594,#2b4a63 70%); }
+  .piece.ma    { background:linear-gradient(160deg,#6a5290,#3f2f5c 70%); }
+  .piece.huang { background:linear-gradient(160deg,#a06a24,#6e4512 70%); }
+  .piece.bing  { background:linear-gradient(160deg,#7d6b52,#54452f 70%); }
+  .piece.cao .ch { letter-spacing:0; }
+  .v-name { writing-mode:vertical-rl; letter-spacing:.25em; }
+
+  /* 胜利卷轴 */
+  .overlay {
+    position:fixed; inset:0; z-index:20; display:none;
+    align-items:center; justify-content:center;
+    background:rgba(10,6,3,.72); backdrop-filter:blur(3px);
+  }
+  .overlay.show { display:flex; }
+  .scroll-card {
+    background:linear-gradient(180deg,#f2e3bd,#e2cb96 60%,#d3b678);
+    color:#4a2c12; border-radius:6px; text-align:center;
+    padding:34px 46px 28px; max-width:86vw;
+    box-shadow:0 20px 60px rgba(0,0,0,.8), inset 0 0 40px rgba(160,110,40,.18);
+    border:1px solid #a5813f;
+    animation:unroll .5s cubic-bezier(.2,1.4,.4,1);
+    position:relative;
+  }
+  @keyframes unroll { from{transform:scaleY(.15);opacity:0} to{transform:scaleY(1);opacity:1} }
+  .scroll-card h2 { font-size:34px; letter-spacing:.25em; color:#8e2418; margin-bottom:6px; }
+  .scroll-card .stamp {
+    position:absolute; right:16px; top:16px; width:52px;height:52px; border-radius:8px;
+    background:#a3271e; color:#f6e7c8; font-size:16px; line-height:1.15;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    transform:rotate(8deg); box-shadow:0 2px 8px rgba(0,0,0,.35); padding:4px;
+    animation:stampIn .45s .3s cubic-bezier(.2,2.2,.4,1) backwards;
+  }
+  @keyframes stampIn { from{transform:rotate(8deg) scale(2.6);opacity:0} to{transform:rotate(8deg) scale(1);opacity:1} }
+  .scroll-card p { font-size:17px; margin:8px 0; }
+  .scroll-card .newbest { color:#8e2418; font-weight:700; }
+  .scroll-card .btns { margin-top:18px; display:flex; gap:14px; justify-content:center; }
+  .scroll-card button {
+    font-family:inherit; font-size:16px; letter-spacing:.15em; cursor:pointer;
+    padding:9px 22px; border-radius:6px; border:1px solid #7c5a22;
+    background:linear-gradient(180deg,#8e2a1f,#6d1d14); color:#f8e9c4;
+    box-shadow:0 3px 8px rgba(0,0,0,.3);
+  }
+  .scroll-card button.ghost { background:transparent; color:#5d3c14; }
+  .scroll-card button:hover { filter:brightness(1.12); }
+
+  footer { position:relative; z-index:1; padding:0 0 20px; color:#7d6a48; font-size:12px; letter-spacing:.2em; text-align:center; }
+</style>
+</head>
+<body>
+<div class="bg-ink">
+  <svg viewBox="0 0 1200 320" preserveAspectRatio="none">
+    <path d="M0,320 L0,220 Q120,140 240,200 T480,160 Q600,90 720,170 T960,180 Q1080,110 1200,190 L1200,320 Z" fill="#0d0a07"/>
+    <path d="M0,320 L0,260 Q200,190 400,250 T800,230 Q1000,170 1200,250 L1200,320 Z" fill="#080604"/>
+  </svg>
+</div>
+
+<header>
+  <div class="title-row">
+    <h1>華容道</h1>
+    <div class="seal">關公<br>義釋</div>
+  </div>
+  <div class="subtitle">曹操敗走 · 義薄雲天</div>
+</header>
+
+<div class="levels" id="levels"></div>
+
+<div class="stats">
+  <span>步數 <b id="moves">0</b></span>
+  <span>用時 <b id="timer">00:00</b></span>
+  <span>最佳 <b id="best">—</b></span>
+  <button class="icon-btn" id="undoBtn">↩ 悔棋</button>
+  <button class="icon-btn" id="resetBtn">⟳ 重開</button>
+</div>
+
+<div class="stage">
+  <div class="frame">
+    <div id="board"></div>
+    <div class="exit-gap" id="exitGap">出 口<span class="exit-arrow">▼</span></div>
+  </div>
+</div>
+
+<footer>拖動棋子 · 助曹操自底部出口脫困</footer>
+
+<div class="overlay" id="overlay">
+  <div class="scroll-card">
+    <div class="stamp">脫困<br>成功</div>
+    <h2>突出重圍</h2>
+    <p id="winLevel"></p>
+    <p>共用 <b id="winMoves"></b> 步 · 用時 <b id="winTime"></b></p>
+    <p class="newbest" id="newBest" style="display:none">☆ 新紀錄 ☆</p>
+    <div class="btns">
+      <button class="ghost" id="againBtn">再戰一局</button>
+      <button id="nextBtn">下一關 →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ 关卡数据（均经求解器验证可解） ============ */
+/* 棋子: 曹=曹操2x2 关=关羽2x1 张/赵/马/黄=1x2 兵=1x1 */
+function P(id,cls,name,w,h,x,y){ return {id:id,cls:cls,name:name,w:w,h:h,x:x,y:y}; }
+function bing(x,y,i){ return P("b"+i,"bing","兵",1,1,x,y); }
+
+const LEVELS = [
+  { name:"橫刀立馬", desc:"传世经典", best:"≈81步",
+    pieces:[ P("cao","cao","曹操",2,2,1,0), P("zhang","zhang","張飛",1,2,0,0), P("zhao","zhao","趙雲",1,2,3,0),
+             P("ma","ma","馬超",1,2,0,2), P("huang","huang","黃忠",1,2,3,2), P("guan","guan","關羽",2,1,1,2),
+             bing(1,3,0),bing(2,3,1),bing(0,4,2),bing(3,4,3) ] },
+  { name:"指揮若定", desc:"将帅运筹", best:"≈63步",
+    pieces:[ P("cao","cao","曹操",2,2,1,0), bing(0,0,0),bing(3,0,1),
+             P("zhang","zhang","張飛",1,2,0,1), P("zhao","zhao","趙雲",1,2,3,1), P("guan","guan","關羽",2,1,1,2),
+             P("ma","ma","馬超",1,2,0,3), P("huang","huang","黃忠",1,2,3,3), bing(1,3,2),bing(2,3,3) ] },
+  { name:"將擁曹營", desc:"众将拱卫", best:"≈72步",
+    pieces:[ P("cao","cao","曹操",2,2,1,0),
+             P("zhang","zhang","張飛",1,2,0,1), P("zhao","zhao","趙雲",1,2,3,1), P("guan","guan","關羽",2,1,1,2),
+             P("ma","ma","馬超",1,2,0,3), P("huang","huang","黃忠",1,2,3,3),
+             bing(1,3,0),bing(2,3,1),bing(1,4,2),bing(2,4,3) ] },
+  { name:"齊頭並進", desc:"齐头并进", best:"≈60步",
+    pieces:[ P("cao","cao","曹操",2,2,1,0), P("zhang","zhang","張飛",1,2,0,0), P("zhao","zhao","趙雲",1,2,3,0),
+             bing(0,2,0),bing(3,2,1), P("guan","guan","關羽",2,1,1,2),
+             P("ma","ma","馬超",1,2,0,3), P("huang","huang","黃忠",1,2,3,3), bing(1,3,2),bing(2,3,3) ] },
+  { name:"水泄不通", desc:"四面合围", best:"≈33步",
+    pieces:[ P("cao","cao","曹操",2,2,1,0), bing(0,0,0),bing(3,0,1),bing(0,1,2),bing(3,1,3),
+             P("guan","guan","關羽",2,1,1,2), P("zhang","zhang","張飛",1,2,0,2), P("zhao","zhao","趙雲",1,2,3,2),
+             P("ma","ma","馬超",1,2,1,3), P("huang","huang","黃忠",1,2,2,3) ] },
+];
+
+const COLS=4, ROWS=5;
+const boardEl=document.getElementById("board");
+const movesEl=document.getElementById("moves");
+const timerEl=document.getElementById("timer");
+const bestEl=document.getElementById("best");
+const undoBtn=document.getElementById("undoBtn");
+const resetBtn=document.getElementById("resetBtn");
+const levelsEl=document.getElementById("levels");
+const overlay=document.getElementById("overlay");
+
+let levelIdx=0, pieces=[], cell=80, boardW=320, boardH=400;
+let moves=0, history=[], won=false;
+let startTime=null, timerInt=null, elapsed=0;
+
+/* ---------- 音效（WebAudio，免素材） ---------- */
+let audioCtx=null;
+function tone(freq,dur,type,vol){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||"sine"; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol||0.12,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+const sndMove=()=>tone(190,0.09,"triangle",0.10);
+const sndWin=()=>{ tone(262,0.35,"sine",0.14); setTimeout(()=>tone(330,0.35,"sine",0.14),160); setTimeout(()=>tone(392,0.55,"sine",0.16),320); };
+
+/* ---------- 布局尺寸 ---------- */
+function resize(){
+  boardW=Math.min(window.innerWidth-56, 380);
+  cell=Math.floor(boardW/COLS);
+  boardW=cell*COLS; boardH=cell*ROWS;
+  boardEl.style.width=boardW+"px"; boardEl.style.height=boardH+"px";
+  drawGrid();
+  const gap=document.getElementById("exitGap");
+  gap.style.left=(14+cell)+"px"; gap.style.width=(cell*2)+"px";
+  renderAll(false);
+}
+function drawGrid(){
+  boardEl.querySelectorAll(".grid-line").forEach(e=>e.remove());
+  for(let c=1;c<COLS;c++){
+    const l=document.createElement("div"); l.className="grid-line";
+    l.style.cssText="left:"+(c*cell)+"px;top:0;width:1px;height:100%"; boardEl.appendChild(l);
+  }
+  for(let r=1;r<ROWS;r++){
+    const l=document.createElement("div"); l.className="grid-line";
+    l.style.cssText="top:"+(r*cell)+"px;left:0;height:1px;width:100%"; boardEl.appendChild(l);
+  }
+}
+window.addEventListener("resize",resize);
+
+/* ---------- 棋子渲染 ---------- */
+function pieceEl(p){
+  let el=document.getElementById("pc-"+p.id);
+  if(!el){
+    el=document.createElement("div");
+    el.className="piece "+p.cls; el.id="pc-"+p.id;
+    const s=document.createElement("span"); s.className="ch"; el.appendChild(s);
+    boardEl.appendChild(el);
+    el.addEventListener("pointerdown",e=>onDown(e,p));
+  }
+  return el;
+}
+function renderPiece(p,animate){
+  const el=pieceEl(p);
+  const nameEl=el.querySelector(".ch");
+  const pad=Math.max(3,cell*0.05);
+  el.style.left=(p.x*cell+pad)+"px"; el.style.top=(p.y*cell+pad)+"px";
+  el.style.width=(p.w*cell-pad*2)+"px"; el.style.height=(p.h*cell-pad*2)+"px";
+  const longSide=Math.max(p.w,p.h);
+  const fs=p.id==="cao"?cell*0.52:(longSide===2?cell*0.42:cell*0.5);
+  nameEl.style.fontSize=fs+"px";
+  // 竖将名字竖排
+  if(p.h>p.w && p.name.length>1){ nameEl.classList.add("v-name"); } else { nameEl.classList.remove("v-name"); }
+  nameEl.textContent=p.name;
+}
+function renderAll(){ pieces.forEach(p=>renderPiece(p)); }
+
+/* ---------- 占用网格 ---------- */
+function occupancy(exceptId){
+  const g=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+  pieces.forEach(p=>{
+    if(p.id===exceptId)return;
+    for(let dy=0;dy<p.h;dy++)for(let dx=0;dx<p.w;dx++) g[p.y+dy][p.x+dx]=p.id;
+  });
+  return g;
+}
+
+/* ---------- 拖动（鼠标+触屏统一 Pointer Events） ---------- */
+let drag=null;
+function onDown(e,p){
+  if(won) return;
+  e.preventDefault();
+  const el=pieceEl(p);
+  try{ el.setPointerCapture(e.pointerId); }catch(err){}
+  el.classList.add("dragging");
+  drag={p:p, el:el, pid:e.pointerId, sx:e.clientX, sy:e.clientY, ox:p.x, oy:p.y, axis:null};
+  el.addEventListener("pointermove",onMove);
+  el.addEventListener("pointerup",onUp,{once:true});
+  el.addEventListener("pointercancel",onUp,{once:true});
+}
+function pickAxis(d){
+  if(d.p.w>d.p.w||d.p.w>d.p.h) return "x";
+  if(d.p.h>d.p.w) return "y";
+  return Math.abs(d.dxPx)>=Math.abs(d.dyPx)?"x":"y";
+}
+function freeRange(p,axis){
+  const g=occupancy(p.id);
+  let min=0,max=0;
+  if(axis==="x"){
+    for(let x=p.x-1;;x--){ let ok=true; for(let dy=0;dy<p.h;dy++) if(x<0||g[p.y+dy][x]){ok=false;break;} if(!ok)break; min--; }
+    for(let x=p.x+p.w;;x++){ let ok=true; for(let dy=0;dy<p.h;dy++) if(x>=COLS||g[p.y+dy][x]){ok=false;break;} if(!ok)break; max++; }
+  }else{
+    for(let y=p.y-1;;y--){ let ok=true; for(let dx=0;dx<p.w;dx++) if(y<0||g[y][p.x+dx]){ok=false;break;} if(!ok)break; min--; }
+    for(let y=p.y+p.h;;y++){ let ok=true; for(let dx=0;dx<p.w;dx++) if(y>=ROWS||g[y][p.x+dx]){ok=false;break;} if(!ok)break; max++; }
+  }
+  return {min:min,max:max};
+}
+function onMove(e){
+  if(!drag||e.pointerId!==drag.pid) return;
+  const d=drag;
+  d.dxPx=e.clientX-d.sx; d.dyPx=e.clientY-d.sy;
+  if(!d.axis){ if(Math.abs(d.dxPx)<6&&Math.abs(d.dyPx)<6) return;
+    d.axis=(d.p.w>d.p.h)?"x":(d.p.h>d.p.w)?"y":(Math.abs(d.dxPx)>=Math.abs(d.dyPx)?"x":"y"); }
+  const range=freeRange(d.p,d.axis);
+  const deltaPx=d.axis==="x"?d.dxPx:d.dyPx;
+  const clamped=Math.max(range.min*cell,Math.min(range.max*cell,deltaPx));
+  d.curDelta=clamped;
+  d.el.style.transform=d.axis==="x"?"translateX("+clamped+"px)":"translateY("+clamped+"px)";
+}
+function onUp(e){
+  if(!drag||e.pointerId!==drag.pid) return;
+  const d=drag; drag=null;
+  d.el.removeEventListener("pointermove",onMove);
+  d.el.classList.remove("dragging");
+  d.el.style.transform="";
+  if(!d.axis||d.curDelta===undefined) return;
+  const steps=Math.round(d.curDelta/cell);
+  if(steps===0) return;
+  const from={x:d.p.x,y:d.p.y};
+  if(d.axis==="x") d.p.x+=steps; else d.p.y+=steps;
+  history.push({id:d.p.id,from:from,to:{x:d.p.x,y:d.p.y}});
+  moves++; updateStats(); renderPiece(d.p); sndMove();
+  startTimerIfNeeded();
+  undoBtn.disabled=false;
+  checkWin();
+}
+
+/* ---------- 胜负判定 ---------- */
+function checkWin(){
+  const cao=pieces.find(p=>p.id==="cao");
+  if(cao.x===1&&cao.y===3){
+    won=true; stopTimer(); sndWin();
+    const key="hrd_best_"+levelIdx;
+    const prev=localStorage.getItem(key);
+    let isNew=false;
+    if(!prev||moves<parseInt(prev,10)){ localStorage.setItem(key,String(moves)); isNew=true; }
+    bestEl.textContent=localStorage.getItem(key);
+    document.getElementById("winLevel").textContent="「"+LEVELS[levelIdx].name+"」";
+    document.getElementById("winMoves").textContent=moves;
+    document.getElementById("winTime").textContent=fmtTime(elapsed);
+    document.getElementById("newBest").style.display=isNew?"block":"none";
+    document.getElementById("nextBtn").style.display=levelIdx<LEVELS.length-1?"":"none";
+    setTimeout(()=>overlay.classList.add("show"),350);
+  }
+}
+
+/* ---------- 计时 ---------- */
+function startTimerIfNeeded(){
+  if(startTime!==null||won) return;
+  startTime=Date.now();
+  timerInt=setInterval(()=>{ elapsed=Math.floor((Date.now()-startTime)/1000); timerEl.textContent=fmtTime(elapsed); },500);
+}
+function stopTimer(){ if(timerInt){clearInterval(timerInt);timerInt=null;} }
+function fmtTime(s){ const m=String(Math.floor(s/60)).padStart(2,"0"),ss=String(s%60).padStart(2,"0"); return m+":"+ss; }
+
+/* ---------- 悔棋 / 重开 ---------- */
+undoBtn.addEventListener("click",()=>{
+  const h=history.pop(); if(!h) return;
+  const p=pieces.find(x=>x.id===h.id);
+  p.x=h.from.x; p.y=h.from.y;
+  moves=Math.max(0,moves-1); updateStats(); renderPiece(p);
+  undoBtn.disabled=history.length===0;
+});
+resetBtn.addEventListener("click",()=>loadLevel(levelIdx));
+
+function updateStats(){ movesEl.textContent=moves; }
+
+/* ---------- 关卡切换 ---------- */
+function loadLevel(idx){
+  levelIdx=idx; won=false; moves=0; history=[]; elapsed=0;
+  startTime=null; stopTimer(); timerEl.textContent="00:00";
+  undoBtn.disabled=true; overlay.classList.remove("show");
+  boardEl.querySelectorAll(".piece").forEach(e=>e.remove());
+  pieces=LEVELS[idx].pieces.map(p=>Object.assign({},p));
+  const best=localStorage.getItem("hrd_best_"+idx);
+  bestEl.textContent=best||"—";
+  updateStats();
+  levelsEl.querySelectorAll(".lv-btn").forEach((b,i)=>b.classList.toggle("active",i===idx));
+  resize();
+}
+LEVELS.forEach((lv,i)=>{
+  const b=document.createElement("button");
+  b.className="lv-btn"; b.textContent="第"+("一二三四五"[i])+"關 · "+lv.name;
+  b.title=lv.desc+"（最少 "+lv.best+"）";
+  b.addEventListener("click",()=>loadLevel(i));
+  levelsEl.appendChild(b);
+});
+
+document.getElementById("againBtn").addEventListener("click",()=>loadLevel(levelIdx));
+document.getElementById("nextBtn").addEventListener("click",()=>loadLevel(Math.min(levelIdx+1,LEVELS.length-1)));
+
+/* 阻止双击缩放/长按选择 */
+boardEl.addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("gesturestart",e=>e.preventDefault());
+
+loadLevel(0);
+
+/* 测试钩子（不影响游戏） */
+window.__hrd={ get pieces(){return pieces}, get moves(){return moves}, get cell(){return cell},
+  loadLevel:loadLevel, checkWin:checkWin, get won(){return won} };
+})();
+</script>
+</body>
+</html>

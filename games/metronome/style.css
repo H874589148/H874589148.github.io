@@ -1,0 +1,305 @@
+/* ============================================
+   节拍器 metronome 页面样式
+   配色一律走 base.css CSS 变量，暗色模式自动适配
+   ============================================ */
+
+.metro-header {
+    margin-bottom: var(--space-lg);
+}
+
+.metro-page .tool-section {
+    margin-bottom: var(--space-lg);
+}
+
+/* ---- 舞台 ---- */
+.metro-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-lg) var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+/* 摆锤：底部支点，JS 用 rotate 驱动（不经 CSS transition，与音频时钟对齐） */
+.pendulum-stage {
+    position: relative;
+    width: min(280px, 80vw);
+    height: 200px;
+}
+
+.pendulum {
+    position: absolute;
+    left: 50%;
+    bottom: 30px;
+    width: 6px;
+    height: 150px;
+    margin-left: -3px;
+    transform-origin: 50% 100%;
+    transform: rotate(0deg);
+}
+
+.pendulum-rod {
+    position: absolute;
+    inset: 0;
+    background: var(--color-border-sketch);
+    border-radius: 3px;
+}
+
+.pendulum-bob {
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    width: 28px;
+    height: 28px;
+    margin-left: -14px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    border: 2px solid var(--color-border-sketch);
+    box-shadow: var(--shadow-sketch);
+}
+
+.pendulum-pivot {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    border-radius: 50%;
+    background: var(--color-border-sketch);
+    z-index: 2;
+}
+
+.pendulum-base {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    width: 160px;
+    height: 14px;
+    margin-left: -80px;
+    background: var(--color-bg-paper);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ---- 拍点指示灯 ---- */
+.beat-dots {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+    min-height: 20px;
+}
+
+.beat-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border-sketch);
+    background: var(--color-card-bg);
+    transition: background 0.08s, transform 0.08s;
+}
+
+.beat-dot.downbeat {
+    border-color: var(--color-accent);
+}
+
+.beat-dot.active {
+    transform: scale(1.3);
+    background: var(--color-primary);
+}
+
+.beat-dot.active.downbeat {
+    background: var(--color-accent);
+}
+
+/* ---- 开始 / 停止 ---- */
+.metro-toggle {
+    font-family: var(--font-title);
+    font-size: 1.5rem;
+    padding: var(--space-xs) var(--space-xxl);
+    min-width: 160px;
+}
+
+/* ---- 速度区 ---- */
+.bpm-display {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.bpm-num {
+    font-family: var(--font-title);
+    font-size: 3rem;
+    line-height: 1;
+    color: var(--color-primary);
+    min-width: 3ch;
+}
+
+.bpm-unit {
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+}
+
+.bpm-term {
+    margin-left: var(--space-md);
+    font-family: var(--font-title);
+    font-size: 1.5rem;
+    color: var(--color-accent);
+}
+
+.bpm-row {
+    gap: var(--space-md);
+}
+
+/* ---- 步进按钮 ---- */
+.btn-step {
+    padding: 2px 14px;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    user-select: none;
+    flex: none;
+}
+
+/* ---- chips ---- */
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.chip-btn {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 4px 14px;
+    background: var(--color-card-bg);
+    color: var(--color-text);
+    border: 2px solid var(--color-border-sketch);
+    border-radius: 16px 20px 15px 22px;
+    box-shadow: var(--shadow-sketch);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.chip-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--color-border-sketch);
+    color: var(--color-primary);
+}
+
+.chip-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
+}
+
+.chip-btn.active {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.chip-btn.active:hover {
+    color: #fff;
+}
+
+/* ---- 拍号与重音 ---- */
+.meter-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
+}
+
+.beats-ctrl {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.beats-num {
+    min-width: 116px;
+    text-align: center;
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+}
+
+.beats-num span {
+    font-family: var(--font-title);
+    font-size: 1.7rem;
+    color: var(--color-primary);
+}
+
+.accent-check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 1.05rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.accent-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+.accent-check.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.accent-check.disabled input {
+    cursor: not-allowed;
+}
+
+/* ---- 音量 ---- */
+.vol-row {
+    margin-top: var(--space-md);
+}
+
+.vol-label {
+    flex: none;
+    min-width: 2.4em;
+    color: var(--color-text-secondary);
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 560px) {
+    .bpm-num {
+        font-size: 2.4rem;
+    }
+
+    .bpm-term {
+        font-size: 1.2rem;
+        margin-left: var(--space-sm);
+    }
+
+    .metro-toggle {
+        min-width: 140px;
+        font-size: 1.3rem;
+    }
+
+    .pendulum-stage {
+        height: 176px;
+    }
+
+    .pendulum {
+        height: 130px;
+    }
+}
+
+/* 减少动态：拍点保留状态变色，去掉缩放过渡；摆锤由 JS 侧保持静止 */
+@media (prefers-reduced-motion: reduce) {
+    .beat-dot {
+        transition: none;
+    }
+
+    .beat-dot.active {
+        transform: none;
+    }
+}
