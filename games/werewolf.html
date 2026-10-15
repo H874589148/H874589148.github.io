@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>狼人杀 - EE工具箱</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family: "PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background: radial-gradient(ellipse at 50% -20%, #241b3a 0%, #120e1f 55%, #0a0714 100%);
+    color:#e8e2d0; min-height:100vh; display:flex; justify-content:center;
+    user-select:none;
+  }
+  #app { width:100%; max-width:480px; padding:18px 16px 40px; }
+  h1 { text-align:center; font-size:22px; letter-spacing:6px; color:#d8c47f;
+       text-shadow:0 0 18px rgba(216,196,127,.35); margin:6px 0 2px; }
+  .subtitle { text-align:center; font-size:12px; color:#8b93a8; letter-spacing:2px; margin-bottom:18px; }
+  .screen { display:none; animation:fadein .35s ease; }
+  .screen.active { display:block; }
+  @keyframes fadein { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+  .card-panel { background:rgba(255,255,255,.04); border:1px solid rgba(216,196,127,.18);
+    border-radius:14px; padding:16px; margin-bottom:16px; }
+  .panel-title { font-size:14px; color:#d8c47f; letter-spacing:2px; margin-bottom:12px; }
+  .hint { font-size:12px; color:#8b93a8; line-height:1.7; margin-top:10px; }
+
+  .num-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .num-btn {
+    padding:18px 0; border-radius:12px; border:1px solid rgba(216,196,127,.35);
+    background:linear-gradient(160deg,#2b2347,#1a152e); color:#e8e2d0;
+    font-size:20px; font-weight:600; cursor:pointer; transition:.15s;
+  }
+  .num-btn:active { transform:scale(.95); }
+  .num-btn.selected { background:linear-gradient(160deg,#8a6d1f,#5e4a12); border-color:#d8c47f; color:#fff; }
+
+  /* 身份牌 */
+  .role-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:12px; }
+  .role-card {
+    aspect-ratio: 3/4.7; border-radius:12px; position:relative; cursor:pointer;
+    perspective:600px; transition:opacity .3s;
+  }
+  .role-inner { position:absolute; inset:0; transform-style:preserve-3d; transition:transform .5s; }
+  .role-card.revealed .role-inner { transform:rotateY(180deg); }
+  .role-face {
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:12px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    border:1px solid rgba(216,196,127,.4);
+  }
+  .role-back { background:linear-gradient(160deg,#322a52,#17122b); }
+  .role-back .seat { font-size:26px; font-weight:700; color:#d8c47f; }
+  .role-back .tap { font-size:11px; color:#8b93a8; }
+  .role-front { transform:rotateY(180deg); padding:8px; text-align:center; }
+  .role-front.good { background:linear-gradient(160deg,#1f4f8a,#12315c); border-color:#6fb1ff; }
+  .role-front.wolf { background:linear-gradient(160deg,#7c1f2b,#4a0f18); border-color:#ff7d8a; }
+  .role-front .rname { font-size:17px; font-weight:700; }
+  .role-front .rcamp { font-size:11px; opacity:.85; margin-top:2px; }
+  .role-front .rdesc { font-size:10px; line-height:1.5; opacity:.85; margin-top:6px; }
+  .role-front .wolf-mates { font-size:10px; line-height:1.6; margin-top:6px; color:#ffb3ba; font-weight:600; }
+  .role-card.destroyed { pointer-events:none; opacity:.35; }
+  .role-card.destroyed .role-inner { transform:none; }
+  .role-card.destroyed .role-back { background:#1a1626; border-style:dashed; }
+  .role-card.destroyed .seat { color:#556; font-size:16px; }
+  .role-card.destroyed .seat::after { content:"已销毁"; display:block; font-size:11px; color:#667; margin-top:4px; }
+
+  .btn {
+    display:block; width:100%; padding:14px 0; border:none; border-radius:12px;
+    font-size:16px; font-weight:600; letter-spacing:2px; cursor:pointer; transition:.15s;
+  }
+  .btn:active { transform:scale(.97); }
+  .btn-gold { background:linear-gradient(160deg,#c9a227,#8a6d1f); color:#141414; }
+  .btn-ghost { background:transparent; border:1px solid rgba(139,147,168,.4); color:#8b93a8; font-size:13px; padding:10px 0; margin-top:10px; }
+  .btn:disabled { opacity:.35; pointer-events:none; }
+
+  /* 公示弹层 */
+  #overlay {
+    position:fixed; inset:0; background:rgba(8,5,16,.88); display:none;
+    align-items:center; justify-content:center; z-index:10; padding:24px;
+  }
+  #overlay.show { display:flex; animation:fadein .3s ease; }
+  .result-box {
+    width:100%; max-width:380px; border-radius:18px; padding:28px 20px; text-align:center;
+    background:linear-gradient(170deg,#221b3d,#120d22); border:1px solid rgba(216,196,127,.3);
+  }
+
+  details.rules { margin-top:8px; }
+  details.rules summary { cursor:pointer; font-size:13px; color:#8b93a8; letter-spacing:1px; padding:6px 0; }
+  .rules-body { font-size:12px; color:#9aa2b5; line-height:1.9; padding:8px 2px; }
+  .rules-body b { color:#cfd4e2; }
+  .rules-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:11px; }
+  .rules-table th,.rules-table td { border:1px solid rgba(139,147,168,.25); padding:4px 6px; text-align:center; }
+  .rules-table th { color:#d8c47f; }
+
+  /* 身份公示 */
+  .reveal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0 4px; }
+  .reveal-item { border-radius:8px; padding:8px 4px; text-align:center; border:1px solid; }
+  .reveal-item .seatno { font-size:10px; opacity:.8; }
+  .reveal-item .rname2 { font-size:13px; font-weight:700; margin-top:2px; }
+  .reveal-item.good { background:linear-gradient(160deg,#1f4f8a,#12315c); border-color:rgba(111,177,255,.4); }
+  .reveal-item.wolf { background:linear-gradient(160deg,#7c1f2b,#4a0f18); border-color:rgba(255,125,138,.4); }
+  .role-card.locked { pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>狼人杀</h1>
+  <div class="subtitle">WEREWOLF · 无纸化发牌助手</div>
+
+  <!-- 屏 1：选人数 -->
+  <div class="screen active" id="s-setup">
+    <div class="card-panel">
+      <div class="panel-title">选择本局人数（6–12 人 · 预设板子）</div>
+      <div class="num-grid" id="numGrid"></div>
+      <div class="hint">选定人数后，系统将按预设板子随机分配身份到 1–N 号座位牌。</div>
+    </div>
+    <button class="btn btn-gold" id="btnStart" disabled>开始分配身份</button>
+
+    <details class="rules">
+      <summary>📜 板子配置与规则速查</summary>
+      <div class="rules-body" id="rulesBody"></div>
+    </details>
+  </div>
+
+  <!-- 屏 2：身份牌 -->
+  <div class="screen" id="s-roles">
+    <div class="card-panel">
+      <div class="panel-title">身份牌 · 点击自己的序号查看身份，再点一次销毁</div>
+      <div class="role-grid" id="roleGrid"></div>
+      <div class="hint" id="destroyHint">请依次查看：看身份时确保周围无人偷看；看完点牌销毁，下一个人就看不到了。</div>
+    </div>
+    <button class="btn btn-gold" id="btnRevealAll">🏁 本局结束 · 公示全部身份</button>
+    <button class="btn btn-ghost" id="btnReshuffle">↻ 重新洗牌分配</button>
+    <button class="btn btn-gold" id="btnNewGame" style="display:none">开始新一局</button>
+  </div>
+</div>
+
+<!-- 公示弹层 -->
+<div id="overlay">
+  <div class="result-box">
+    <div id="resultContent"></div>
+    <button class="btn btn-gold" id="btnViewCards" style="display:none;margin-top:14px">进入翻牌界面细看</button>
+    <button class="btn btn-ghost" id="btnCloseOverlay" style="display:none">留在本页</button>
+  </div>
+</div>
+
+<script>
+/* ============ 规则数据（预设板子） ============ */
+const ROLE_INFO = {
+  "狼人":   {camp:"wolf", campText:"狼人阵营", desc:"每晚与狼队友共同袭击一名玩家。白天隐藏身份，混在好人中发言投票。"},
+  "平民":   {camp:"good", campText:"好人阵营 · 平民", desc:"无特殊能力。靠发言与投票找出并放逐所有狼人。"},
+  "预言家": {camp:"good", campText:"好人阵营 · 神职", desc:"每晚可查验一名玩家的阵营（好人或狼人）。"},
+  "女巫":   {camp:"good", campText:"好人阵营 · 神职", desc:"拥有一瓶解药（救人）与一瓶毒药（毒人），全程各限用一次。"},
+  "猎人":   {camp:"good", campText:"好人阵营 · 神职", desc:"被狼人杀害或被投票放逐时可开枪带走一名玩家；被毒死则无法开枪。"},
+  "守卫":   {camp:"good", campText:"好人阵营 · 神职", desc:"每晚可守护一名玩家免遭狼人袭击，不能连续两晚守护同一人。"},
+  "白痴":   {camp:"good", campText:"好人阵营 · 神职", desc:"被投票放逐时可翻开身份牌免于出局，但此后失去投票权。"}
+};
+const GODS = ["预言家","女巫","猎人","守卫","白痴"];
+const CONFIGS = {
+  6:  ["狼人","狼人","预言家","女巫","平民","平民"],
+  7:  ["狼人","狼人","预言家","女巫","平民","平民","平民"],
+  8:  ["狼人","狼人","狼人","预言家","女巫","平民","平民","平民"],
+  9:  ["狼人","狼人","狼人","预言家","女巫","猎人","平民","平民","平民"],
+  10: ["狼人","狼人","狼人","预言家","女巫","猎人","平民","平民","平民","平民"],
+  11: ["狼人","狼人","狼人","预言家","女巫","猎人","白痴","平民","平民","平民","平民"],
+  12: ["狼人","狼人","狼人","狼人","预言家","女巫","猎人","守卫","平民","平民","平民","平民"]
+};
+
+/* ============ 状态 ============ */
+const S = {
+  playerCount: 0,
+  roles: [],          // index = 座位号-1
+  destroyed: 0,
+  revealMode: false
+};
+
+const $ = id => document.getElementById(id);
+const show = id => { document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); window.scrollTo(0,0); };
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ============ 屏 1：选人数 ============ */
+(function initSetup(){
+  const g = $("numGrid");
+  for(let n=6;n<=12;n++){
+    const b=document.createElement("button");
+    b.className="num-btn"; b.textContent=n+" 人";
+    b.onclick=()=>{
+      document.querySelectorAll(".num-btn").forEach(x=>x.classList.remove("selected"));
+      b.classList.add("selected"); S.playerCount=n; $("btnStart").disabled=false;
+    };
+    g.appendChild(b);
+  }
+  // 规则速查
+  let html="<b>身份配置（预设板子）</b><table class='rules-table'><tr><th>人数</th><th>狼人</th><th>神职</th><th>平民</th></tr>";
+  for(let n=6;n<=12;n++){
+    const list=CONFIGS[n];
+    const wolves=list.filter(r=>r==="狼人").length;
+    const gods=[...new Set(list.filter(r=>GODS.includes(r)))];
+    const civs=list.filter(r=>r==="平民").length;
+    html+=`<tr><td>${n}</td><td>${wolves}</td><td>${gods.join(" ")}</td><td>${civs}</td></tr>`;
+  }
+  html+="</table><br><b>角色技能</b>";
+  for(const r of ["狼人","平民","预言家","女巫","猎人","守卫","白痴"]){
+    html+=`<br><b>${r}</b>（${ROLE_INFO[r].campText}）：${ROLE_INFO[r].desc}`;
+  }
+  html+="<br><br><b>夜晚行动顺序</b>：守卫（如有）→ 狼人 → 女巫 → 预言家 → 天亮报死讯；白天：依次发言 → 投票放逐。";
+  html+="<br><b>胜负判定（屠边）</b>：好人放逐或带走所有狼人，好人胜；狼人杀光全部神职或全部平民，狼人胜。";
+  $("rulesBody").innerHTML=html;
+})();
+
+$("btnStart").onclick = ()=>{ assignRoles(); show("s-roles"); };
+$("btnReshuffle").onclick = ()=>{ if(confirm("重新洗牌？当前已销毁的牌将全部重置。")) assignRoles(); };
+
+function assignRoles(){
+  S.roles = shuffle([...CONFIGS[S.playerCount]]);
+  S.destroyed = 0;
+  S.revealMode = false;
+  document.querySelector("#s-roles .panel-title").textContent = "身份牌 · 点击自己的序号查看身份，再点一次销毁";
+  $("btnRevealAll").style.display = "block";
+  $("btnReshuffle").style.display = "block";
+  $("btnNewGame").style.display = "none";
+  const wolfSeats = S.roles.map((r,i)=>r==="狼人"?i+1:0).filter(x=>x>0);
+  const g = $("roleGrid"); g.innerHTML="";
+  S.roles.forEach((role,i)=>{
+    const info = ROLE_INFO[role];
+    const mates = role==="狼人" ? wolfSeats.filter(s=>s!==i+1) : [];
+    const card = document.createElement("div");
+    card.className="role-card";
+    card.innerHTML=`
+      <div class="role-inner">
+        <div class="role-face role-back"><div class="seat">${i+1}</div><div class="tap">点击查看身份</div></div>
+        <div class="role-face role-front ${info.camp}">
+          <div class="rname">${role}</div>
+          <div class="rcamp">${info.campText}</div>
+          <div class="rdesc">${info.desc}</div>
+          ${role==="狼人"?`<div class="wolf-mates">${mates.length?"你的狼队友："+mates.join(" 号、")+" 号":"你是唯一的狼人"}</div>`:""}
+          <div class="rcamp" style="margin-top:6px">再点一次销毁</div>
+        </div>
+      </div>`;
+    card.onclick = ()=>{
+      if(S.revealMode || card.classList.contains("destroyed")) return;
+      if(!card.classList.contains("revealed")){
+        card.classList.add("revealed");
+      }else{
+        card.classList.remove("revealed");
+        card.classList.add("destroyed");
+        S.destroyed++;
+        $("destroyHint").textContent = `已销毁 ${S.destroyed}/${S.playerCount} 张。${S.destroyed<S.playerCount?"请下一位点击自己的序号牌。":"全部身份已确认并销毁。"}`;
+      }
+    };
+    g.appendChild(card);
+  });
+  $("destroyHint").textContent="请依次查看：看身份时确保周围无人偷看；看完点牌销毁，下一个人就看不到了。狼人请牢记牌面上的狼队友座位号。";
+}
+
+/* ============ 身份公示 ============ */
+$("btnRevealAll").onclick=()=>{
+  if(!S.roles.length) return;
+  if(confirm("确定本局已结束？公示后所有人身份将全部公开。")) openRevealOverlay();
+};
+function openRevealOverlay(){
+  let html=`<div style="font-size:13px;color:#8b93a8;letter-spacing:2px">身份公示</div><div class="reveal-grid">`;
+  S.roles.forEach((role,i)=>{
+    const info=ROLE_INFO[role];
+    html+=`<div class="reveal-item ${info.camp}"><div class="seatno">${i+1}号</div><div class="rname2">${role}</div></div>`;
+  });
+  html+=`</div>`;
+  $("resultContent").innerHTML=html;
+  $("btnViewCards").style.display="block";
+  $("btnCloseOverlay").style.display="block";
+  $("overlay").classList.add("show");
+}
+$("btnViewCards").onclick=()=>{
+  S.revealMode=true;
+  $("overlay").classList.remove("show");
+  show("s-roles");
+  document.querySelectorAll("#roleGrid .role-card").forEach(c=>{
+    c.classList.remove("destroyed");
+    c.classList.add("revealed","locked");
+  });
+  document.querySelector("#s-roles .panel-title").textContent="身份公示 · 本局已结束";
+  $("destroyHint").textContent="本局身份已全部公开。确认完毕后可点击「开始新一局」。";
+  $("btnRevealAll").style.display="none";
+  $("btnReshuffle").style.display="none";
+  $("btnNewGame").style.display="block";
+};
+$("btnCloseOverlay").onclick=()=>$("overlay").classList.remove("show");
+$("btnNewGame").onclick=()=>{
+  S.revealMode=false;
+  show("s-setup");
+};
+</script>
+</body>
+</html>

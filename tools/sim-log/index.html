@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <script>(function(){var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>仿真结果规范收集 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
 
     <main class="container-wide">
         <h1>仿真结果规范收集</h1>
-        <p class="tool-desc">按左侧表单填写仿真设置，右侧实时生成「字段名黑体加粗 + 值楷体斜体」的规范化记录；一键复制为 Word（富文本，粘贴后保留字体样式）、Markdown 或 LaTeX 格式，直接贴入实验记录、报告或邮件。填写内容自动保存在本机，刷新后恢复。</p>
+        <p class="tool-desc">填写仿真设置与后仿寄生提参类型，实时生成规范化记录；字段名与字段值可分别设置加粗、斜体和颜色。默认字段名黑体加粗、值楷体斜体，支持 Word、Markdown、LaTeX 三格式复制。填写内容及样式自动保存在本机，刷新后恢复。</p>
 
         <div class="simlog-layout">
             <aside class="simlog-params">
@@ -114,11 +114,58 @@
                             <option value="后仿">后仿</option>
                         </select>
                     </div>
+                    <div class="field sub-field" id="parasiticTypeWrap" hidden>
+                        <label for="parasiticType">寄生提参类型</label>
+                        <select id="parasiticType" aria-describedby="parasiticHint" disabled>
+                            <option value="" selected>请选择…</option>
+                            <option value="R+C+CC">R+C+CC</option>
+                            <option value="R+C">R+C</option>
+                            <option value="R">R</option>
+                            <option value="C+CC">C+CC</option>
+                            <option value="No R/C">No R/C</option>
+                        </select>
+                        <p class="hint" id="parasiticHint">R：寄生电阻；C：对地电容；CC：耦合电容，具体以提参工具定义为准。No R/C 仍属于后仿，仅表示不含上述互连寄生，不代表去除器件本征寄生。未选择时记录标注「待选择」。</p>
+                    </div>
                     <p class="hint" id="simlogHint">电压 / 温度选「自定义…」后可直接填写任意点或范围；设置自动保存在本机，刷新后恢复。</p>
                 </div>
             </aside>
 
             <section class="simlog-result">
+                <div class="param-block paper-card simlog-format">
+                    <h3>格式设置</h3>
+                    <fieldset>
+                        <legend>所有字段名（黑体）</legend>
+                        <div class="format-row">
+                            <label class="format-check"><input type="checkbox" id="labelBold" checked>加粗</label>
+                            <label class="format-check"><input type="checkbox" id="labelItalic">斜体</label>
+                            <label class="format-color" for="labelColor">颜色
+                                <select id="labelColor">
+                                    <option value="auto" selected>自动</option>
+                                    <option value="blue">蓝色</option>
+                                    <option value="red">砖红</option>
+                                    <option value="gray">灰色</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>所有字段值（楷体）</legend>
+                        <div class="format-row">
+                            <label class="format-check"><input type="checkbox" id="valueBold">加粗</label>
+                            <label class="format-check"><input type="checkbox" id="valueItalic" checked>斜体</label>
+                            <label class="format-color" for="valueColor">颜色
+                                <select id="valueColor">
+                                    <option value="auto" selected>自动</option>
+                                    <option value="blue">蓝色</option>
+                                    <option value="red">砖红</option>
+                                    <option value="gray">灰色</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <button class="btn" id="resetFormatBtn" type="button">恢复默认样式</button>
+                    <p class="hint">仅重置样式，不清空仿真数据。预览颜色随日夜主题调整；Word / LaTeX 使用适合白底文档的固定配色，自动颜色输出为黑色。</p>
+                </div>
                 <div class="param-block paper-card">
                     <h3>格式化预览</h3>
                     <div id="simlogPreview" class="simlog-preview"></div>
@@ -129,7 +176,7 @@
                     <button class="btn" id="copyMdBtn" type="button">复制 Markdown</button>
                     <button class="btn" id="copyLatexBtn" type="button">复制 LaTeX</button>
                 </div>
-                <p class="hint">「复制 Word 格式」写入富文本剪贴板：粘贴进 Word / WPS 后字段名保持黑体加粗、值保持楷体斜体；Markdown 与 LaTeX 为纯文本。</p>
+                <p class="hint">Word / WPS 粘贴时请选择「保留源格式」，以保留字体与所选样式。Markdown 保留加粗、斜体，不支持颜色；LaTeX 输出样式命令，需 XeLaTeX / ctex，使用颜色时另需 xcolor 宏包。</p>
             </section>
         </div>
     </main>

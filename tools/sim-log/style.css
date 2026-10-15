@@ -1,7 +1,7 @@
 /* tools/sim-log/style.css */
 .simlog-layout {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     gap: var(--space-lg);
     align-items: start;
 }
@@ -20,20 +20,47 @@
 .simlog-preview {
     line-height: 2.1;
     font-size: 1.05rem;
+    overflow-wrap: anywhere;
 }
-.simlog-preview .simlog-label {
-    font-family: 'SimHei', 'Heiti SC', 'Microsoft YaHei', sans-serif;
-    font-weight: bold;
-}
+.simlog-preview .simlog-label,
 .simlog-preview .simlog-value {
-    font-family: 'KaiTi', 'STKaiti', 'DFKai-SB', serif;
-    font-style: italic;
-}
-.simlog-preview .simlog-empty {
-    font-family: 'KaiTi', 'STKaiti', serif;
+    font-weight: normal;
     font-style: normal;
-    color: var(--color-text-muted);
 }
+
+/* 强调与字体由统一格式配置输出，避免关闭选项后仍被固定样式覆盖。 */
+.simlog-params, .simlog-result { min-width: 0; }
+#parasiticTypeWrap[hidden] { display: none; }
+.simlog-format { margin-bottom: var(--space-lg); }
+.simlog-format fieldset {
+    min-width: 0;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-md);
+    border: 1px dashed var(--color-border-sketch);
+    border-radius: var(--radius-sm);
+}
+.simlog-format legend { color: var(--color-text); padding: 0 var(--space-xs); }
+.format-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-md);
+}
+.format-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin: 0;
+}
+.format-check { cursor: pointer; min-height: 36px; }
+.format-check input { width: 18px; height: 18px; accent-color: var(--color-primary); }
+.format-color { flex-wrap: wrap; }
+.format-color select { width: auto; max-width: 100%; }
+.simlog-format :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+.simlog-format .hint, #parasiticHint { margin-top: var(--space-sm); }
 
 .copy-bar {
     display: flex;
