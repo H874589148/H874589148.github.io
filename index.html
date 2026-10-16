@@ -341,6 +341,7 @@
                 <div class="card-title">24点计算器</div>
                 <div class="card-desc">四则运算凑 24：手动输入或随机发牌，全部解法去重展示</div>
             </a>
+            <!--
             <a href="games/sight-reading/index.html" class="nav-card">
                 <div class="card-icon" id="icon-sightreading"></div>
                 <div class="card-title">识谱练习</div>
@@ -356,166 +357,179 @@
                 <div class="card-title">小游戏合集</div>
                 <div class="card-desc">休息一下吧！本地 & 网页小游戏合集</div>
             </a>
+            -->
         </div>
     </div>
 
     <!-- Live 2D YueXinMao -->
-    <link rel="stylesheet" href="css/yuexinmiao-widget.css">
-    <div id="yuexinmiao-root"></div>
-    <script src="js/yuexinmiao-widget.js"></script>
-    <script>
-        YuexinmiaoWidget.init({
-            mount: '#yuexinmiao-root',
-            spritesheet: 'assets/images/spritesheet.webp',
-            width: 128,          // 显示宽度(px)，高度按比例自适应
-            right: 24,           // 距右边缘
-            bottom: 24,          // 距底边
-            speak: true,         // 自动冒泡
-            autoIdle: true       // 待机时随机小动作
-        });
-    </script>
-
-    <!-- 页脚 -->
-    <footer class="site-footer">
-        <p>EE工具箱 &copy; 2026 &mdash; Built with pencil & passion</p>
-        <div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div>
-    </footer>
-    <script async src="https://cn.vercount.one/js"></script>
-
-    <script src="js/cursor.js"></script>
-    <script>
-        //RainbowCursor.init();   // 即彩虹循环+粒子喷射+粒子爆发
-        OutlineArrowCursor.init();   // 默认即描边箭头+彩虹循环+粒子喷射+粒子爆发
-    </script>
-
-    <script src="js/common.js"></script>
-    <script>
-        // 动态渲染 SVG 图标
-        document.getElementById('icon-binary').innerHTML = Icons.binary;
-        document.getElementById('icon-complement').innerHTML = Icons.binary;
-        document.getElementById('icon-noise').innerHTML = Icons.noise;
-        document.getElementById('icon-dpi').innerHTML = Icons.dpi;
-        document.getElementById('icon-circuit').innerHTML = Icons.circuit;
-        document.getElementById('icon-bode').innerHTML = Icons.bode;
-        document.getElementById('icon-power').innerHTML = Icons.power;
-        document.getElementById('icon-miller').innerHTML = Icons.miller;
-        document.getElementById('icon-bandgap').innerHTML = Icons.bandgap;
-        document.getElementById('icon-gaussian').innerHTML = Icons.gaussian;
-        document.getElementById('icon-layout').innerHTML = Icons.layout;
-        document.getElementById('icon-filter').innerHTML = Icons.filter;
-        document.getElementById('icon-ntf').innerHTML = Icons.ntf;
-        document.getElementById('icon-tex').innerHTML = Icons.tex;
-        document.getElementById('icon-calculator').innerHTML = Icons.calculator;
-        document.getElementById('icon-wire').innerHTML = Icons.wire;
-        document.getElementById('icon-lsq').innerHTML = Icons.lsq;
-        document.getElementById('icon-schematic').innerHTML = Icons.schematic;
-        document.getElementById('icon-tt').innerHTML = Icons.tt;
-        document.getElementById('icon-transfer-function').innerHTML = Icons.transferFunction;
-        document.getElementById('icon-waveform').innerHTML = Icons.waveform;
-        document.getElementById('icon-fmea').innerHTML = Icons.fmea;
-        document.getElementById('icon-dice').innerHTML = Icons.dice;
-        document.getElementById('icon-24point').innerHTML = Icons['24point'];
-        document.getElementById('icon-sightreading').innerHTML = Icons.sightreading;
-        document.getElementById('icon-metronome').innerHTML = Icons.metronome;
-        document.getElementById('icon-book').innerHTML = Icons.book;
-        document.getElementById('icon-paper').innerHTML = Icons.paper;
-        document.getElementById('icon-simlog').innerHTML = Icons.simlog;
-        document.getElementById('icon-format').innerHTML = Icons.format;
-        document.getElementById('icon-links').innerHTML = Icons.links;
-        document.getElementById('icon-game').innerHTML = Icons.game;
-
-        // 白天/黑夜模式切换按钮
-        Theme.bind(document.getElementById('themeToggle'));
-    </script>
-    <script>
-        /* ========== 站内功能搜索：标题/描述/补充关键词实时过滤 ==========
-           匹配文本 = 卡片文字 + SEARCH_KEYS 中按 href 前缀补充的中英文关键词 */
-        var SEARCH_KEYS = {
-            'tools/bandgap/': '带隙 基准 电压 vbe trim bandgap 温漂',
-            'tools/current-mirror/': '电流镜 失配 mirror mismatch mos 蒙特卡洛',
-            'tools/noise-calc/': '噪声 热噪声 散粒 闪烁 noise 运放 放大器',
-            'tools/dpi-calc/': 'dpi 直接功率注入 direct power injection emi emc rf 射频 抗扰度 易感性 dbm mw 毫瓦 功率 电压 峰值 ban 隔直电容 阻抗',
-            'tools/power-electronics/': '电力电子 buck boost 升降压 反激 flyback llc dsd 电感 纹波 dcm ccm 占空比 开关电源 拓扑',
-            'tools/bode-plot/': 'bode 波特图 零极点 频响 相位 裕度 补偿',
-            'tools/miller-comp/': 'miller 密勒 补偿 两级运放 极点分裂 相位裕度 零点',
-            'tools/filter-design/': '滤波器 filter rc 低通 高通 带通 带阻 陷波 sallen 有源',
-            'tools/ntf-plot/': 'ntf 噪声整形 sigma delta 调制 频谱 量化',
-            'tools/calculator/': '计算器 表达式 三角 对数 阶乘 calculator',
-            'tools/least-squares/': '最小二乘 拟合 线性 回归 fit 直线',
-            'tools/layout-match/': '版图 失配 梯度 匹配 layout inl dnl 阵列',
-            'tools/wire-res/': '版图 寄生 阻抗 电阻 电容 衬底 走线 方块 wire ir 压降 metal',
-            'tools/latex-render/': 'latex 公式 渲染 tex svg 导出 符号',
-            'tools/base-converter/': '进制 二进制 八进制 十六进制 hex bin oct dec 转换',
-            'tools/complement-code/': '原码 反码 补码 位宽 有符号',
-            'tools/gaussian/': '正态 高斯 分布 概率 置信区间 gaussian',
-            'tools/random-gen/': '随机数 骰子 随机 random dice 抽取',
-            'tools/sim-log/': '仿真 结果 记录 收集 规范 corner 蒙特卡罗 monte carlo pvt tt 前仿 后仿 模板 寄生 提参 提取 parasitic extraction rc cc 样式 配置 加粗 斜体 颜色',
-            'tools/circuit-sketch/': '电路 示意图 原理图 schematic 编辑器 绘图 visio 运放 连线 论文 razavi 器件',
-                        'tools/truth-table/': '真值表 逻辑 布尔 表达式 门电路 卡诺 truth table logic 组合逻辑',
-            'tools/transfer-function/': '传递函数 跨导 gm 小信号 电压增益 跨阻 级联 并联 耦合电容 零极点 频响 bode transfer function MNA',
-            'tools/wavedrom/': '波形 时序 数字 时钟 编辑器 timing 填色 方波 总线',
-            'tools/fmea/': 'fmea fmeda 失效模式 故障 可靠性 iso 26262 asil spfm lfm pmhf fit mtbf 失效率 功能安全',
-            'blog/': '知识 论文 博客 笔记 blog paper 分享 精读',
-            'links/': '链接 导航 资源 网站 links 友链',
-            'games/24point/': '24点 扑克 速算 四则运算 凑24 加减乘除 卡牌 发牌 poker',
-            'games/sight-reading/': '识谱 视唱 五线谱 音符 钢琴 谱号 调号 键盘 练耳 sight reading note piano music',
-            'games/metronome/': '节拍器 metronome bpm 速度 拍子 拍号 重音 细分 节奏 木鱼 架子鼓 练琴 tempo beat',
-            'games/': '游戏 小游戏 休闲 game'
-        };
-        (function initSearch() {
-            var input = document.getElementById('siteSearch');
-            var clearBtn = document.getElementById('searchClear');
-            var emptyTip = document.getElementById('searchEmpty');
-            var cards = Array.prototype.slice.call(document.querySelectorAll('.nav-card'));
-            /* 预生成检索文本（标题+描述+补充关键词），小写化 */
-            cards.forEach(function (card) {
-                var href = card.getAttribute('href') || '';
-                var extra = '';
-                Object.keys(SEARCH_KEYS).forEach(function (prefix) {
-                    if (href.indexOf(prefix) === 0) extra = SEARCH_KEYS[prefix];
+            <link rel="stylesheet" href="css/yuexinmiao-widget.css">
+            <div id="yuexinmiao-root"></div>
+            <script src="js/yuexinmiao-widget.js"></script>
+            <script>
+                YuexinmiaoWidget.init({
+                    mount: '#yuexinmiao-root',
+                    spritesheet: 'assets/images/spritesheet.webp',
+                    width: 128,          // 显示宽度(px)，高度按比例自适应
+                    right: 24,           // 距右边缘
+                    bottom: 80,          // 距底边
+                    speak: true,         // 自动冒泡
+                    autoIdle: true,      // 待机时随机小动作
+                    links: {
+                        games: 'games/index.html',
+                        sightReading: 'games/sight-reading/index.html',
+                        calculator: 'games/24point/index.html'
+                    }
                 });
-                card._haystack = (card.textContent + ' ' + extra).toLowerCase();
-            });
-            function doSearch() {
-                var q = input.value.trim().toLowerCase();
-                clearBtn.style.display = q ? 'block' : 'none';
-                var anyVisible = false;
-                document.querySelectorAll('.card-grid').forEach(function (grid) {
-                    var gridVisible = false;
-                    grid.querySelectorAll('.nav-card').forEach(function (card) {
-                        var show = !q || card._haystack.indexOf(q) !== -1;
-                        card.style.display = show ? '' : 'none';
-                        if (show) gridVisible = true;
+            </script>
+
+            <!-- 页脚 -->
+            <footer class="site-footer">
+                <p>EE工具箱 &copy; 2026 &mdash; Built with pencil & passion</p>
+                <div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div>
+            </footer>
+            <script async src="https://cn.vercount.one/js"></script>
+
+            <script src="js/cursor.js"></script>
+            <script>
+                //RainbowCursor.init();   // 即彩虹循环+粒子喷射+粒子爆发
+                OutlineArrowCursor.init();   // 默认即描边箭头+彩虹循环+粒子喷射+粒子爆发
+            </script>
+
+            <script src="js/common.js"></script>
+            <script>
+                // 动态渲染 SVG 图标；被注释的入口可能没有占位元素，不能阻断后续初始化。
+                var ICON_TARGETS = {
+                    'icon-binary': 'binary',
+                    'icon-complement': 'binary',
+                    'icon-noise': 'noise',
+                    'icon-dpi': 'dpi',
+                    'icon-circuit': 'circuit',
+                    'icon-bode': 'bode',
+                    'icon-power': 'power',
+                    'icon-miller': 'miller',
+                    'icon-bandgap': 'bandgap',
+                    'icon-gaussian': 'gaussian',
+                    'icon-layout': 'layout',
+                    'icon-filter': 'filter',
+                    'icon-ntf': 'ntf',
+                    'icon-tex': 'tex',
+                    'icon-calculator': 'calculator',
+                    'icon-wire': 'wire',
+                    'icon-lsq': 'lsq',
+                    'icon-schematic': 'schematic',
+                    'icon-tt': 'tt',
+                    'icon-transfer-function': 'transferFunction',
+                    'icon-waveform': 'waveform',
+                    'icon-fmea': 'fmea',
+                    'icon-dice': 'dice',
+                    'icon-24point': '24point',
+                    'icon-sightreading': 'sightreading',
+                    'icon-metronome': 'metronome',
+                    'icon-book': 'book',
+                    'icon-paper': 'paper',
+                    'icon-simlog': 'simlog',
+                    'icon-format': 'format',
+                    'icon-links': 'links',
+                    'icon-game': 'game'
+                };
+                Object.keys(ICON_TARGETS).forEach(function (id) {
+                    var target = document.getElementById(id);
+                    var svg = Icons[ICON_TARGETS[id]];
+                    if (target && svg) target.innerHTML = svg;
+                });
+
+                // 白天/黑夜模式切换按钮
+                Theme.bind(document.getElementById('themeToggle'));
+            </script>
+            <script>
+                /* ========== 站内功能搜索：标题/描述/补充关键词实时过滤 ==========
+                   匹配文本 = 卡片文字 + SEARCH_KEYS 中按 href 前缀补充的中英文关键词 */
+                var SEARCH_KEYS = {
+                    'tools/bandgap/': '带隙 基准 电压 vbe trim bandgap 温漂',
+                    'tools/current-mirror/': '电流镜 失配 mirror mismatch mos 蒙特卡洛',
+                    'tools/noise-calc/': '噪声 热噪声 散粒 闪烁 noise 运放 放大器',
+                    'tools/dpi-calc/': 'dpi 直接功率注入 direct power injection emi emc rf 射频 抗扰度 易感性 dbm mw 毫瓦 功率 电压 峰值 ban 隔直电容 阻抗',
+                    'tools/power-electronics/': '电力电子 buck boost 升降压 反激 flyback llc dsd 电感 纹波 dcm ccm 占空比 开关电源 拓扑',
+                    'tools/bode-plot/': 'bode 波特图 零极点 频响 相位 裕度 补偿',
+                    'tools/miller-comp/': 'miller 密勒 补偿 两级运放 极点分裂 相位裕度 零点',
+                    'tools/filter-design/': '滤波器 filter rc 低通 高通 带通 带阻 陷波 sallen 有源',
+                    'tools/ntf-plot/': 'ntf 噪声整形 sigma delta 调制 频谱 量化',
+                    'tools/calculator/': '计算器 表达式 三角 对数 阶乘 calculator',
+                    'tools/least-squares/': '最小二乘 拟合 线性 回归 fit 直线',
+                    'tools/layout-match/': '版图 失配 梯度 匹配 layout inl dnl 阵列',
+                    'tools/wire-res/': '版图 寄生 阻抗 电阻 电容 衬底 走线 方块 wire ir 压降 metal',
+                    'tools/latex-render/': 'latex 公式 渲染 tex svg 导出 符号',
+                    'tools/base-converter/': '进制 二进制 八进制 十六进制 hex bin oct dec 转换',
+                    'tools/complement-code/': '原码 反码 补码 位宽 有符号',
+                    'tools/gaussian/': '正态 高斯 分布 概率 置信区间 gaussian',
+                    'tools/random-gen/': '随机数 骰子 随机 random dice 抽取',
+                    'tools/sim-log/': '仿真 结果 记录 收集 规范 corner 蒙特卡罗 monte carlo pvt tt 前仿 后仿 模板 寄生 提参 提取 parasitic extraction rc cc 样式 配置 加粗 斜体 颜色',
+                    'tools/circuit-sketch/': '电路 示意图 原理图 schematic 编辑器 绘图 visio 运放 连线 论文 razavi 器件',
+                    'tools/truth-table/': '真值表 逻辑 布尔 表达式 门电路 卡诺 truth table logic 组合逻辑',
+                    'tools/transfer-function/': '传递函数 跨导 gm 小信号 电压增益 跨阻 级联 并联 耦合电容 零极点 频响 bode transfer function MNA',
+                    'tools/wavedrom/': '波形 时序 数字 时钟 编辑器 timing 填色 方波 总线',
+                    'tools/fmea/': 'fmea fmeda 失效模式 故障 可靠性 iso 26262 asil spfm lfm pmhf fit mtbf 失效率 功能安全',
+                    'blog/': '知识 论文 博客 笔记 blog paper 分享 精读',
+                    'links/': '链接 导航 资源 网站 links 友链',
+                    'games/24point/': '24点 扑克 速算 四则运算 凑24 加减乘除 卡牌 发牌 poker',
+                    'games/sight-reading/': '识谱 视唱 五线谱 音符 钢琴 谱号 调号 键盘 练耳 sight reading note piano music',
+                    'games/metronome/': '节拍器 metronome bpm 速度 拍子 拍号 重音 细分 节奏 木鱼 架子鼓 练琴 tempo beat',
+                    'games/': '游戏 小游戏 休闲 game'
+                };
+                (function initSearch() {
+                    var input = document.getElementById('siteSearch');
+                    var clearBtn = document.getElementById('searchClear');
+                    var emptyTip = document.getElementById('searchEmpty');
+                    var cards = Array.prototype.slice.call(document.querySelectorAll('.nav-card'));
+                    /* 预生成检索文本（标题+描述+补充关键词），小写化 */
+                    cards.forEach(function (card) {
+                        var href = card.getAttribute('href') || '';
+                        var extra = '';
+                        Object.keys(SEARCH_KEYS).forEach(function (prefix) {
+                            if (href.indexOf(prefix) === 0) extra = SEARCH_KEYS[prefix];
+                        });
+                        card._haystack = (card.textContent + ' ' + extra).toLowerCase();
                     });
-                    /* 整组无可见卡片时，联动隐藏分组标题与其前的分隔线 */
-                    var title = grid.previousElementSibling;
-                    if (title && title.classList.contains('section-title')) {
-                        title.style.display = gridVisible ? '' : 'none';
-                        var divider = title.previousElementSibling;
-                        if (divider && divider.classList.contains('divider-sketch')) {
-                            divider.style.display = gridVisible ? '' : 'none';
+                    function doSearch() {
+                        var q = input.value.trim().toLowerCase();
+                        clearBtn.style.display = q ? 'block' : 'none';
+                        var anyVisible = false;
+                        document.querySelectorAll('.card-grid').forEach(function (grid) {
+                            var gridVisible = false;
+                            grid.querySelectorAll('.nav-card').forEach(function (card) {
+                                var show = !q || card._haystack.indexOf(q) !== -1;
+                                card.style.display = show ? '' : 'none';
+                                if (show) gridVisible = true;
+                            });
+                            /* 整组无可见卡片时，联动隐藏分组标题与其前的分隔线 */
+                            var title = grid.previousElementSibling;
+                            if (title && title.classList.contains('section-title')) {
+                                title.style.display = gridVisible ? '' : 'none';
+                                var divider = title.previousElementSibling;
+                                if (divider && divider.classList.contains('divider-sketch')) {
+                                    divider.style.display = gridVisible ? '' : 'none';
+                                }
+                            }
+                            if (gridVisible) anyVisible = true;
+                        });
+                        emptyTip.style.display = (q && !anyVisible) ? '' : 'none';
+                    }
+                    input.addEventListener('input', doSearch);
+                    clearBtn.addEventListener('click', function () {
+                        input.value = '';
+                        doSearch();
+                        input.focus();
+                    });
+                    input.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape') { input.value = ''; doSearch(); return; }
+                        if (e.key === 'Enter' && input.value.trim()) {
+                            /* 回车直达第一个可见结果 */
+                            for (var i = 0; i < cards.length; i++) {
+                                if (cards[i].style.display !== 'none') { location.href = cards[i].href; return; }
+                            }
                         }
-                    }
-                    if (gridVisible) anyVisible = true;
-                });
-                emptyTip.style.display = (q && !anyVisible) ? '' : 'none';
-            }
-            input.addEventListener('input', doSearch);
-            clearBtn.addEventListener('click', function () {
-                input.value = '';
-                doSearch();
-                input.focus();
-            });
-            input.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') { input.value = ''; doSearch(); return; }
-                if (e.key === 'Enter' && input.value.trim()) {
-                    /* 回车直达第一个可见结果 */
-                    for (var i = 0; i < cards.length; i++) {
-                        if (cards[i].style.display !== 'none') { location.href = cards[i].href; return; }
-                    }
-                }
-            });
-        })();
-    </script>
+                    });
+                })();
+            </script>
 </body>
 </html>

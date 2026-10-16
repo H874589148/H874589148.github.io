@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>谁是卧底 · 单机发牌版</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(160deg, #1a1c3a 0%, #2d1b4e 55%, #1a1c3a 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+  .app {
+    width: 100%;
+    max-width: 460px;
+    min-height: 100vh;
+    padding: 28px 22px 40px;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen { display: none; flex: 1; flex-direction: column; animation: fadeIn .35s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+  .brand { text-align: center; margin: 18px 0 8px; }
+  .brand h1 { font-size: 34px; letter-spacing: 6px; }
+  .brand .sub { margin-top: 8px; font-size: 13px; color: rgba(255,255,255,.55); letter-spacing: 2px; }
+
+  .card {
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    padding: 22px;
+    margin-top: 20px;
+    backdrop-filter: blur(6px);
+  }
+  .card h2 { font-size: 17px; margin-bottom: 14px; color: #ffd166; letter-spacing: 1px; }
+  .hint { font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.8; }
+
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; }
+  .row + .row { border-top: 1px dashed rgba(255,255,255,.1); }
+  .row .label { font-size: 15px; }
+  .row .desc { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 3px; }
+
+  .stepper { display: flex; align-items: center; gap: 14px; }
+  .stepper button {
+    width: 42px; height: 42px; border-radius: 12px; border: none;
+    background: rgba(255,255,255,.12); color: #fff; font-size: 24px; line-height: 1;
+    cursor: pointer; transition: .15s;
+  }
+  .stepper button:active { transform: scale(.92); background: rgba(255,255,255,.25); }
+  .stepper .val { font-size: 26px; font-weight: 700; min-width: 36px; text-align: center; color: #ffd166; }
+
+  .btn {
+    display: block; width: 100%; border: none; cursor: pointer;
+    padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 700;
+    letter-spacing: 2px; transition: .15s; margin-top: 16px;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: linear-gradient(135deg, #ff7e5f, #feb47b); color: #3a1c00; }
+  .btn-blue { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #00283a; }
+  .btn-green { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #00321d; }
+  .btn-danger { background: linear-gradient(135deg, #fa709a, #fee140); color: #3a0020; }
+  .btn-ghost { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+  .btn:disabled { opacity: .35; pointer-events: none; }
+
+  .turn-banner { text-align: center; margin-top: 30px; }
+  .turn-banner .big { font-size: 56px; font-weight: 800; color: #ffd166; text-shadow: 0 4px 24px rgba(255,209,102,.4); }
+  .turn-banner .who { font-size: 20px; margin-top: 6px; letter-spacing: 2px; }
+  .turn-banner .tip { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.8; }
+
+  .press-zone {
+    margin-top: 26px; border-radius: 20px; min-height: 200px;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+    border: 2px dashed rgba(255,255,255,.3);
+    background: rgba(255,255,255,.05);
+    user-select: none; -webkit-user-select: none; touch-action: none;
+    transition: .2s; text-align: center; padding: 20px;
+  }
+  .press-zone.holding { border-style: solid; border-color: #ffd166; background: rgba(255,209,102,.1); }
+  .press-zone .word { font-size: 40px; font-weight: 800; color: #ffd166; letter-spacing: 6px; display: none; }
+  .press-zone.holding .word { display: block; }
+  .press-zone .press-tip { font-size: 15px; color: rgba(255,255,255,.65); line-height: 1.9; }
+  .press-zone.holding .press-tip { display: none; }
+
+  .progress { display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 26px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.15); }
+  .dot.done { background: #43e97b; }
+  .dot.cur { background: #ffd166; }
+
+  .vote-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+  .vote-item {
+    border-radius: 14px; padding: 18px 6px; text-align: center; cursor: pointer;
+    background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.12);
+    transition: .15s; user-select: none; -webkit-user-select: none;
+  }
+  .vote-item .no { font-size: 22px; font-weight: 700; }
+  .vote-item .st { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 4px; }
+  .vote-item.selected { border-color: #ff7e5f; background: rgba(255,126,95,.18); transform: scale(1.04); }
+  .vote-item.out { opacity: .25; pointer-events: none; text-decoration: line-through; }
+
+  .result-box { text-align: center; margin-top: 26px; }
+  .result-box .verdict { font-size: 26px; font-weight: 800; letter-spacing: 2px; }
+  .result-box .verdict.spy { color: #ff7e5f; }
+  .result-box .verdict.civil { color: #43e97b; }
+  .result-box .detail { margin-top: 12px; font-size: 14px; color: rgba(255,255,255,.7); line-height: 1.9; }
+  .result-box .alive { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,.5); }
+
+  .final-icon { font-size: 64px; text-align: center; margin-top: 26px; }
+  .final-title { text-align: center; font-size: 28px; font-weight: 800; margin-top: 12px; letter-spacing: 3px; }
+  .word-reveal { margin-top: 20px; font-size: 15px; line-height: 2.1; text-align: center; }
+  .word-reveal b { color: #ffd166; font-size: 19px; }
+  .spy-list { margin-top: 6px; font-size: 13px; color: rgba(255,255,255,.6); text-align: center; line-height: 1.9; }
+
+  .topbar { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: rgba(255,255,255,.45); letter-spacing: 1px; }
+  .round-tag { background: rgba(255,255,255,.1); padding: 4px 12px; border-radius: 20px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 1. 设置 -->
+  <div class="screen active" id="scr-setup">
+    <div class="brand">
+      <h1>谁是卧底</h1>
+      <div class="sub">单 机 发 牌 版 · 面 对 面 传 机 游 玩</div>
+    </div>
+    <div class="card">
+      <h2>游戏设置</h2>
+      <div class="row">
+        <div>
+          <div class="label">游戏人数</div>
+          <div class="desc">3 ~ 12 人</div>
+        </div>
+        <div class="stepper">
+          <button id="minus-player">−</button>
+          <div class="val" id="player-count">6</div>
+          <button id="plus-player">＋</button>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="label">卧底人数</div>
+          <div class="desc" id="spy-desc">建议 1 人</div>
+        </div>
+        <div class="stepper">
+          <button id="minus-spy">−</button>
+          <div class="val" id="spy-count">1</div>
+          <button id="plus-spy">＋</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>玩法</h2>
+      <div class="hint">
+        1. 每位玩家轮流拿到手机，长按查看自己的词语（只有 1 位卧底的词不同）。<br>
+        2. 所有人看完后逐轮投票，得票最多者出局。<br>
+        3. 卧底全部出局则平民获胜；卧底人数 ≥ 平民人数则卧底获胜。
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-start">开始发牌</button>
+  </div>
+
+  <!-- 2. 传递确认 -->
+  <div class="screen" id="scr-hand">
+    <div class="turn-banner">
+      <div class="big" id="hand-no">1</div>
+      <div class="who">号玩家</div>
+      <div class="tip">请把手机交到 TA 手中<br>确认周围没人偷看后，点击下方按钮</div>
+    </div>
+    <div class="progress" id="hand-progress"></div>
+    <div style="flex:1"></div>
+    <button class="btn btn-blue" id="btn-im">我是 <span id="im-no">1</span> 号玩家，查看身份</button>
+  </div>
+
+  <!-- 3. 长按看词 -->
+  <div class="screen" id="scr-peek">
+    <div class="topbar">
+      <span id="peek-who">1 号玩家</span>
+      <span class="round-tag">长按查看 · 松手隐藏</span>
+    </div>
+    <div class="press-zone" id="press-zone">
+      <div class="word" id="peek-word">词语</div>
+      <div class="press-tip">🔒<br>按住此区域查看你的词语<br>松手后立即隐藏，请牢记</div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn btn-green" id="btn-pass">我已记住，交给下一位玩家</button>
+    <button class="btn btn-primary" id="btn-goto-vote" style="display:none">所有人已看完，进入投票</button>
+  </div>
+
+  <!-- 4. 确认传递 -->
+  <div class="screen" id="scr-confirm">
+    <div class="turn-banner">
+      <div class="big">✓</div>
+      <div class="who">确认你已经记住词语了吗？</div>
+      <div class="tip">点击确认后将无法再回看<br>然后把手机交给下一位玩家</div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn btn-green" id="btn-confirm-pass">确认，传给下一位</button>
+    <button class="btn btn-ghost" id="btn-back-peek">再看一眼</button>
+  </div>
+
+  <!-- 5. 投票 -->
+  <div class="screen" id="scr-vote">
+    <div class="topbar">
+      <span>自由讨论后投票</span>
+      <span class="round-tag" id="vote-round">第 1 轮</span>
+    </div>
+    <div class="card">
+      <h2>本轮得票最多的玩家</h2>
+      <div class="hint">请大家口头讨论并投票，然后在下方点选<b style="color:#ffd166">得票最多</b>的那一位。</div>
+      <div class="vote-grid" id="vote-grid"></div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn btn-danger" id="btn-vote-ok" disabled>确认 TA 出局</button>
+  </div>
+
+  <!-- 6. 出局结果 -->
+  <div class="screen" id="scr-result">
+    <div class="result-box">
+      <div class="big" style="font-size:56px;font-weight:800;color:#ffd166" id="out-no">3</div>
+      <div class="who" style="font-size:20px;margin-top:6px">号玩家出局</div>
+      <div class="verdict" id="out-verdict" style="margin-top:22px">TA 是卧底！</div>
+      <div class="detail" id="out-detail"></div>
+      <div class="alive" id="out-alive"></div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn btn-primary" id="btn-next-round">进入下一轮投票</button>
+  </div>
+
+  <!-- 7. 终局 -->
+  <div class="screen" id="scr-final">
+    <div class="final-icon" id="final-icon">🎉</div>
+    <div class="final-title" id="final-title">平民获胜！</div>
+    <div class="word-reveal" id="final-words"></div>
+    <div class="spy-list" id="final-spies"></div>
+    <div style="flex:1"></div>
+    <button class="btn btn-primary" id="btn-restart">再来一局</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 词库：每组两个相近词，[平民词, 卧底词] ---------- */
+  var WORD_PAIRS = [
+    ["牛奶", "豆浆"], ["苹果", "雪梨"], ["火车", "高铁"], ["手机", "电话"],
+    ["老师", "教练"], ["警察", "保安"], ["医生", "护士"], ["面包", "馒头"],
+    ["可乐", "雪碧"], ["咖啡", "奶茶"], ["足球", "篮球"], ["游泳", "潜水"],
+    ["眼镜", "墨镜"], ["口红", "唇膏"], ["火锅", "麻辣烫"], ["饺子", "包子"],
+    ["月亮", "太阳"], ["猫咪", "老虎"], ["小狗", "狼"], ["自行车", "电动车"],
+    ["飞机", "火箭"], ["大海", "湖泊"], ["下雨", "下雪"], ["刮风", "起雾"],
+    ["夏天", "秋天"], ["微信", "QQ"], ["淘宝", "京东"], ["电影", "电视剧"],
+    ["小说", "漫画"], ["歌手", "演员"], ["吉他", "小提琴"], ["钢琴", "电子琴"],
+    ["数学", "物理"], ["语文", "历史"], ["上海", "北京"], ["狮子", "老虎"],
+    ["蚊子", "苍蝇"], ["蝴蝶", "蜜蜂"], ["红包", "转账"], ["快递", "外卖"]
+  ];
+
+  /* ---------- 状态 ---------- */
+  var G = {
+    playerCount: 6,
+    spyCount: 1,
+    roles: [],        // true = 卧底
+    words: [],        // 每人拿到的词
+    alive: [],        // 是否存活
+    current: 0,       // 当前看牌的玩家下标
+    round: 1,
+    selected: -1,
+    civilWord: "",
+    spyWord: ""
+  };
+
+  /* ---------- 工具 ---------- */
+  function $(id) { return document.getElementById(id); }
+  function show(id) {
+    var screens = document.querySelectorAll(".screen");
+    for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
+    $(id).classList.add("active");
+    window.scrollTo(0, 0);
+  }
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+  function maxSpyAllowed() {
+    if (G.playerCount < 6) return 1;
+    if (G.playerCount < 9) return 2;
+    return 3;
+  }
+  function aliveCivils() {
+    var n = 0;
+    for (var i = 0; i < G.playerCount; i++) if (G.alive[i] && !G.roles[i]) n++;
+    return n;
+  }
+  function aliveSpies() {
+    var n = 0;
+    for (var i = 0; i < G.playerCount; i++) if (G.alive[i] && G.roles[i]) n++;
+    return n;
+  }
+
+  /* ---------- 设置页 ---------- */
+  function refreshSetup() {
+    $("player-count").textContent = G.playerCount;
+    $("spy-count").textContent = G.spyCount;
+    var maxSpy = maxSpyAllowed();
+    if (G.spyCount > maxSpy) { G.spyCount = maxSpy; $("spy-count").textContent = maxSpy; }
+    $("spy-desc").textContent = G.playerCount < 6 ? "仅可选 1 人" : "最多 " + maxSpy + " 人";
+  }
+  $("minus-player").onclick = function () { if (G.playerCount > 3) { G.playerCount--; refreshSetup(); } };
+  $("plus-player").onclick = function () { if (G.playerCount < 12) { G.playerCount++; refreshSetup(); } };
+  $("minus-spy").onclick = function () { if (G.spyCount > 1) { G.spyCount--; refreshSetup(); } };
+  $("plus-spy").onclick = function () { if (G.spyCount < maxSpyAllowed()) { G.spyCount++; refreshSetup(); } };
+
+  /* ---------- 开始发牌 ---------- */
+  $("btn-start").onclick = function () {
+    var pair = WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)];
+    if (Math.random() < 0.5) { G.civilWord = pair[0]; G.spyWord = pair[1]; }
+    else { G.civilWord = pair[1]; G.spyWord = pair[0]; }
+
+    G.roles = [];
+    for (var i = 0; i < G.playerCount; i++) G.roles.push(i < G.spyCount);
+    shuffle(G.roles);
+    G.words = G.roles.map(function (spy) { return spy ? G.spyWord : G.civilWord; });
+    G.alive = G.roles.map(function () { return true; });
+    G.round = 1;
+    G.current = 0;
+
+    showHand();
+  };
+
+  /* ---------- 传递确认页 ---------- */
+  function showHand() {
+    var no = G.current + 1;
+    $("hand-no").textContent = no;
+    $("im-no").textContent = no;
+    var prog = $("hand-progress");
+    prog.innerHTML = "";
+    for (var i = 0; i < G.playerCount; i++) {
+      var d = document.createElement("div");
+      d.className = "dot" + (i < G.current ? " done" : (i === G.current ? " cur" : ""));
+      prog.appendChild(d);
+    }
+    show("scr-hand");
+  }
+
+  $("btn-im").onclick = function () {
+    $("peek-who").textContent = (G.current + 1) + " 号玩家";
+    $("peek-word").textContent = G.words[G.current];
+    var last = G.current === G.playerCount - 1;
+    $("btn-pass").style.display = last ? "none" : "block";
+    $("btn-goto-vote").style.display = last ? "block" : "none";
+    show("scr-peek");
+  };
+
+  /* ---------- 长按看词 ---------- */
+  var zone = $("press-zone");
+  function holdOn(e) { e.preventDefault(); zone.classList.add("holding"); }
+  function holdOff() { zone.classList.remove("holding"); }
+  zone.addEventListener("touchstart", holdOn, { passive: false });
+  zone.addEventListener("touchend", holdOff);
+  zone.addEventListener("touchcancel", holdOff);
+  zone.addEventListener("mousedown", holdOn);
+  zone.addEventListener("mouseup", holdOff);
+  zone.addEventListener("mouseleave", holdOff);
+  zone.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+  /* ---------- 传给下一位 ---------- */
+  $("btn-pass").onclick = function () { show("scr-confirm"); };
+  $("btn-back-peek").onclick = function () { show("scr-peek"); };
+  $("btn-confirm-pass").onclick = function () { G.current++; showHand(); };
+
+  /* ---------- 进入投票 ---------- */
+  $("btn-goto-vote").onclick = function () { showVote(); };
+
+  function showVote() {
+    $("vote-round").textContent = "第 " + G.round + " 轮";
+    var grid = $("vote-grid");
+    grid.innerHTML = "";
+    G.selected = -1;
+    $("btn-vote-ok").disabled = true;
+    for (var i = 0; i < G.playerCount; i++) {
+      (function (idx) {
+        var item = document.createElement("div");
+        item.className = "vote-item" + (G.alive[idx] ? "" : " out");
+        item.innerHTML = '<div class="no">' + (idx + 1) + " 号</div>" +
+          '<div class="st">' + (G.alive[idx] ? "存活" : "已出局") + "</div>";
+        if (G.alive[idx]) {
+          item.onclick = function () {
+            var items = grid.children;
+            for (var k = 0; k < items.length; k++) items[k].classList.remove("selected");
+            item.classList.add("selected");
+            G.selected = idx;
+            $("btn-vote-ok").disabled = false;
+          };
+        }
+        grid.appendChild(item);
+      })(i);
+    }
+    show("scr-vote");
+  }
+
+  /* ---------- 判定出局 ---------- */
+  $("btn-vote-ok").onclick = function () {
+    if (G.selected < 0) return;
+    var idx = G.selected;
+    G.alive[idx] = false;
+    var isSpy = G.roles[idx];
+
+    $("out-no").textContent = idx + 1;
+    var verdict = $("out-verdict");
+    var spiesLeft = aliveSpies();
+    var civilsLeft = aliveCivils();
+
+    if (isSpy) {
+      verdict.textContent = "TA 就是卧底！🎯";
+      verdict.className = "verdict spy";
+      $("out-detail").textContent = spiesLeft > 0
+        ? "干得漂亮！但还有卧底藏在你们中间，继续！"
+        : "所有卧底已被找出！";
+    } else {
+      verdict.textContent = "冤枉了……TA 是平民 😢";
+      verdict.className = "verdict civil";
+      $("out-detail").textContent = "卧底还在人群中偷笑，下一轮擦亮眼睛！";
+    }
+    $("out-alive").textContent = "当前存活：平民 " + civilsLeft + " 人 · 卧底 " + spiesLeft + " 人";
+
+    /* 胜负判定 */
+    if (spiesLeft === 0) { showFinal(false); return; }
+    if (spiesLeft >= civilsLeft) { showFinal(true); return; }
+
+    show("scr-result");
+  };
+
+  $("btn-next-round").onclick = function () { G.round++; showVote(); };
+
+  /* ---------- 终局 ---------- */
+  function showFinal(spyWin) {
+    $("final-icon").textContent = spyWin ? "🕵️" : "🎉";
+    var title = $("final-title");
+    title.textContent = spyWin ? "卧底获胜！" : "平民获胜！";
+    title.style.color = spyWin ? "#ff7e5f" : "#43e97b";
+    $("final-words").innerHTML =
+      "平民词语：<b>" + G.civilWord + "</b><br>卧底词语：<b>" + G.spyWord + "</b>";
+    var spyNos = [];
+    for (var i = 0; i < G.playerCount; i++) if (G.roles[i]) spyNos.push((i + 1) + " 号");
+    $("final-spies").textContent = "本局卧底是：" + spyNos.join("、");
+    show("scr-final");
+  }
+
+  $("btn-restart").onclick = function () { show("scr-setup"); };
+
+  refreshSetup();
+})();
+</script>
+</body>
+</html>

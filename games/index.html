@@ -132,9 +132,6 @@
                 <a href="pianotiles/pianotiles.html" target="_blank" class="game-link">
                     <span class="game-icon">🎹</span>别踩白块
                 </a>
-                <a href="sight-reading/index.html" target="_blank" class="game-link">
-                    <span class="game-icon">🎼</span>识谱练习
-                </a>
                 <a href="towerBloxx.html" target="_blank" class="game-link">
                     <span class="game-icon">🏠</span>towerBloxx
                 </a>
@@ -150,6 +147,19 @@
             </div>
         </section>
 
+        <!-- 常用工具 -->
+        <section class="game-section">
+            <h2 class="section-title">常用工具</h2>
+            <div class="game-grid">
+                <a href="sight-reading/index.html" target="_blank" class="game-link">
+                    <span class="game-icon">🎼</span>识谱练习
+                </a>
+                <a href="metronome/index.html" target="_blank" class="game-link">
+                    <span class="game-icon">🎵</span>节拍器
+                </a>
+            </div>
+        </section>
+
         <!-- 派对游戏 -->
         <section class="game-section">
             <h2 class="section-title">派对游戏</h2>
@@ -160,7 +170,7 @@
                 <a href="werewolf.html" target="_blank" class="game-link">
                     <span class="game-icon">🐺</span>狼人杀助手
                 </a>
-                <a href="#" target="_blank" class="game-link">
+                <a href="spy.html" target="_blank" class="game-link">
                     <span class="game-icon">🏃‍♂️</span>谁是卧底
                 </a>
             </div>
@@ -211,13 +221,10 @@
 
         <!-- 魔方工具 -->
         <section class="game-section">
-            <h2 class="section-title">魔方 & 工具</h2>
+            <h2 class="section-title">魔方工具</h2>
             <div class="game-grid">
                 <a href="https://cstimer.net/" target="_blank" class="game-link">
                     <span class="game-icon">⏱️</span>魔方计时器
-                </a>
-                <a href="metronome/index.html" target="_blank" class="game-link">
-                    <span class="game-icon">🎵</span>节拍器
                 </a>
             </div>
         </section>
@@ -234,9 +241,14 @@
             spritesheet: '../assets/images/spritesheet.webp',
             width: 128,          // 显示宽度(px)，高度按比例自适应
             right: 24,           // 距右边缘
-            bottom: 24,          // 距底边
+            bottom: 80,          // 距底边
             speak: true,         // 自动冒泡
-            autoIdle: true       // 待机时随机小动作
+            autoIdle: true,      // 待机时随机小动作
+            links: {
+                games: 'index.html',
+                sightReading: 'sight-reading/index.html',
+                calculator: '24point/index.html'
+            }
         });
     </script>
 
