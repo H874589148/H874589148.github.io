@@ -7,7 +7,7 @@ const { Element, code } = require('./handoff-harness');
 
 function widget(options = {}, screen = {}) {
     let now = 0, sequence = 0, s;
-    const timers = new Map(), frames = new Map(), drawings = [];
+    const timers = new Map(), frames = new Map(), drawings = [], audios = [];
     const coarse = !!screen.coarse;
     class Node extends Element {
         constructor(tag) { super(tag); this.tabIndex = -1; }
@@ -38,9 +38,13 @@ function widget(options = {}, screen = {}) {
             this.fire('lostpointercapture', { pointerId: id });
         }
         getContext() { return { clearRect() {}, drawImage: (...args) => drawings.push(args) }; }
+        toolbarWidth() {
+            const count = this.children[0].children.filter(n => n.classList.contains('ym-btn')).length;
+            return count * ((coarse ? 44 : 30) + 4) + 11;
+        }
         get offsetWidth() {
             if (this.style.width) return parseFloat(this.style.width);
-            if (this.classList.contains('ym-toolbar')) return Math.min(coarse ? 299 : 215, parseFloat(this.style.maxWidth) || 1000);
+            if (this.classList.contains('ym-toolbar')) return Math.min(this.toolbarWidth(), parseFloat(this.style.maxWidth) || 1000);
             if (this.classList.contains('ym-bubble')) {
                 const text = this.children.find(n => n.classList.contains('ym-bubble-text'))?.textContent || '';
                 return Math.min(text.length * 7 + (coarse ? 62 : 46), parseFloat(this.style.maxWidth) || 220);
@@ -50,7 +54,7 @@ function widget(options = {}, screen = {}) {
         get offsetHeight() {
             if (this.style.height) return parseFloat(this.style.height);
             if (this.classList.contains('ym-toolbar')) {
-                const scrollbar = this.offsetWidth < (coarse ? 299 : 215) ? 8 : 0;
+                const scrollbar = this.offsetWidth < this.toolbarWidth() ? 8 : 0;
                 return Math.min((coarse ? 54 : 40) + scrollbar, parseFloat(this.style.maxHeight) || 1000);
             }
             if (this.classList.contains('ym-bubble')) {
@@ -84,6 +88,33 @@ function widget(options = {}, screen = {}) {
         requestAnimationFrame: fn => { const id = ++sequence; frames.set(id, fn); return id; },
         cancelAnimationFrame: id => frames.delete(id),
         addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events),
+        Audio: class extends Node {
+            constructor() {
+                super('audio'); audios.push(this);
+                this.paused = true; this.ended = false; this.error = null; this.readyState = 0;
+                this.currentTime = 0; this.requests = []; this.sources = []; this.loadCalls = 0; this.pauseCalls = 0;
+            }
+            get src() { return this.getAttribute('src') || ''; }
+            set src(value) { this.sources.push(value); this.setAttribute('src', value); }
+            load() {
+                this.loadCalls++; this.currentTime = 0; this.paused = true; this.ended = false;
+                this.error = null; this.readyState = 0;
+            }
+            play() {
+                if (this.throwOnPlay) throw this.throwOnPlay;
+                this.paused = false;
+                const request = {};
+                const promise = new Promise((resolve, reject) => { request.resolve = resolve; request.reject = reject; });
+                this.requests.push(request);
+                return promise;
+            }
+            pause() { this.pauseCalls++; this.paused = true; this.fire('pause'); }
+            start() {
+                this.readyState = 4; this.paused = false; this.ended = false;
+                this.fire('playing'); this.requests.at(-1).resolve();
+            }
+            finish() { this.ended = true; this.paused = true; this.fire('pause'); this.fire('ended'); }
+        },
         Image: class {
             constructor() { this.complete = false; }
             load() { this.complete = true; if (this.onload) this.onload(); }
@@ -109,7 +140,7 @@ function widget(options = {}, screen = {}) {
         const callbacks = [...frames.values()]; frames.clear();
         callbacks.forEach(fn => fn(now));
     }
-    return { w, s, doc, body, mount, events, timers, frames, drawings, advance, frame, Node };
+    return { w, s, doc, body, mount, events, timers, frames, drawings, audios, advance, frame, Node };
 }
 function rect(node) { return node.getBoundingClientRect(); }
 function separated(a, b) { return a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top; }
@@ -118,10 +149,10 @@ function inside(r, width, height) {
 }
 function drag(h, type, x, y, extra = {}) { return h.w.stage.fire(type, { clientX: x, clientY: y, ...extra }); }
 
-test('生成五个功能入口和隐藏按钮，默认收起且不占 Tab 顺序', () => {
+test('生成六个功能入口和隐藏按钮，默认收起且不占 Tab 顺序', () => {
     const { w } = widget();
-    assert.equal(w.controls.length, 6);
-    assert.deepEqual(Array.from(w.controls, n => n.title), ['换姿势和对话', '只换对话', '小游戏合集', '识谱练习', '24点计算器', '隐藏看板娘']);
+    assert.equal(w.controls.length, 7);
+    assert.deepEqual(Array.from(w.controls, n => n.title), ['换姿势和对话', '只换对话', '小游戏合集', '识谱练习', '24点计算器', '暂无可播放音乐', '隐藏看板娘']);
     assert.equal(w.root.all().some(n => n.tagName === 'SELECT'), false);
     assert.equal(w.toolbar.inert, true);
     assert.equal(w.toolbar.getAttribute('aria-hidden'), 'true');
@@ -326,7 +357,8 @@ test('初始工具栏位于脚下，气泡距头顶6px且不随菜单展开上�
         assert.equal(rect(w.bridge).height, 6);
         assert.equal(rect(w.bridge).bottom, rect(w.toolbar).top);
         inside(rect(w.toolbar), width, 480);
-        assert.equal(rect(w.toolbar).height, coarse ? 54 : 40);
+        assert.equal(rect(w.toolbar).height, coarse ? (width < 363 ? 62 : 54) : 40);
+        assert.equal(w.toolbar.toolbarWidth(), coarse ? 347 : 249);
         w._setMenu(false);
         assert.deepEqual(rect(w.bubble), bubble);
     }
@@ -414,6 +446,156 @@ test('双击气泡切换和现有公开API兼容', () => {
     assert.equal(w.bubbleClose.tabIndex, -1);
 });
 
+test('音乐按钮懒创建Audio，随机选曲并支持断点续播与自然换曲', () => {
+    const tracks = [{ file: '甲.mp3', title: '甲' }, { file: '目录/乙 #%.MP3' }];
+    const { w, audios } = widget({ music: { baseUrl: 'assets/music/', tracks } });
+    assert.equal(w.controls[5], w.audioBtn);
+    assert.equal(w.audioBtn.title, '随机播放音乐');
+    assert.equal(audios.length, 0);
+    w.audioBtn.click();
+    assert.equal(audios.length, 1);
+    const audio = audios[0];
+    assert.equal(audio.preload, 'none');
+    assert.equal(audio.sources[0], 'assets/music/' + tracks[0].file.split('/').map(encodeURIComponent).join('/'));
+    assert.equal(w.audioBtn.title, '取消加载音乐：甲');
+    audio.start();
+    assert.equal(w._musicStatus, 'playing');
+    assert.equal(w.audioBtn.title, '暂停音乐：甲');
+    assert.equal(w.audioBtn.classList.contains('ym-audio-playing'), true);
+    audio.currentTime = 37;
+    w.audioBtn.click();
+    assert.equal(w._musicStatus, 'paused');
+    assert.equal(audio.paused, true); assert.equal(audio.currentTime, 37);
+    assert.equal(audio.loadCalls, 1); assert.equal(audio.sources.length, 1);
+    w.audioBtn.click();
+    assert.equal(w._musicStatus, 'loading');
+    assert.equal(audio.loadCalls, 1); assert.equal(audio.sources.length, 1);
+    audio.start();
+    assert.equal(audio.currentTime, 37); assert.equal(w._musicStatus, 'playing');
+    audio.finish();
+    assert.equal(w._musicTrack.file, tracks[1].file);
+    assert.equal(w._musicTrack.title, '乙 #%');
+    assert.equal(audio.sources[1], 'assets/music/' + tracks[1].file.split('/').map(encodeURIComponent).join('/'));
+    assert.equal(audio.loadCalls, 2); assert.equal(w.audioBtn.title, '取消加载音乐：乙 #%');
+    audio.start();
+    assert.equal(w._musicStatus, 'playing');
+});
+
+test('单曲自然结束后重播同一首，加载中可取消且过期回调不劫持状态', async () => {
+    const { w, audios } = widget({ music: { tracks: [{ file: '甲.mp3', title: '甲' }] } });
+    w.audioBtn.click(); const audio = audios[0];
+    audio.start(); audio.finish();
+    assert.equal(w._musicTrack.file, '甲.mp3');
+    assert.equal(audio.sources[0], audio.sources[1]);
+    assert.equal(audio.loadCalls, 2); assert.equal(audio.readyState, 0);
+
+    const other = widget({ music: { tracks: [{ file: '甲.mp3' }, { file: '乙.mp3' }] } }), ow = other.w;
+    ow.audioBtn.click();
+    const oa = other.audios[0];
+    ow.audioBtn.click();
+    assert.equal(ow._musicStatus, 'paused');
+    ow.audioBtn.click();
+    assert.equal(ow._musicStatus, 'loading');
+    oa.requests[0].reject(new Error('旧请求失败'));
+    await Promise.resolve();
+    assert.equal(ow._musicStatus, 'loading');
+    oa.start();
+    assert.equal(ow._musicStatus, 'playing');
+    oa.fire('pause'); oa.fire('ended'); oa.fire('error');
+    assert.equal(ow._musicStatus, 'playing');
+    oa.readyState = 1; oa.fire('waiting');
+    assert.equal(ow._musicStatus, 'loading');
+    oa.readyState = 4; oa.fire('playing');
+    assert.equal(ow._musicStatus, 'playing');
+    ow.audioBtn.click();
+    assert.equal(ow._musicStatus, 'paused');
+    oa.fire('playing');
+    assert.equal(ow._musicStatus, 'paused');
+    oa.requests[1].resolve();
+    await Promise.resolve();
+    assert.equal(ow._musicStatus, 'paused');
+});
+
+test('音乐失败给出安全提示并可手动重试，空清单不创建Audio', async () => {
+    const rejected = widget({ music: { tracks: [{ file: '甲.mp3', title: '甲' }] } });
+    const rw = rejected.w, rejectedAudios = rejected.audios;
+    rw.audioBtn.click();
+    const error = new Error('自动播放被拒绝'); error.name = 'NotAllowedError';
+    rejectedAudios[0].requests[0].reject(error);
+    await Promise.resolve();
+    assert.equal(rw._musicStatus, 'error');
+    assert.equal(rw.audioBtn.title, '播放失败，点击重试：甲');
+    assert.equal(rw.bubbleText.textContent, '浏览器阻止了播放，请再次点击音乐按钮。');
+    rw.audioBtn.click(); rejectedAudios[0].start();
+    assert.equal(rw._musicStatus, 'playing');
+
+    const throwing = widget({ music: { tracks: [{ file: '甲.mp3' }] } }), tw = throwing.w;
+    const originalPlay = throwing.s.Audio.prototype.play;
+    throwing.s.Audio = class extends throwing.s.Audio {
+        play() { throw new Error('同步失败'); }
+    };
+    tw.audioBtn.click();
+    assert.equal(tw._musicStatus, 'error');
+    assert.equal(tw.bubbleText.textContent, '音乐加载或播放失败，请再次点击重试。');
+    throwing.audios[0].play = function play() { return originalPlay.call(this); };
+    tw.audioBtn.click(); throwing.audios[0].start();
+    assert.equal(tw._musicStatus, 'playing');
+
+    const errored = widget({ music: { tracks: [{ file: '甲.mp3' }] } }), ew = errored.w;
+    ew.audioBtn.click();
+    errored.audios[0].error = { code: 9 };
+    errored.audios[0].fire('error');
+    assert.equal(ew._musicStatus, 'error');
+    assert.equal(ew.bubbleText.textContent, '音乐加载或播放失败，请再次点击重试。');
+    ew.audioBtn.click(); errored.audios[0].start();
+    assert.equal(ew._musicStatus, 'playing');
+
+    const empty = widget();
+    empty.w.audioBtn.click();
+    assert.equal(empty.audios.length, 0);
+    assert.equal(empty.w._musicStatus, 'idle');
+    assert.equal(empty.w.bubbleText.textContent, '暂无可播放音乐');
+});
+
+test('音乐配置过滤危险路径和坏条目，曲名只作文本展示', () => {
+    const { w, s, audios } = widget({ music: { tracks: [
+        null, { file: 'C:/bad.mp3' }, { file: '../bad.mp3' }, { file: 'a//b.mp3' },
+        { file: '甲.mp3' }, { file: '甲.mp3', title: '重复' },
+        { file: '目录/乙 #%.m4a' }, { file: '<img onerror>.mp3', title: '<b>标题</b>' },
+        { file: '\uD800.mp3' }
+    ] } });
+    assert.equal(JSON.stringify(w.cfg.music.tracks.map(track => track.file)), JSON.stringify(['甲.mp3', '目录/乙 #%.m4a', '<img onerror>.mp3']));
+    assert.equal(JSON.stringify(w.cfg.music.tracks.map(track => track.title)), JSON.stringify(['甲', '乙 #%', '<b>标题</b>']));
+    s.Math.random = () => 0.99;
+    w.audioBtn.click();
+    assert.equal(audios.length, 1);
+    const audio = audios[0];
+    assert.equal(audio.sources[0], 'assets/music/' + encodeURIComponent('<img onerror>.mp3'));
+    assert.equal(w.audioBtn.title, '取消加载音乐：<b>标题</b>');
+    assert.doesNotMatch(w.audioBtn.innerHTML, /<b>/);
+});
+
+test('音乐与显隐独立，pagehide和destroy才停止并复位音源', () => {
+    const h = widget({ music: { tracks: [{ file: '甲.mp3' }, { file: '乙.mp3' }] } });
+    const { w, events, s, audios } = h;
+    w.audioBtn.click(); const audio = audios[0]; audio.start();
+    events.fire('blur'); w._setMenu(true); w._setMenu(false);
+    assert.equal(w._musicStatus, 'playing'); assert.equal(audio.paused, false);
+    w.hide();
+    assert.equal(w.hidden, true); assert.equal(w._musicStatus, 'playing'); assert.equal(audio.paused, false);
+    audio.currentTime = 20; audio.finish(); audio.start();
+    assert.equal(w._musicTrack.file, '乙.mp3'); assert.equal(w._musicStatus, 'playing');
+    const sources = audio.sources.length, time = audio.currentTime;
+    w.show();
+    assert.equal(audio.paused, false); assert.equal(audio.sources.length, sources);
+    assert.equal(audio.currentTime, time); assert.equal(w._musicStatus, 'playing');
+    events.fire('pagehide');
+    assert.equal(w._musicTrack, null); assert.equal(w._musicStatus, 'idle');
+    assert.equal(audio.paused, true); assert.equal(audio.getAttribute('src'), null); assert.equal(audio.currentTime, 0);
+    s.YuexinmiaoWidget.destroy();
+    assert.equal(w._destroyed, true); assert.equal(w._audio, null); assert.equal(audio.getAttribute('src'), null);
+});
+
 test('辅助技术click可以激活角色，真实指针click不重复执行', () => {
     const { w } = widget();
     w.stage.fire('click', { detail: 0, pointerType: '' });
@@ -443,8 +625,18 @@ test('两处真实页面提供正确相对链接，兼容站点子目录，24点
         const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(match => match[1]);
         scripts.forEach(source => new vm.Script(source));
         const source = scripts.find(source => source.includes('YuexinmiaoWidget.init'));
-        vm.runInNewContext(source, { YuexinmiaoWidget: { init: value => { config = value; } } });
+        const page = { window: {}, YuexinmiaoWidget: { init: value => { config = value; } } };
+        vm.runInNewContext(code('assets/music/playlist.js'), page);
+        vm.runInNewContext(source, page);
+        const manifestPath = file === 'index.html' ? 'assets/music/playlist.js' : '../assets/music/playlist.js';
+        assert.ok(html.includes('src="' + manifestPath + '"'));
+        assert.ok(html.indexOf('src="' + manifestPath + '"') < html.indexOf('YuexinmiaoWidget.init'));
         const h = widget(config);
+        assert.ok(config.music.tracks.length > 0);
+        for (const track of config.music.tracks) for (const prefix of ['https://example.test/', 'https://example.test/project/', 'file:///F:/site/']) {
+            const relative = track.file.split('/').map(encodeURIComponent).join('/');
+            assert.equal(new URL(config.music.baseUrl + relative, prefix + file).href, prefix + 'assets/music/' + relative);
+        }
         assert.equal(config.bottom, 80);
         const mobile = widget(config, { width: 320, height: 480, coarse: true });
         mobile.w._setMenu(true);

@@ -364,6 +364,7 @@
     <!-- Live 2D YueXinMao -->
             <link rel="stylesheet" href="css/yuexinmiao-widget.css">
             <div id="yuexinmiao-root"></div>
+            <script src="assets/music/playlist.js"></script>
             <script src="js/yuexinmiao-widget.js"></script>
             <script>
                 YuexinmiaoWidget.init({
@@ -374,6 +375,10 @@
                     bottom: 80,          // 距底边
                     speak: true,         // 自动冒泡
                     autoIdle: true,      // 待机时随机小动作
+                    music: {
+                        baseUrl: 'assets/music/',
+                        tracks: window.YuexinmiaoMusicTracks || []
+                    },
                     links: {
                         games: 'games/index.html',
                         sightReading: 'games/sight-reading/index.html',

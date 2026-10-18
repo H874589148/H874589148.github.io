@@ -160,6 +160,15 @@
 }
 .ym-btn svg, .ym-more-btn svg { width: 18px; height: 18px; pointer-events: none; }
 .yuexinmiao-widget .ym-btn-number { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+.yuexinmiao-widget .ym-btn-audio.ym-audio-playing {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-bg-paper);
+}
+.yuexinmiao-widget .ym-btn-audio.ym-audio-loading {
+  color: var(--color-primary);
+  border-style: dashed;
+}
 .yuexinmiao-widget .ym-btn-hide { color: var(--color-text-secondary); border-color: transparent; }
 .ym-divider { flex: none; height: 20px; border-left: 1px dashed var(--color-border); }
 .ym-more-btn { display: none; position: absolute; right: 0; bottom: 0; z-index: 1; pointer-events: auto; }

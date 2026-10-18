@@ -101,6 +101,10 @@
         sightReading: (opts.links && opts.links.sightReading) || 'games/sight-reading/index.html',
         calculator: (opts.links && opts.links.calculator) || 'games/24point/index.html'
       },
+      music: {
+        baseUrl: (opts.music && typeof opts.music.baseUrl === 'string' && opts.music.baseUrl) || 'assets/music/',
+        tracks: musicTracks(opts.music && opts.music.tracks)
+      },
       autoIdle: opts.autoIdle !== false,        // 是否随机触发小动作
       speak: opts.speak !== false               // 是否自动冒泡
     };
@@ -119,6 +123,20 @@
     var choices = arr.filter(function (value) { return value !== current; });
     return rand(choices.length ? choices : arr);
   }
+  function musicTracks(list) {
+    var seen = Object.create(null), tracks = [];
+    (Array.isArray(list) ? list : []).forEach(function (track) {
+      if (!track || typeof track.file !== 'string') return;
+      var file = track.file;
+      // 曲目只能是音乐目录内的相对文件，保留中文、空格和需要 URL 编码的字符。
+      if (!/\.(mp3|m4a|ogg|wav)$/i.test(file) || /[\\:\u0000-\u001f]/.test(file) || seen[file]) return;
+      if (file.split('/').some(function (part) { return !part || part === '.' || part === '..'; })) return;
+      try { encodeURIComponent(file); } catch (_) { return; }
+      seen[file] = true;
+      tracks.push({ file: file, title: typeof track.title === 'string' && track.title.trim() ? track.title.trim() : file.split('/').pop().replace(/\.[^.]+$/, '') });
+    });
+    return tracks;
+  }
   function icon(paths) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
   }
@@ -127,6 +145,9 @@
     talk: icon('<path d="M21 11a8 8 0 0 1-8 8H7l-4 3V11a9 9 0 0 1 18 0Z"/><path d="M7 10h10M7 14h6"/>'),
     games: icon('<path d="M7 6h10c3 0 5 10 4 12s-4 0-6-3H9c-2 3-5 5-6 3S4 6 7 6Z"/><path d="M6 10v4M4 12h4M16 10h.01M18 13h.01"/>'),
     music: icon('<path d="M9 17V5l11-2v12M9 9l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/>'),
+    audioPlay: icon('<path d="m8 5 11 7-11 7Z"/>'),
+    audioPause: icon('<path d="M8 5v14M16 5v14" stroke-width="3"/>'),
+    audioLoading: icon('<path d="M20 12a8 8 0 1 1-8-8"/><path d="m16 4 4 4m0-4-4 4"/>'),
     hide: icon('<path d="m6 6 12 12M18 6 6 18"/>'),
     more: icon('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>')
   };
@@ -155,6 +176,11 @@
     this._pinned = false;
     this._manualBubble = false;
     this._lastMessage = null;
+    this._audio = null;
+    this._musicTrack = null;
+    this._musicRequested = false;
+    this._musicStatus = 'idle';
+    this._musicSeq = 0;
     this.menuOpen = false;
     this._build();
     this._load();
@@ -245,6 +271,8 @@
     control('games', '小游戏合集', ICONS.games, null, cfg.links.games);
     control('music', '识谱练习', ICONS.music, null, cfg.links.sightReading);
     control('number', '24点计算器', '<span aria-hidden="true">24</span>', null, cfg.links.calculator);
+    this.audioBtn = control('audio', '随机播放音乐', ICONS.audioPlay, function () { self._toggleMusic(); });
+    this._setMusicStatus('idle');
     this.toolbarList.appendChild(el('div', 'ym-divider'));
     this.hideBtn = control('hide', '隐藏看板娘', ICONS.hide, function () { self.hide(); });
     this.root.appendChild(this.toolbar);
@@ -476,6 +504,98 @@
     else this.hideBubble();
   };
 
+  /* ---------- 音乐：独立于角色动画和显隐，不自动请求音频 ---------- */
+  Widget.prototype._setMusicStatus = function (status) {
+    this._musicStatus = status;
+    var loading = status === 'loading', playing = status === 'playing';
+    var title = this._musicTrack ? '：' + this._musicTrack.title : '';
+    var label = loading ? '取消加载音乐' + title : playing ? '暂停音乐' + title :
+      status === 'paused' ? '继续播放音乐' + title : status === 'error' ? '播放失败，点击重试' + title :
+      this.cfg.music.tracks.length ? '随机播放音乐' : '暂无可播放音乐';
+    this.audioBtn.innerHTML = loading ? ICONS.audioLoading : playing ? ICONS.audioPause : ICONS.audioPlay;
+    this.audioBtn.title = label;
+    this.audioBtn.setAttribute('aria-label', label);
+    this.audioBtn.setAttribute('aria-busy', String(loading));
+    this.audioBtn.classList.toggle('ym-audio-playing', playing);
+    this.audioBtn.classList.toggle('ym-audio-loading', loading);
+  };
+  Widget.prototype._ensureAudio = function () {
+    if (this._audio) return this._audio;
+    var self = this, audio = new Audio();
+    audio.preload = 'none';
+    this._audio = audio;
+    function active() { return !self._destroyed && self._audio === audio && self._musicRequested && self._musicTrack; }
+    this._listen(audio, 'playing', function () {
+      if (!active()) { if (!audio.paused) audio.pause(); return; }
+      // 媒体事件不携带请求序号，需核对当前属性，忽略旧音源排队中的事件。
+      if (!audio.paused && !audio.ended && audio.readyState >= 3) self._setMusicStatus('playing');
+    });
+    this._listen(audio, 'waiting', function () {
+      if (active() && !audio.paused && !audio.ended && audio.readyState < 3) self._setMusicStatus('loading');
+    });
+    this._listen(audio, 'pause', function () {
+      if (active() && audio.paused && !audio.ended) self._pauseMusic(false);
+    });
+    this._listen(audio, 'ended', function () {
+      if (active() && audio.ended) self._startMusic(true);
+    });
+    this._listen(audio, 'error', function () {
+      if (active() && audio.error) self._musicFailed();
+    });
+    return audio;
+  };
+  Widget.prototype._toggleMusic = function () {
+    if (this._destroyed) return;
+    if (this._musicRequested) { this._pauseMusic(false); return; }
+    if (!this.cfg.music.tracks.length) { this.say('暂无可播放音乐', 3200); return; }
+    this._startMusic(!this._musicTrack || this._musicStatus === 'error');
+  };
+  Widget.prototype._startMusic = function (fresh) {
+    if (this._destroyed || !this.cfg.music.tracks.length) return;
+    if (fresh) this._musicTrack = randExcept(this.cfg.music.tracks, this._musicTrack);
+    var self = this, seq = ++this._musicSeq;
+    this._musicRequested = true;
+    this._setMusicStatus('loading');
+    try {
+      var audio = this._ensureAudio();
+      if (fresh) {
+        var relative = this._musicTrack.file.split('/').map(encodeURIComponent).join('/');
+        audio.src = this.cfg.music.baseUrl.replace(/\/+$/, '') + '/' + relative;
+        audio.load();
+      }
+      // 首次播放在按钮点击调用链中直接执行，不先等待清单请求。
+      var result = audio.play();
+      if (result && typeof result.then === 'function') result.then(function () {
+        if (self._destroyed || !self._musicRequested) { audio.pause(); return; }
+        if (seq !== self._musicSeq) return;
+        if (!audio.paused && !audio.ended && audio.readyState >= 3) self._setMusicStatus('playing');
+      }, function (err) {
+        if (!self._destroyed && self._musicRequested && seq === self._musicSeq) self._musicFailed(err);
+      });
+    } catch (err) {
+      if (seq === this._musicSeq) this._musicFailed(err);
+    }
+  };
+  Widget.prototype._pauseMusic = function (reset) {
+    this._musicRequested = false;
+    this._musicSeq++;
+    if (this._audio) {
+      this._audio.pause();
+      if (reset) {
+        this._audio.removeAttribute('src');
+        this._audio.load();
+      }
+    }
+    if (reset) this._musicTrack = null;
+    this._setMusicStatus(this._musicTrack ? 'paused' : 'idle');
+  };
+  Widget.prototype._musicFailed = function (err) {
+    this._pauseMusic(false);
+    this._setMusicStatus('error');
+    this.say(err && err.name === 'NotAllowedError' ? '浏览器阻止了播放，请再次点击音乐按钮。' :
+      '音乐加载或播放失败，请再次点击重试。', 5000);
+  };
+
   Widget.prototype.isBusy = function () {
     return this.state && !this.loop && this._then;
   };
@@ -572,6 +692,7 @@
       }
     });
     this._listen(window, 'resize', function () { self._fitPosition(); });
+    this._listen(window, 'pagehide', function () { self._pauseMusic(true); });
     this._listen(window, 'blur', function () {
       self._finishPointer(true);
       self._pinned = self._hovered = false;
@@ -690,6 +811,7 @@
     if (this._destroyed) return;
     this._finishPointer(true);
     this._destroyed = true;
+    this._pauseMusic(true);
     if (this._raf !== null) cancelAnimationFrame(this._raf);
     this._raf = null;
     this._stopIdle();
@@ -701,6 +823,7 @@
     if (this.img) this.img.onload = this.img.onerror = null;
     this._listeners.forEach(function (off) { off(); });
     this._listeners = [];
+    this._audio = null;
     if (this.root && this.root.parentNode) this.root.parentNode.removeChild(this.root);
     if (this.showBtn && this.showBtn.parentNode) this.showBtn.parentNode.removeChild(this.showBtn);
   };
