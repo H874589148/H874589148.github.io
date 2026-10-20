@@ -1,9 +1,10 @@
 /* tools/bode-plot/style.css */
+.container-wide { max-width: 1360px; }
 .tool-desc { color: var(--color-text-secondary); font-size: 1.05rem; margin: var(--space-sm) 0 var(--space-lg); }
 
 .bode-layout {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 360px minmax(0, 1fr);
     gap: var(--space-xl);
     align-items: start;
 }
@@ -72,7 +73,7 @@
     transition: background 0.15s;
 }
 
-.pz-del:hover { background: rgba(192,88,58,0.1); }
+.pz-del:hover { background: var(--color-bg-paper); }
 
 .pz-type {
     font-size: 0.75rem;
@@ -90,7 +91,32 @@
 .preset-btns .btn { font-size: 0.9rem; padding: 6px 12px; text-align: left; }
 
 /* 图表 */
-.bode-charts { display: flex; flex-direction: column; }
+.bode-charts { display: flex; flex-direction: column; min-width: 0; }
+.bode-params { min-width: 0; }
+.frequency-range { margin-top: var(--space-md); }
+.frequency-range .field { margin-bottom: 12px; }
+.frequency-range input { width: 100%; min-width: 0; }
+.frequency-range input[type="range"] { padding: 0; margin-top: 8px; accent-color: var(--color-primary); border: 0; box-shadow: none; }
+.pz-card { padding: 8px; border: 1px dashed var(--color-border); border-radius: var(--radius-sm); min-width: 0; }
+.pz-card .pz-row { margin-bottom: 6px; }
+.pz-card select { flex: 1; min-width: 0; width: auto; padding: 3px 6px; font-size: 0.85rem; }
+.pz-card input { width: 100%; min-width: 0; font-family: var(--font-mono); font-size: 0.85rem; }
+.pz-card label { color: var(--color-text-secondary); font-size: 0.85rem; }
+.pz-rc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pz-card [hidden] { display: none; }
+.pz-result { font-family: var(--font-mono); font-size: 0.8rem; overflow-wrap: anywhere; }
+.input-error, .plot-status.is-stale, .model-notice { color: var(--color-accent); font-size: 0.85rem; overflow-wrap: anywhere; }
+.input-error:empty { display: none; }
+[aria-invalid="true"] { border-color: var(--color-accent); outline: 1px solid var(--color-accent); }
+.plot-status { font-size: 0.85rem; color: var(--color-text-secondary); }
+.model-notice { padding: 8px; border: 1px dashed var(--color-accent); }
+.bode-charts > .hint { margin-top: 8px; }
+.crossing-table-wrap { width: 100%; overflow-x: auto; margin-top: 12px; }
+.crossing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.crossing-table caption { text-align: left; color: var(--color-text-secondary); }
+.crossing-table th, .crossing-table td { padding: 6px; text-align: left; border-bottom: 1px solid var(--color-border); }
+.crossing-table td { font-family: var(--font-mono); }
+.crossing-table tr.is-primary { color: var(--color-primary); font-weight: bold; background: var(--color-bg-paper); }
 
 .chart-container {
     padding: var(--space-sm) var(--space-md) var(--space-md);
@@ -103,10 +129,9 @@
     margin-bottom: var(--space-sm);
 }
 
-.chart-container canvas {
-    width: 100%;
-    height: auto;
-}
+.chart-container canvas { width: 100%; }
+#magCanvas { height: 340px; }
+#phaseCanvas { height: 300px; }
 
 /* 裕度显示 */
 .margin-display {
@@ -128,6 +153,12 @@
     .bode-layout { grid-template-columns: 1fr; }
     .bode-params { position: static; }
 }
+@media (max-width: 480px) {
+    .container-wide { padding: 20px 12px; }
+    .chart-container { padding: 8px; }
+    .preset-info .preset-info-fig, .preset-info .preset-info-formulas { min-width: 0; flex-basis: 100%; }
+    .crossing-table { font-size: 0.75rem; }
+}
 
 /* Type-II / Type-III 预设拓扑公式卡 */
 .preset-info { margin-top: var(--space-xl); }
@@ -139,12 +170,12 @@
 .preset-info-formulas .info-box { font-size: 0.9rem; }
 
 .topo-svg { width: 100%; max-width: 400px; height: auto; display: block; margin: 0 auto; }
-.topo-svg .tw { stroke: #4a4a4a; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.topo-svg .td { fill: #4a4a4a; }
-.topo-svg .tl { font-family: var(--font-hand); font-size: 13px; fill: #4a4a4a; }
+.topo-svg .tw { stroke: var(--color-border-sketch); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.topo-svg .td { fill: var(--color-border-sketch); }
+.topo-svg .tl { font-family: var(--font-body); font-size: 13px; fill: var(--color-border-sketch); }
 
 /* TF 表达式错误提示 */
-#tfMsg.tf-err { color: #c0583a; }
+#tfMsg.tf-err { color: var(--color-accent); }
 
 /* 鼠标取点：十字准线覆盖层 + 读数框 */
 .bode-plot-wrap { position: relative; }
@@ -154,13 +185,15 @@
     position: absolute;
     z-index: 5;
     pointer-events: none;
-    background: rgba(255, 252, 247, 0.95);
+    background: var(--color-card-bg);
     border: 1.5px solid var(--color-border-sketch);
     border-radius: var(--radius-sm);
     padding: 3px 8px;
     font-family: var(--font-mono);
     font-size: 0.75rem;
     color: var(--color-text);
-    white-space: nowrap;
-    box-shadow: 2px 2px 0 rgba(74, 74, 74, 0.15);
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: var(--shadow-sm);
 }

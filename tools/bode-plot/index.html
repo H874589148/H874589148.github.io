@@ -17,12 +17,12 @@
     <nav class="top-nav">
         <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
-        <span class="breadcrumb">计算工具 / 零极点 Bode 图</span>
+        <span class="breadcrumb">绘图工具 / 零极点 Bode 图</span>
     </nav>
 
     <main class="container-wide">
         <h1>零极点 Bode 图</h1>
-        <p class="tool-desc">输入传递函数的零点和极点（Hz），实时绘制幅频特性与相频特性曲线。</p>
+        <p class="tool-desc">用频率或节点 RC 设置零极点，实时查看 Bode 曲线、0 dB 交越与相位裕度。</p>
 
         <!-- 参数输入区 -->
         <div class="bode-layout">
@@ -33,7 +33,7 @@
                     <div class="field">
                         <label for="dcGain">直流增益 K</label>
                         <div style="display:flex;gap:6px;align-items:center;">
-                            <input type="number" id="dcGain" value="20" step="any" style="width:100px;">
+                            <input type="number" id="dcGain" value="20" step="any" aria-describedby="gainError" style="width:140px;">
                             <select id="dcUnit" style="width:auto;">
                                 <option value="dB">dB</option>
                                 <option value="vv">V/V</option>
@@ -41,14 +41,21 @@
                         </div>
                         <p id="dcConv" style="margin-top:4px;font-family:var(--font-mono);font-size:0.85rem;color:var(--color-text-muted);">20 dB = 10 V/V</p>
                     </div>
-                    <div class="field" style="margin-top:var(--space-md);">
-                        <label for="freqStart">频率范围</label>
-                        <div style="display:flex;gap:6px;align-items:center;">
-                            <input type="number" id="freqStart" value="1" step="any" style="width:80px;">
-                            <span style="color:var(--color-text-muted);">~</span>
-                            <input type="number" id="freqEnd" value="1e8" step="any" style="width:100px;">
-                            <span style="font-size:0.85rem;color:var(--color-text-muted);">Hz</span>
+                    <p id="gainError" class="input-error" role="status"></p>
+                    <div class="frequency-range">
+                        <div class="field">
+                            <label for="freqStart">起始频率</label>
+                            <input type="text" id="freqStart" value="1 Hz" spellcheck="false" autocomplete="off" aria-describedby="rangeHelp rangeError">
+                            <input type="range" id="freqStartSlider" min="-3" max="12" step="any" value="0" aria-label="起始频率（对数滑块）">
                         </div>
+                        <div class="field">
+                            <label for="freqEnd">终止频率</label>
+                            <input type="text" id="freqEnd" value="100 MHz" spellcheck="false" autocomplete="off" aria-describedby="rangeHelp rangeError">
+                            <input type="range" id="freqEndSlider" min="-3" max="12" step="any" value="8" aria-label="终止频率（对数滑块）">
+                        </div>
+                        <p class="hint" id="rangeHelp">支持 10k、2.5MHz、1e9 Hz；M 与 m 不同。未写单位时按 Hz。滑块使用对数刻度。</p>
+                        <p class="hint" id="sliderDomain">滑块量程：1 mHz ～ 1 THz</p>
+                        <p id="rangeError" class="input-error" role="status"></p>
                     </div>
                 </div>
 
@@ -71,6 +78,7 @@
                         <button class="btn btn-sm" onclick="addPole()">+ 添加</button>
                     </div>
                     <div id="poleList" class="pole-zero-list"></div>
+                    <p class="hint">RC：R 为正实数等效电阻（Ω），C 为寄生/等效电容（F）；f = 1/(2πRC)。支持 10kΩ、10pF。</p>
                 </div>
 
                 <!-- 零点列表 -->
@@ -80,6 +88,7 @@
                         <button class="btn btn-sm" onclick="addZero()">+ 添加</button>
                     </div>
                     <div id="zeroList" class="pole-zero-list"></div>
+                    <p class="hint">节点 RC 通常估计极点；用于零点时请自行确认电路成因。本页不推导复阻抗或多节点电路。</p>
                 </div>
 
                 <!-- 预设 -->
@@ -89,7 +98,7 @@
                         <button class="btn" onclick="loadPreset('singlePole')">单极点系统</button>
                         <button class="btn" onclick="loadPreset('typeII')">Type-II 补偿</button>
                         <button class="btn" onclick="loadPreset('typeIII')">Type-III 补偿</button>
-                        <button class="btn" onclick="loadPreset('notch')">陷波滤波器</button>
+                        <button class="btn" onclick="loadPreset('notch')" title="保留原有参数；一阶实因子模型不能表示真正的陷波">陷波（原简化预设）</button>
                     </div>
                 </div>
 
@@ -100,15 +109,17 @@
 
             <!-- 图表区 -->
             <div class="bode-charts">
+                <p id="plotStatus" class="plot-status" role="status" aria-live="polite"></p>
+                <p id="modelNotice" class="model-notice" hidden></p>
                 <!-- 幅频特性 -->
                 <div class="chart-container">
                     <div class="chart-label">幅频特性 |H(jω)| (dB)</div>
-                    <div class="bode-plot-wrap"><canvas id="magCanvas" width="700" height="300"></canvas></div>
+                    <div class="bode-plot-wrap"><canvas id="magCanvas" width="700" height="340" aria-label="幅频响应及 0 dB 交越，数值见下方摘要与交越列表"></canvas></div>
                 </div>
                 <!-- 相频特性 -->
                 <div class="chart-container" style="margin-top:var(--space-md);">
                     <div class="chart-label">相频特性 ∠H(jω) (°)</div>
-                    <div class="bode-plot-wrap"><canvas id="phaseCanvas" width="700" height="240"></canvas></div>
+                    <div class="bode-plot-wrap"><canvas id="phaseCanvas" width="700" height="300" aria-label="相频响应及相位裕度，数值见下方摘要与交越列表"></canvas></div>
                 </div>
                 <!-- 相位/增益裕度 -->
                 <div class="margin-display" id="marginDisplay" style="display:none;">
@@ -121,10 +132,19 @@
                         <span class="mval" id="gmVal">-</span>
                     </div>
                     <div class="margin-item">
-                        <span class="mlabel">0dB 穿越频率</span>
+                        <span class="mlabel">最低频下降交越 fc / UGB</span>
                         <span class="mval" id="fcVal">-</span>
                     </div>
                 </div>
+                <p class="hint" id="marginMessage" role="status"></p>
+                <div class="crossing-table-wrap" id="crossingTableWrap" hidden>
+                    <table class="crossing-table">
+                        <caption>0 dB 交越列表（★ 为主交越）</caption>
+                        <thead><tr><th scope="col">编号 / 方向</th><th scope="col">频率</th><th scope="col">相位</th><th scope="col">PM</th></tr></thead>
+                        <tbody id="crossingRows"></tbody>
+                    </table>
+                </div>
+                <p class="hint">UGB 在此指 0 dB 下降交越，不是 −3 dB 带宽或 GBW。PM = 180° + φ(fc)，仅当 H 为负反馈环路增益时具有裕度意义；多交越需结合完整环路分析。本页 GM 采用首个 −180° 下降交越。</p>
             </div>
         </div>
 
@@ -136,6 +156,8 @@
         <script async src="https://cn.vercount.one/js"></script>
 
     <script src="../../js/common.js"></script>
+    <script src="bode-core.js"></script>
+    <script src="bode-plot.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

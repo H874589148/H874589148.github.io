@@ -6,61 +6,78 @@ var zeros = [];   // [{freq: Hz}]
 var poleCount = 0;
 var zeroCount = 0;
 
-/* 绘区边距（drawCanvas 与鼠标取点共用）与最近绘制频率范围 */
-var PLOT_PAD = { top: 16, right: 20, bottom: 36, left: 54 };
+/* 输入草稿与已生效快照隔离；读数框、图与摘要只使用同一有效快照。 */
 var lastRange = { fStart: 1, fEnd: 1e8 };
-
-/* ========== 初始化 ========== */
-loadPreset('singlePole');
+var lastPlot = null;
+var approximation = '';
+var sliderBounds = { min: -3, max: 12 };
+var gainUnit = 'dB';
+var drawFrame = 0;
+function byId(id) { return document.getElementById(id); }
+function setError(input, message) { input.setAttribute('aria-invalid', String(!!message)); }
+function scheduleDraw() {
+    byId('plotStatus').textContent = '参数正在更新；图表与读数暂为上次有效结果。';
+    byId('plotStatus').classList.add('is-stale');
+    if (!drawFrame) drawFrame = requestAnimationFrame(function () { drawFrame = 0; drawBode(); });
+}
+function markUnapplied(reason) {
+    byId('plotStatus').textContent = '参数未生效：' + reason + '；曲线、裕度和鼠标读数保留上次有效结果。';
+    byId('plotStatus').classList.add('is-stale');
+}
 
 /* ========== 直流增益单位联动 (dB <-> V/V) ========== */
-function getGainK() {
-    // 返回线性增益 K（供 calcH 使用）
-    var v = parseFloat(document.getElementById('dcGain').value) || 0;
-    var unit = document.getElementById('dcUnit').value;
-    return unit === 'dB' ? Math.pow(10, v / 20) : v;
+function getGainDb() {
+    var text = byId('dcGain').value.trim(), v = Number(text);
+    if (!text || !Number.isFinite(v)) throw new Error('请输入有限的直流增益');
+    if (byId('dcUnit').value === 'vv') {
+        if (v <= 0) throw new Error('V/V 增益须大于 0；反相增益请使用传递函数表达式并留意近似提示');
+        v = 20 * Math.log10(v);
+    }
+    if (Math.abs(v) > 1e6) throw new Error('增益安全范围为 |dB| ≤ 1e6');
+    return v;
 }
 
 function updateGainConv() {
-    var v = parseFloat(document.getElementById('dcGain').value);
-    var unit = document.getElementById('dcUnit').value;
-    var conv = document.getElementById('dcConv');
-    if (isNaN(v)) { conv.textContent = ''; return; }
-    if (unit === 'dB') {
+    var input = byId('dcGain'), conv = byId('dcConv'), gainDb, error = '';
+    try { gainDb = getGainDb(); }
+    catch (err) { error = err.message; }
+    byId('gainError').textContent = error; setError(input, error);
+    if (error) { conv.textContent = ''; return null; }
+    var v = Number(input.value);
+    if (byId('dcUnit').value === 'dB') {
         var vv = Math.pow(10, v / 20);
-        conv.textContent = fmtNum(v) + ' dB = ' + fmtNum(vv) + ' V/V';
+        conv.textContent = !Number.isFinite(vv) || vv === 0 ? fmtNum(v) + ' dB（线性换算超出浮点范围，可继续使用 dB 绘图）' : fmtNum(v) + ' dB = ' + fmtNum(vv) + ' V/V';
     } else {
-        if (v <= 0) { conv.textContent = fmtNum(v) + ' V/V （需 > 0 才能换算 dB）'; return; }
-        var db = 20 * Math.log10(v);
-        conv.textContent = fmtNum(v) + ' V/V = ' + fmtNum(db) + ' dB';
+        conv.textContent = fmtNum(v) + ' V/V = ' + fmtNum(gainDb) + ' dB';
     }
+    return gainDb;
 }
 
 function onGainUnitChange() {
-    // 切换单位时把当前值换算并回填另一种表示
-    var el = document.getElementById('dcGain');
-    var unit = document.getElementById('dcUnit').value;
-    var v = parseFloat(el.value);
-    if (!isNaN(v)) {
-        if (unit === 'vv') {
-            // 之前是 dB，现在显示 V/V
-            el.value = fmtNum(Math.pow(10, v / 20));
-        } else {
-            // 之前是 V/V，现在显示 dB
-            el.value = v > 0 ? fmtNum(20 * Math.log10(v)) : 0;
-        }
+    var el = byId('dcGain'), select = byId('dcUnit'), unit = select.value;
+    var v = Number(el.value), converted = unit === 'vv' ? Math.pow(10, v / 20) : 20 * Math.log10(v);
+    if (!el.value.trim() || !Number.isFinite(v) || !Number.isFinite(converted) || (unit === 'vv' && converted <= 0)) {
+        select.value = gainUnit;
+        byId('gainError').textContent = '当前值不能换算为目标单位，请修正输入或继续使用 dB。';
+        return;
     }
-    updateGainConv();
-    drawBode();
+    el.value = String(converted); gainUnit = unit;
+    updateGainConv(); drawBode();
 }
 
 function fmtNum(x) {
     if (!isFinite(x)) return '∞';
-    var r = Math.round(x * 1000) / 1000;
-    return (Math.abs(r) >= 1e4 || (r !== 0 && Math.abs(r) < 1e-3)) ? r.toExponential(2) : String(r);
+    return x !== 0 && (Math.abs(x) >= 1e6 || Math.abs(x) < 1e-3) ? x.toExponential(5) : String(Number(x.toPrecision(7)));
 }
 
-document.getElementById('dcGain').addEventListener('input', function(){ updateGainConv(); drawBode(); });
+function onGainInput() {
+    // 字段反馈不等待绘图帧；后台暂停 rAF 时也能清除旧换算值并提示错误。
+    hidePresetInfo();
+    var gainDb = updateGainConv();
+    scheduleDraw();
+    if (gainDb === null) markUnapplied('请修正标红输入');
+}
+['input', 'change', 'blur'].forEach(function (event) { byId('dcGain').addEventListener(event, onGainInput); });
 document.getElementById('dcUnit').addEventListener('change', onGainUnitChange);
 updateGainConv();
 
@@ -97,38 +114,72 @@ function removePZ(type, id) {
     drawBode();
 }
 
-function renderPZList(containerId, list, type) {
-    var el = document.getElementById(containerId);
-    el.innerHTML = '';
-    list.forEach(function(item) {
-        var row = document.createElement('div');
-        row.className = 'pz-row';
-        row.innerHTML =
-            '<span class="pz-type">' + (type === 'pole' ? 'fp' : 'fz') + '</span>' +
-            '<input type="number" value="' + item.freq + '" step="any" min="0" ' +
-                'onchange="updatePZ(\'' + type + '\',\'' + item.id + '\',this.value)">' +
-            '<span class="pz-unit">Hz</span>' +
-            '<button class="pz-del" onclick="removePZ(\'' + type + '\',\'' + item.id + '\')" title="删除">×</button>';
-        el.appendChild(row);
-    });
+function initPZ(item) {
+    if (!item.mode) { item.mode = 'frequency'; item.text = String(item.freq) + ' Hz'; item.r = ''; item.c = ''; }
+    return item;
 }
-
-function updatePZ(type, id, val) {
-    var freq = parseFloat(val);
-    if (isNaN(freq) || freq <= 0) return;
-    hidePresetInfo();
-    var list = type === 'pole' ? poles : zeros;
-    for (var i = 0; i < list.length; i++) {
-        if (list[i].id === id) { list[i].freq = freq; break; }
+function readPZ(item) {
+    initPZ(item);
+    var card = byId('item-' + item.id), error = '', values = {}, missing = [];
+    var keys = item.mode === 'rc' ? ['r', 'c'] : ['text'];
+    keys.forEach(function (key) {
+        var input = card.querySelector('[data-field="' + key + '"]');
+        if (item.mode === 'rc' && !item[key].trim()) {
+            missing.push(key.toUpperCase()); setError(input, ''); return;
+        }
+        try { values[key] = BodeCore.parseQuantity(item[key], key === 'r' ? 'Ω' : key === 'c' ? 'F' : 'Hz'); setError(input, ''); }
+        catch (err) { setError(input, err.message); error += (key === 'r' ? 'R：' : key === 'c' ? 'C：' : '') + err.message + '；'; }
+    });
+    if (!error && !missing.length) {
+        try { item.freq = item.mode === 'rc' ? BodeCore.rcFrequency(values.r, values.c) : values.text; }
+        catch (err) {
+            error = 'RC 换算失败：' + err.message;
+            keys.forEach(function (key) { setError(card.querySelector('[data-field="' + key + '"]'), error); });
+        }
     }
-    drawBode();
+    card.querySelector('.input-error').textContent = error;
+    card.querySelector('.pz-result').textContent = error ? '参数未生效' : missing.length ? '待输入 ' + missing.join('、') : 'f = ' + BodeCore.format(item.freq, 'Hz');
+    return error ? 'invalid' : missing.length ? 'pending' : 'valid';
+}
+function renderPZList(containerId, list, type) {
+    var el = byId(containerId); el.innerHTML = '';
+    list.forEach(function (item, index) {
+        initPZ(item);
+        var card = document.createElement('div'), id = item.id;
+        card.className = 'pz-card'; card.id = 'item-' + id;
+        card.innerHTML = '<div class="pz-row"><span class="pz-type">' + (type === 'pole' ? 'fp' : 'fz') + (index + 1) + '</span>' +
+            '<select aria-label="' + (type === 'pole' ? '极点' : '零点') + (index + 1) + '输入模式"><option value="frequency">直接频率</option><option value="rc">RC 换算</option></select>' +
+            '<button type="button" class="pz-del" title="删除此项" aria-label="删除此项">×</button></div>' +
+            '<div class="pz-frequency"><label for="freq-' + id + '">频率（Hz）</label><input id="freq-' + id + '" data-field="text" type="text" placeholder="10kHz 或 1e4"></div>' +
+            '<div class="pz-rc"><div><label for="r-' + id + '">等效 R（Ω）</label><input id="r-' + id + '" data-field="r" type="text" placeholder="10kΩ"></div>' +
+            '<div><label for="c-' + id + '">电容 C（F）</label><input id="c-' + id + '" data-field="c" type="text" placeholder="10pF"></div></div>' +
+            '<p class="pz-result"></p><p class="input-error" id="error-' + id + '" role="status"></p>';
+        el.appendChild(card);
+        var select = card.querySelector('select'); select.value = item.mode;
+        card.querySelector('.pz-frequency').hidden = item.mode === 'rc';
+        card.querySelector('.pz-rc').hidden = item.mode !== 'rc';
+        card.querySelectorAll('input').forEach(function (input) {
+            input.value = item[input.dataset.field]; input.spellcheck = false;
+            input.setAttribute('aria-describedby', 'error-' + id);
+            input.addEventListener('input', function () {
+                item[input.dataset.field] = input.value; hidePresetInfo(); scheduleDraw();
+            });
+        });
+        select.addEventListener('change', function () {
+            if (item.mode === 'rc' && select.value === 'frequency') {
+                readPZ(item); item.text = String(item.freq) + ' Hz';
+            }
+            item.mode = select.value; hidePresetInfo();
+            renderPZList(containerId, list, type);
+            byId('item-' + id).querySelector('select').focus(); drawBode();
+        });
+        card.querySelector('.pz-del').addEventListener('click', function () { removePZ(type, id); });
+        readPZ(item);
+    });
 }
 
 /* ========== 预设配置 ========== */
 function loadPreset(name) {
-    poles = []; zeros = [];
-    poleCount = 0; zeroCount = 0;
-
     var presets = {
         singlePole: {
             dc: 20,
@@ -154,276 +205,133 @@ function loadPreset(name) {
 
     var cfg = presets[name];
     if (!cfg) return;
+    poles = []; zeros = [];
+    poleCount = 0; zeroCount = 0;
 
     // 预设 dc 字段统一以 dB 标注
     document.getElementById('dcUnit').value = 'dB';
     document.getElementById('dcGain').value = cfg.dc;
     updateGainConv();
-    cfg.poles.forEach(function(f){ addPole(f); });
-    cfg.zeros.forEach(function(f){ addZero(f); });
-    updatePresetInfo(name);
+    gainUnit = 'dB';
+    cfg.poles.forEach(function(f){ poles.push({ id: 'p' + (++poleCount), freq: f }); });
+    cfg.zeros.forEach(function(f){ zeros.push({ id: 'z' + (++zeroCount), freq: f }); });
+    approximation = name === 'typeII' || name === 'typeIII' ? '原点极点以 0.001 Hz 一阶因子近似，增益归一化与理想积分器不同。' :
+        name === 'notch' ? '保留原简化参数：双极点与同频零点相消后为单极点低通，并不是真正的陷波响应。' : '';
+    byId('tfMsg').textContent = '';
+    renderPZList('poleList', poles, 'pole'); renderPZList('zeroList', zeros, 'zero');
+    updatePresetInfo(name); drawBode();
 }
 
-/* ========== Bode 计算 ========== */
-function calcH(f) {
-    var w = 2 * Math.PI * f;
-    var K = getGainK();  // 统一用线性增益参与计算
-
-    // 传递函数 H(jω) = K * Π(1 + jω/wz) / Π(1 + jω/wp)
-    // 对于原点极点近似为 0.001Hz -> 实际是积分器
-    var magNum = K;
-    var phaseNum = 0;  // degrees
-
-    zeros.forEach(function(z) {
-        var wz = 2 * Math.PI * z.freq;
-        var re = 1;
-        var im = w / wz;
-        magNum *= Math.sqrt(re*re + im*im);
-        phaseNum += Math.atan2(im, re) * 180 / Math.PI;
+/* ========== 有效参数、滑块与绘图快照 ========== */
+function calcH(f) { return lastPlot ? BodeCore.response(f, lastPlot.model) : { mag: NaN, phase: NaN }; }
+function syncSliders(range) {
+    sliderBounds = BodeCore.sliderDomain(range, sliderBounds);
+    ['Start', 'End'].forEach(function (side) {
+        var el = byId('freq' + side + 'Slider'), value = range['f' + side];
+        el.min = sliderBounds.min; el.max = sliderBounds.max; el.value = Math.log10(value);
+        el.setAttribute('aria-valuetext', BodeCore.format(value, 'Hz'));
     });
-
-    var magDen = 1;
-    var phaseDen = 0;
-
-    poles.forEach(function(p) {
-        var wp = 2 * Math.PI * Math.max(p.freq, 1e-6);
-        var re = 1;
-        var im = w / wp;
-        magDen *= Math.sqrt(re*re + im*im);
-        phaseDen += Math.atan2(im, re) * 180 / Math.PI;
-    });
-
-    var mag = 20 * Math.log10(magNum / magDen);
-    var phase = phaseNum - phaseDen;
-    return { mag: mag, phase: phase };
+    byId('sliderDomain').textContent = '滑块量程：' + BodeCore.format(Math.pow(10, sliderBounds.min), 'Hz') + ' ～ ' + BodeCore.format(Math.pow(10, sliderBounds.max), 'Hz');
 }
-
-/* ========== Canvas 绘制 ========== */
+function redrawLastPlot() {
+    if (!lastPlot) return;
+    BodePlot.draw(byId('magCanvas'), lastPlot, false);
+    BodePlot.draw(byId('phaseCanvas'), lastPlot, true);
+    document.querySelectorAll('.bode-probe').forEach(function (c) { c.getContext('2d').clearRect(0, 0, c.width, c.height); });
+    document.querySelectorAll('.bode-tip').forEach(function (tip) { tip.style.display = 'none'; });
+}
 function drawBode() {
-    var fStart = parseFloat(document.getElementById('freqStart').value) || 1;
-    var fEnd   = parseFloat(document.getElementById('freqEnd').value)   || 1e8;
-    if (fStart <= 0) fStart = 0.01;
-    if (fEnd <= fStart) fEnd = fStart * 1000;
-
-    var N = 500;  // 采样点数
-    var freqs = [];
-    for (var i = 0; i <= N; i++) {
-        freqs.push(Math.pow(10, Math.log10(fStart) + i * (Math.log10(fEnd) - Math.log10(fStart)) / N));
+    if (drawFrame) { cancelAnimationFrame(drawFrame); drawFrame = 0; }
+    var range, gainDb, valid = true, pending = false, rangeError = '';
+    ['freqStart', 'freqEnd'].forEach(function (id) {
+        try { BodeCore.parseQuantity(byId(id).value, 'Hz'); setError(byId(id), ''); }
+        catch (err) { rangeError += (id === 'freqStart' ? '起点：' : '终点：') + err.message + '；'; setError(byId(id), err.message); }
+    });
+    if (!rangeError) {
+        try { range = BodeCore.frequencyRange(byId('freqStart').value, byId('freqEnd').value); }
+        catch (err) { rangeError = err.message; setError(byId('freqStart'), rangeError); setError(byId('freqEnd'), rangeError); }
     }
-
-    var mags = [], phases = [];
-    freqs.forEach(function(f) {
-        var h = calcH(f);
-        mags.push(h.mag);
-        phases.push(h.phase);
+    byId('rangeError').textContent = rangeError;
+    if (rangeError) valid = false; else syncSliders(range);
+    gainDb = updateGainConv();
+    if (gainDb === null) valid = false;
+    poles.concat(zeros).forEach(function (item) {
+        var state = readPZ(item);
+        if (state === 'invalid') valid = false;
+        else if (state === 'pending') pending = true;
     });
-
-    // 零极点标记（曲线对应频率处：极点红 ×，零点蓝 ○）
-    var magMk = [], phMk = [];
-    poles.concat(zeros).forEach(function (it, idx) {
-        var kind = idx < poles.length ? 'pole' : 'zero';
-        var h = calcH(Math.max(it.freq, 1e-6));
-        magMk.push({ f: it.freq, y: h.mag, kind: kind });
-        phMk.push({ f: it.freq, y: h.phase, kind: kind });
-    });
-
-    drawCanvas('magCanvas', freqs, mags, {
-        color: '#3a5a8c',
-        yLabel: 'dB',
-        yUnit: 'dB',
-        gridLines: [-40,-20,0,20,40,60,80],
-        zeroLine: 0,
-        markers: magMk
-    });
-
-    drawCanvas('phaseCanvas', freqs, phases, {
-        color: '#c0583a',
-        yLabel: '°',
-        yUnit: '°',
-        gridLines: [-180,-135,-90,-45,0,45,90],
-        zeroLine: -180,
-        markers: phMk
-    });
-
-    lastRange.fStart = freqs[0];
-    lastRange.fEnd = freqs[freqs.length - 1];
-
-    // 计算裕度
-    calcMargins(freqs, mags, phases);
-}
-
-function drawCanvas(canvasId, freqs, vals, opts) {
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    var dpr = window.devicePixelRatio || 1;
-    var w = canvas.clientWidth || canvas.width;
-    var h = canvas.clientHeight || canvas.height;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    var ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-
-    var PAD = PLOT_PAD;
-    var cw = w - PAD.left - PAD.right;
-    var ch = h - PAD.top - PAD.bottom;
-
-    // 背景
-    ctx.fillStyle = '#fffcf7';
-    ctx.fillRect(0, 0, w, h);
-
-    // 确定 Y 轴范围
-    var yMin = Math.min.apply(null, vals) - 10;
-    var yMax = Math.max.apply(null, vals) + 10;
-    // 对 phase 固定范围
-    if (opts.yUnit === '°') { yMin = -200; yMax = 100; }
-
-    var logFmin = Math.log10(freqs[0]);
-    var logFmax = Math.log10(freqs[freqs.length - 1]);
-
-    function xPos(f) { return PAD.left + (Math.log10(f) - logFmin) / (logFmax - logFmin) * cw; }
-    function yPos(v) { return PAD.top + (1 - (v - yMin) / (yMax - yMin)) * ch; }
-
-    // 网格 - 频率（对数刻度）
-    ctx.strokeStyle = '#e8e2d8';
-    ctx.lineWidth = 1;
-    var dec = Math.floor(logFmin);
-    while (dec <= logFmax) {
-        for (var m = 1; m <= 9; m++) {
-            var fGrid = m * Math.pow(10, dec);
-            if (fGrid >= freqs[0] && fGrid <= freqs[freqs.length-1]) {
-                var x = xPos(fGrid);
-                ctx.beginPath();
-                ctx.moveTo(x, PAD.top);
-                ctx.lineTo(x, PAD.top + ch);
-                ctx.strokeStyle = m === 1 ? '#d0c8b8' : '#e8e2d8';
-                ctx.stroke();
-            }
-        }
-        dec++;
+    if (!valid || pending) {
+        markUnapplied(valid ? 'RC 参数待输入，请补全 R、C' : '请修正标红输入'); return;
     }
-
-    // 网格 - Y 轴
-    opts.gridLines.forEach(function(v) {
-        var y = yPos(v);
-        if (y < PAD.top || y > PAD.top + ch) return;
-        ctx.beginPath();
-        ctx.moveTo(PAD.left, y);
-        ctx.lineTo(PAD.left + cw, y);
-        ctx.strokeStyle = v === 0 || v === -180 ? '#b8b0a0' : '#e8e2d8';
-        ctx.lineWidth = v === 0 || v === -180 ? 1.5 : 1;
-        ctx.stroke();
-
-        // Y 轴标签
-        ctx.fillStyle = '#8a8a8a';
-        ctx.font = '11px Fira Code, monospace';
-        ctx.textAlign = 'right';
-        ctx.fillText(v + opts.yUnit, PAD.left - 4, y + 4);
-    });
-
-    // X 轴标签
-    ctx.fillStyle = '#8a8a8a';
-    ctx.font = '11px Fira Code, monospace';
-    ctx.textAlign = 'center';
-    dec = Math.floor(logFmin);
-    while (dec <= logFmax) {
-        var f = Math.pow(10, dec);
-        if (f >= freqs[0] && f <= freqs[freqs.length-1]) {
-            var x = xPos(f);
-            ctx.fillText(fmtFreq(f), x, PAD.top + ch + 16);
-        }
-        dec++;
-    }
-
-    // 轴框
-    ctx.strokeStyle = '#4a4a4a';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(PAD.left, PAD.top, cw, ch);
-
-    // 绘制曲线（手绘效果：轻微抖动）
-    ctx.beginPath();
-    ctx.strokeStyle = opts.color;
-    ctx.lineWidth = 2.5;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-
-    for (var i = 0; i < freqs.length; i++) {
-        var px = xPos(freqs[i]);
-        var py = yPos(vals[i]);
-        // 限制在绘图区
-        py = Math.max(PAD.top, Math.min(PAD.top + ch, py));
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-    }
-    ctx.stroke();
-
-    // 零极点标记：极点红 ×，零点蓝 ○ + 频率文字
-    if (opts.markers) {
-        opts.markers.forEach(function (mk) {
-            if (mk.f < freqs[0] || mk.f > freqs[freqs.length - 1]) return;
-            var mx = xPos(Math.max(mk.f, 1e-9));
-            var my = Math.max(PAD.top + 6, Math.min(PAD.top + ch - 6, yPos(mk.y)));
-            ctx.lineWidth = 2;
-            if (mk.kind === 'pole') {
-                ctx.strokeStyle = '#c0583a';
-                ctx.beginPath();
-                ctx.moveTo(mx - 5, my - 5); ctx.lineTo(mx + 5, my + 5);
-                ctx.moveTo(mx + 5, my - 5); ctx.lineTo(mx - 5, my + 5);
-                ctx.stroke();
-            } else {
-                ctx.strokeStyle = '#3a5a8c';
-                ctx.beginPath();
-                ctx.arc(mx, my, 5, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            ctx.fillStyle = mk.kind === 'pole' ? '#c0583a' : '#3a5a8c';
-            ctx.font = '10px Fira Code, monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(fmtFreq(mk.f), mx, mk.kind === 'pole' ? my - 10 : my + 18);
+    try {
+        var model = BodeCore.prepare(gainDb, poles, zeros), result = BodeCore.sweep(model, range);
+        var markers = poles.concat(zeros).map(function (item, i) {
+            return Object.assign({ f: item.freq, kind: i < poles.length ? 'pole' : 'zero' }, BodeCore.response(item.freq, model));
         });
+        lastPlot = { model: model, result: result, range: range, markers: markers, approximation: approximation };
+        lastRange = range;
+        redrawLastPlot(); renderMargins(result);
+        byId('plotStatus').textContent = '已生效：' + BodeCore.format(range.fStart, 'Hz') + ' ～ ' + BodeCore.format(range.fEnd, 'Hz') + '；极点 × / 零点 ○；虚线为 0 dB 交越。';
+        byId('plotStatus').classList.remove('is-stale');
+        byId('modelNotice').hidden = !approximation;
+        byId('modelNotice').textContent = approximation ? '基于近似模型：' + approximation + ' 图中裕度不代表原系统的实际稳定性。' : '';
+    } catch (err) {
+        byId('plotStatus').textContent = '参数未生效：' + err.message;
+        byId('plotStatus').classList.add('is-stale');
     }
 }
-
-function fmtFreq(f) {
-    if (f >= 1e6) return (f/1e6).toFixed(0) + 'M';
-    if (f >= 1e3) return (f/1e3).toFixed(0) + 'k';
-    return f.toFixed(0);
+function renderMargins(result) {
+    var c = result.primary;
+    byId('marginDisplay').style.display = 'flex';
+    byId('pmVal').textContent = c ? c.pm.toFixed(2) + '°' : '—';
+    byId('gmVal').textContent = result.gm === null ? '未找到交越' : result.gm.toFixed(2) + ' dB';
+    byId('fcVal').textContent = c ? BodeCore.format(c.f, 'Hz') : result.unity ? '无唯一交越' : '未找到下降交越';
+    var message = result.unity ? '全频段为 0 dB，无唯一交越频率，PM 不定义。' :
+        !result.crossings.length ? '当前频率范围内未找到 0 dB 交越，请检查频率范围。' :
+        !c ? '当前范围只有上升交越或相切点，无下降交越；不指定 UGB 与主 PM。' :
+        '主交越取最低频下降点，图上标记与以下列表使用同一份计算结果。';
+    if (result.gm === null) message += ' 当前范围未找到 −180° 下降交越，不能据此判定稳定性。';
+    byId('marginMessage').textContent = message;
+    byId('crossingTableWrap').hidden = !result.crossings.length;
+    byId('crossingRows').innerHTML = '';
+    result.crossings.forEach(function (cross, index) {
+        var row = document.createElement('tr');
+        if (cross === c) row.className = 'is-primary';
+        [(cross === c ? '★ ' : '') + '#' + (index + 1) + ' ' + ({ down: '下降', up: '上升', touch: '相切' })[cross.direction],
+            BodeCore.format(cross.f, 'Hz'), cross.phase.toFixed(2) + '°', cross.pm.toFixed(2) + '°'].forEach(function (value) {
+            var cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell);
+        });
+        byId('crossingRows').appendChild(row);
+    });
 }
-
-function calcMargins(freqs, mags, phases) {
-    // 穿越频率（0dB 点）
-    var fc = null;
-    var pm = null;
-    for (var i = 1; i < mags.length; i++) {
-        if (mags[i-1] > 0 && mags[i] <= 0) {
-            // 线性插值
-            var t = (0 - mags[i-1]) / (mags[i] - mags[i-1]);
-            fc = freqs[i-1] * Math.pow(freqs[i]/freqs[i-1], t);
-            var phaseAtFc = phases[i-1] + t * (phases[i] - phases[i-1]);
-            pm = phaseAtFc + 180;
-            break;
-        }
+['Start', 'End'].forEach(function (side) {
+    byId('freq' + side).addEventListener('input', scheduleDraw);
+    function slide() {
+        var range;
+        try { range = BodeCore.frequencyRange(byId('freqStart').value, byId('freqEnd').value); }
+        catch (err) { range = lastRange; }
+        range = BodeCore.slideRange(range, side.toLowerCase(), Number(byId('freq' + side + 'Slider').value));
+        byId('freqStart').value = String(Number(range.fStart.toPrecision(12))) + ' Hz';
+        byId('freqEnd').value = String(Number(range.fEnd.toPrecision(12))) + ' Hz';
+        syncSliders(range); scheduleDraw();
     }
-
-    // 相位穿越频率（-180° 点）
-    var fpc = null;
-    var gm = null;
-    for (var i = 1; i < phases.length; i++) {
-        if (phases[i-1] > -180 && phases[i] <= -180) {
-            var t = (-180 - phases[i-1]) / (phases[i] - phases[i-1]);
-            fpc = freqs[i-1] * Math.pow(freqs[i]/freqs[i-1], t);
-            var magAtFpc = mags[i-1] + t * (mags[i] - mags[i-1]);
-            gm = -magAtFpc;
-            break;
-        }
-    }
-
-    var disp = document.getElementById('marginDisplay');
-    disp.style.display = 'flex';
-
-    document.getElementById('pmVal').textContent = pm !== null ? pm.toFixed(1) + '°' : '> 180°（稳定）';
-    document.getElementById('gmVal').textContent = gm !== null ? gm.toFixed(1) + ' dB' : '∞（稳定）';
-    document.getElementById('fcVal').textContent = fc !== null ? fmtFreq(fc) + 'Hz' : 'N/A';
+    byId('freq' + side + 'Slider').addEventListener('input', slide);
+    byId('freq' + side + 'Slider').addEventListener('keydown', function (e) {
+        // step=any 保持手输频率的精确位置，同时提供确定的键盘步长。
+        var changes = { ArrowLeft: -0.05, ArrowDown: -0.05, ArrowRight: 0.05, ArrowUp: 0.05, PageDown: -1, PageUp: 1 };
+        if (!(e.key in changes) && e.key !== 'Home' && e.key !== 'End') return;
+        e.preventDefault();
+        this.value = e.key === 'Home' ? this.min : e.key === 'End' ? this.max : Number(this.value) + changes[e.key];
+        slide();
+    });
+});
+var redrawFrame = 0;
+function scheduleRedraw() {
+    if (!redrawFrame) redrawFrame = requestAnimationFrame(function () { redrawFrame = 0; redrawLastPlot(); });
 }
+window.addEventListener('resize', scheduleRedraw);
+new MutationObserver(scheduleRedraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts) document.fonts.ready.then(scheduleRedraw);
 
 /* ========== Type-II / Type-III 预设拓扑公式卡 ========== */
 /* 手绘 SVG helpers（与 filter-design 同风格） */
@@ -754,20 +662,28 @@ function applyTF() {
         var pRoots = polyRoots(sd.co);
         var hasComplex = false, hasRHP = false;
         function fOf(r) {
-            if (Math.abs(r.im) > 1e-6 * Math.max(1, Math.abs(r.re))) hasComplex = true;
-            if (r.re > 1e-6 * Math.max(1, Math.abs(r.im))) hasRHP = true;
-            var a = Math.sqrt(r.re * r.re + r.im * r.im);
-            return Math.max(a, 1e-3) / (2 * Math.PI);
+            if (r.im !== 0) hasComplex = true;
+            if (r.re > 0) hasRHP = true;
+            return BodeCore.parseQuantity(String(Math.hypot(r.re, r.im) / (2 * Math.PI)), 'Hz');
         }
-        poles = []; zeros = []; poleCount = 0; zeroCount = 0;
-        zRoots.forEach(function (r) { zeroCount++; zeros.push({ id: 'z' + zeroCount, freq: fOf(r) }); });
-        pRoots.forEach(function (r) { poleCount++; poles.push({ id: 'p' + poleCount, freq: fOf(r) }); });
+        // 先构建候选列表并校验，失败时不破坏现有输入与有效图。
+        var nextPoles = [], nextZeros = [];
+        zRoots.forEach(function (r) { nextZeros.push({ id: 'z' + (nextZeros.length + 1), freq: fOf(r) }); });
+        pRoots.forEach(function (r) { nextPoles.push({ id: 'p' + (nextPoles.length + 1), freq: fOf(r) }); });
         var k;
-        for (k = 0; k < sn.n; k++) { zeroCount++; zeros.push({ id: 'z' + zeroCount, freq: 0.001 }); }  // 原点零点近似
-        for (k = 0; k < sd.n; k++) { poleCount++; poles.push({ id: 'p' + poleCount, freq: 0.001 }); }  // 原点极点近似
-
+        for (k = 0; k < sn.n; k++) nextZeros.push({ id: 'z' + (nextZeros.length + 1), freq: 0.001 });
+        for (k = 0; k < sd.n; k++) nextPoles.push({ id: 'p' + (nextPoles.length + 1), freq: 0.001 });
+        BodeCore.prepare(20 * Math.log10(Math.abs(gain)), nextPoles, nextZeros);
+        poles = nextPoles; zeros = nextZeros; poleCount = poles.length; zeroCount = zeros.length;
+        var notes = [];
+        if (sn.n + sd.n > 0) notes.push('原点根以 0.001 Hz 一阶因子替代，归一化与理想积分/微分因子不同');
+        if (gain < 0) notes.push('负增益的额外 180° 相位未计入');
+        if (hasComplex) notes.push('复根以同频一阶实因子替代');
+        if (hasRHP) notes.push('右半平面根仅按模折算，相位与实际不同');
+        approximation = notes.join('；');
+        gainUnit = 'dB';
         document.getElementById('dcUnit').value = 'dB';
-        document.getElementById('dcGain').value = fmtNum(20 * Math.log10(Math.abs(gain)));
+        document.getElementById('dcGain').value = String(20 * Math.log10(Math.abs(gain)));
         updateGainConv();
         renderPZList('poleList', poles, 'pole');
         renderPZList('zeroList', zeros, 'zero');
@@ -818,7 +734,8 @@ function setupProbe(canvasId) {
         var rect = canvas.getBoundingClientRect();
         var x = e.clientX - rect.left;
         var y = e.clientY - rect.top;
-        var PAD = PLOT_PAD;
+        if (!lastPlot || !canvas._bodeGeometry) return;
+        var PAD = canvas._bodeGeometry.pad;
         var cw = w - PAD.left - PAD.right, ch = h - PAD.top - PAD.bottom;
         if (x < PAD.left || x > PAD.left + cw || y < PAD.top || y > PAD.top + ch) {
             tip.style.display = 'none';
@@ -829,7 +746,7 @@ function setupProbe(canvasId) {
         var f = Math.pow(10, lf);
         var hv = calcH(f);
         /* 十字准线 */
-        oc.strokeStyle = 'rgba(74,74,74,0.55)';
+        oc.strokeStyle = BodePlot.palette().ink;
         oc.lineWidth = 1;
         oc.setLineDash([4, 4]);
         oc.beginPath();
@@ -838,14 +755,12 @@ function setupProbe(canvasId) {
         oc.stroke();
         oc.setLineDash([]);
         /* 读数框 */
-        tip.textContent = 'f = ' + formatEngineering(f) + 'Hz ｜ |H| = ' + hv.mag.toFixed(2) +
-            ' dB ｜ ∠H = ' + hv.phase.toFixed(1) + '°';
+        tip.textContent = 'f = ' + BodeCore.format(f, 'Hz') + ' ｜ |H| = ' + hv.mag.toFixed(2) +
+            ' dB ｜ ∠H = ' + hv.phase.toFixed(2) + '°' + (lastPlot.approximation ? '（近似模型）' : '');
         tip.style.display = '';
-        var tx = x + 14, ty = y + 12;
-        if (tx > w - 220) tx = x - 224;
-        if (ty > h - 36) ty = y - 34;
-        tip.style.left = tx + 'px';
-        tip.style.top = ty + 'px';
+        tip.style.width = Math.min(320, w) + 'px';
+        tip.style.left = Math.max(0, Math.min(w - tip.offsetWidth, x + 14)) + 'px';
+        tip.style.top = Math.max(0, Math.min(h - tip.offsetHeight, y + 12)) + 'px';
     });
     canvas.addEventListener('mouseleave', function () {
         var oc = ov.getContext('2d');
@@ -855,3 +770,4 @@ function setupProbe(canvasId) {
 }
 setupProbe('magCanvas');
 setupProbe('phaseCanvas');
+loadPreset('singlePole');
