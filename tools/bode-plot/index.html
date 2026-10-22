@@ -27,6 +27,26 @@
         <!-- 参数输入区 -->
         <div class="bode-layout">
             <aside class="bode-params">
+                <!-- 极点列表 -->
+                <div class="param-block paper-card">
+                    <div class="block-header">
+                        <h3>极点 (Poles)</h3>
+                        <button class="btn btn-sm" onclick="addPole()">+ 添加</button>
+                    </div>
+                    <div id="poleList" class="pole-zero-list"></div>
+                    <p class="hint">RC：R 为正实数等效电阻（Ω），C 为寄生/等效电容（F）；f = 1/(2πRC)。支持 10kΩ、10pF。</p>
+                </div>
+
+                <!-- 零点列表 -->
+                <div class="param-block paper-card">
+                    <div class="block-header">
+                        <h3>零点 (Zeros)</h3>
+                        <button class="btn btn-sm" onclick="addZero()">+ 添加</button>
+                    </div>
+                    <div id="zeroList" class="pole-zero-list"></div>
+                    <p class="hint">节点 RC 通常估计极点；用于零点时请自行确认电路成因。本页不推导复阻抗或多节点电路。</p>
+                </div>
+
                 <!-- 直流增益 -->
                 <div class="param-block paper-card">
                     <h3>系统参数</h3>
@@ -69,26 +89,6 @@
                     </div>
                     <button class="btn" id="tfApply" type="button" style="width:100%;margin-top:6px;">解析并载入零极点</button>
                     <p class="hint" id="tfMsg"></p>
-                </div>
-
-                <!-- 极点列表 -->
-                <div class="param-block paper-card">
-                    <div class="block-header">
-                        <h3>极点 (Poles)</h3>
-                        <button class="btn btn-sm" onclick="addPole()">+ 添加</button>
-                    </div>
-                    <div id="poleList" class="pole-zero-list"></div>
-                    <p class="hint">RC：R 为正实数等效电阻（Ω），C 为寄生/等效电容（F）；f = 1/(2πRC)。支持 10kΩ、10pF。</p>
-                </div>
-
-                <!-- 零点列表 -->
-                <div class="param-block paper-card">
-                    <div class="block-header">
-                        <h3>零点 (Zeros)</h3>
-                        <button class="btn btn-sm" onclick="addZero()">+ 添加</button>
-                    </div>
-                    <div id="zeroList" class="pole-zero-list"></div>
-                    <p class="hint">节点 RC 通常估计极点；用于零点时请自行确认电路成因。本页不推导复阻抗或多节点电路。</p>
                 </div>
 
                 <!-- 预设 -->

@@ -16,6 +16,53 @@
     border-left: 2px dashed var(--color-border-sketch);
 }
 
+/* 模块类别切换按钮条 */
+.cat-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+.cat-btn {
+    padding: var(--space-xs) var(--space-md);
+    font-size: 0.9rem;
+}
+.cat-btn[aria-pressed="true"] {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* 分类专有字段：顶部虚线与公共字段分组 */
+.cat-fields {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 2px dashed var(--color-border-sketch);
+}
+.cat-fields .hint {
+    margin-top: var(--space-sm);
+}
+
+/* 自定义条目行：条目名窄、内容宽，窄屏允许折行 */
+.custom-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+.custom-row .custom-label {
+    flex: 1 1 8em;
+    min-width: 0;
+}
+.custom-row .custom-value {
+    flex: 2 1 12em;
+    min-width: 0;
+}
+.custom-row .custom-del {
+    flex: 0 0 auto;
+}
+
 /* 预览区：字段名黑体加粗、值楷体斜体 */
 .simlog-preview {
     line-height: 2.1;

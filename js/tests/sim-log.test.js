@@ -344,3 +344,91 @@ test('入口与脚本语法保持有效；窄屏、隐藏与焦点规则存在',
     assert.match(css, /:focus-visible/); assert.match(css, /flex-wrap:\s*wrap/);
     assert.doesNotMatch(css, /#[\da-f]{3,8}\b/i);
 });
+
+test('分类按钮切换显隐与激活态，专有字段按类别追加且切走保留数据', () => {
+    const h = harness();
+    for (const id of ['catAmpWrap', 'catLdoWrap', 'catPowerWrap', 'catCustomWrap']) assert.equal(h.nodes[id].style.display, 'none');
+    assert.equal(h.nodes['catBtn-common'].attributes['aria-pressed'], 'true');
+    assert.doesNotMatch(h.nodes.simlogPreview.innerHTML, /电路模块/);
+    h.click('catBtn-amp');
+    assert.equal(h.state().category, 'amp');
+    assert.equal(h.nodes.catAmpWrap.style.display, '');
+    assert.equal(h.nodes.catCustomWrap.style.display, 'none');
+    assert.equal(h.nodes['catBtn-amp'].attributes['aria-pressed'], 'true');
+    assert.equal(h.nodes['catBtn-common'].attributes['aria-pressed'], 'false');
+    h.change('cmVolt', '0.9 V'); h.change('currentType', 'PTAT');
+    const fv = fieldValues(h.state());
+    assert.equal(fv['电路模块'], 'AMP');
+    assert.equal(fv['共模输入电压'], '0.9 V');
+    assert.equal(fv['电流类型'], 'PTAT（正比于绝对温度）');
+    h.click('catBtn-ldo');
+    assert.equal(h.nodes.catAmpWrap.style.display, 'none');
+    assert.equal(h.nodes.catLdoWrap.style.display, '');
+    assert.equal(h.state().cmVolt, '0.9 V');
+    const fv2 = fieldValues(h.state());
+    assert.equal(fv2['电路模块'], 'LDO');
+    assert.ok(!('共模输入电压' in fv2));
+    h.change('loadCurrent', '0–100 mA'); h.change('loadCap', '1 µF');
+    assert.equal(fieldValues(h.state())['负载电容'], '1 µF');
+    h.click('catBtn-power');
+    h.change('paraR', '50 mΩ'); h.change('paraL', '2 nH');
+    const fv3 = fieldValues(h.state());
+    assert.equal(fv3['电路模块'], 'PowerStage');
+    assert.equal(fv3['寄生电阻'], '50 mΩ');
+    assert.equal(fv3['寄生电感'], '2 nH');
+    h.click('catBtn-common');
+    assert.ok(!('电路模块' in fieldValues(h.state())));
+    const restored = harness({ raw: h.raw });
+    restored.click('catBtn-amp');
+    assert.equal(fieldValues(restored.state())['共模输入电压'], '0.9 V');
+});
+
+test('customItems 规范化：非数组回落、脏项处理、控制字符截断、上限与类别白名单', () => {
+    assert.deepEqual(M.normalizeState({ customItems: 'bad' }).customItems, []);
+    assert.deepEqual(M.normalizeState({ customItems: [null, 42, 'x', [1], { label: 1 }, { label: 'a', value: 'b' }] }).customItems,
+        [{ label: '', value: '' }, { label: 'a', value: 'b' }]);
+    assert.deepEqual(M.normalizeState({ customItems: [{ label: 'a\x00b\n', value: 'c\x07d' }] }).customItems,
+        [{ label: 'ab', value: 'cd' }]);
+    const many = Array.from({ length: 40 }, (_, i) => ({ label: 'L' + i, value: 'v' }));
+    assert.equal(M.normalizeState({ customItems: many }).customItems.length, M.CUSTOM_ITEMS_MAX);
+    assert.equal(M.normalizeState({ category: 'nope' }).category, 'common');
+    assert.deepEqual(M.CATEGORIES, ['common', 'amp', 'ldo', 'power', 'custom']);
+    assert.equal(M.normalizeState({ category: 'amp' }).category, 'amp');
+});
+
+test('自定义条目增删、空条目名过滤与刷新恢复', () => {
+    const h = harness();
+    h.click('catBtn-custom');
+    assert.equal(h.nodes.catCustomWrap.style.display, '');
+    h.click('customAddBtn'); h.click('customAddBtn');
+    assert.equal(h.nodes.customList.children.length, 2);
+    const row0 = h.nodes.customList.children[0];
+    row0.children[0].value = '环路带宽';
+    row0.children[1].value = '10 MHz';
+    h.nodes.customList.emit('input', { target: row0.children[0] });
+    let fv = fieldValues(h.state());
+    assert.equal(fv['电路模块'], '自定义');
+    assert.equal(fv['环路带宽'], '10 MHz');
+    assert.equal(h.state().customItems.length, 2);
+    assert.equal(Object.keys(fv).length, 7);
+    h.nodes.customList.emit('click', { target: row0.children[2] });
+    assert.equal(h.nodes.customList.children.length, 1);
+    fv = fieldValues(h.state());
+    assert.ok(!('环路带宽' in fv));
+    const restored = harness({ raw: h.raw });
+    assert.equal(restored.nodes.customList.children.length, 1);
+    assert.equal(restored.state().category, 'custom');
+    assert.equal(restored.nodes.catCustomWrap.style.display, '');
+});
+
+test('自定义条目名与内容经 HTML/Markdown/LaTeX 转义，不注入标签或命令', () => {
+    const fields = M.buildFields({ category: 'custom', customItems: [{ label: '<b>x</b>&"*', value: 'F:\\a_b {y} $%' }] });
+    const rich = M.buildHtml(fields, undefined, 'preview');
+    assert.doesNotMatch(rich, /<b>/);
+    assert.match(rich, /&lt;b&gt;/);
+    const parsed = marked.parse(M.buildMd(fields));
+    assert.doesNotMatch(parsed, /<b>/);
+    const tex = M.buildLatex(fields);
+    assert.match(tex, /a\\_b/);
+    assert.match(tex, /\\\$\\%/);
+});

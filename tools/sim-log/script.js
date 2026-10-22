@@ -4,6 +4,10 @@
 
     var STORE_KEY = 'ee-sim-log';
     var PARASITIC_TYPES = ['R+C+CC', 'R+C', 'R', 'C+CC', 'No R/C'];
+    var CATEGORIES = ['common', 'amp', 'ldo', 'power', 'custom'];
+    var CATEGORY_NAMES = { amp: 'AMP', ldo: 'LDO', power: 'PowerStage', custom: '自定义' };
+    var CURRENT_TYPES = { ZTC: 'ZTC（零温度系数）', PTAT: 'PTAT（正比于绝对温度）', POLY: 'POLY（多项式补偿）' };
+    var CUSTOM_ITEMS_MAX = 30;
     var COLORS = {
         auto: { css: '--color-text', hex: '000000' },
         blue: { css: '--color-primary', hex: '3a5a8c' },
@@ -13,7 +17,9 @@
     var DEFAULTS = {
         simPath: '', simType: 'tt', cornerCount: '49', mcCount: '100', mcCountCustom: '',
         mcMode: 'global', voltPreset: '1.62–1.98 V', voltCustom: '',
-        tempPreset: '-50–160 °C', tempCustom: '', simMode: '前仿', parasiticType: ''
+        tempPreset: '-50–160 °C', tempCustom: '', simMode: '前仿', parasiticType: '',
+        category: 'common', cmVolt: '', currentType: 'ZTC',
+        loadCurrent: '', loadCap: '', paraR: '', paraL: ''
     };
     var OPTIONS = {
         simType: ['tt', 'corner', 'mc'],
@@ -21,7 +27,8 @@
         mcMode: ['global', 'local'],
         voltPreset: ['1.62–1.98 V', '1.7–1.9 V', '1.65–1.95 V', '1.08–1.32 V', '2.97–3.63 V', '4.5–5.5 V', '4.5 V, 5 V, 5.5 V', '1.8 V', '3.3 V', '__custom__'],
         tempPreset: ['-50–160 °C', '-40–150 °C', '-40–125 °C', '-40–85 °C', '-20–85 °C', '0–70 °C', '25 °C', '27 °C', '125 °C', '__custom__'],
-        simMode: ['前仿', '后仿'], parasiticType: [''].concat(PARASITIC_TYPES)
+        simMode: ['前仿', '后仿'], parasiticType: [''].concat(PARASITIC_TYPES),
+        currentType: ['ZTC', 'PTAT', 'POLY']
     };
     function objectOrEmpty(value) {
         return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -47,7 +54,26 @@
             result[key] = typeof value === 'string' && (!OPTIONS[key] || OPTIONS[key].indexOf(value) !== -1)
                 ? value : DEFAULTS[key];
         });
+        /* category 不在 OPTIONS（对应隐藏输入而非 select），单独白名单校验 */
+        if (CATEGORIES.indexOf(result.category) === -1) result.category = DEFAULTS.category;
+        result.customItems = normalizeItems(state.customItems);
         result.format = normalizeFormat(state.format);
+        return result;
+    }
+    /* 自定义条目：仅接受对象数组，去控制字符并截断，上限 CUSTOM_ITEMS_MAX 条 */
+    function normalizeItems(items) {
+        if (!Array.isArray(items)) return [];
+        var result = [];
+        for (var i = 0; i < items.length && result.length < CUSTOM_ITEMS_MAX; i++) {
+            var item = items[i];
+            if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+            var label = typeof item.label === 'string' ? item.label : '';
+            var value = typeof item.value === 'string' ? item.value : '';
+            result.push({
+                label: label.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 60),
+                value: value.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 200)
+            });
+        }
         return result;
     }
     function parseState(raw) {
@@ -75,6 +101,25 @@
         f.push(field('温度', s.tempPreset === '__custom__' ? s.tempCustom : s.tempPreset));
         f.push(field('仿真方式', s.simMode));
         if (s.simMode === '后仿') f.push(field('寄生提参', s.parasiticType || '（待选择）'));
+        /* 模块类别专有字段：common 不追加；自定义条目仅条目名非空的行进输出 */
+        if (s.category === 'amp') {
+            f.push(field('电路模块', CATEGORY_NAMES.amp));
+            f.push(field('共模输入电压', s.cmVolt));
+            f.push(field('电流类型', CURRENT_TYPES[s.currentType] || s.currentType));
+        } else if (s.category === 'ldo') {
+            f.push(field('电路模块', CATEGORY_NAMES.ldo));
+            f.push(field('负载电流', s.loadCurrent));
+            f.push(field('负载电容', s.loadCap));
+        } else if (s.category === 'power') {
+            f.push(field('电路模块', CATEGORY_NAMES.power));
+            f.push(field('寄生电阻', s.paraR));
+            f.push(field('寄生电感', s.paraL));
+        } else if (s.category === 'custom') {
+            f.push(field('电路模块', CATEGORY_NAMES.custom));
+            s.customItems.forEach(function (item) {
+                if (item.label.trim()) f.push(field(item.label, item.value));
+            });
+        }
         return f;
     }
 
@@ -148,8 +193,11 @@
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            PARASITIC_TYPES: PARASITIC_TYPES, COLORS: COLORS, DEFAULTS: DEFAULTS, OPTIONS: OPTIONS,
-            normalizeFormat: normalizeFormat, normalizeState: normalizeState, parseState: parseState,
+            PARASITIC_TYPES: PARASITIC_TYPES, CATEGORIES: CATEGORIES, CATEGORY_NAMES: CATEGORY_NAMES,
+            CURRENT_TYPES: CURRENT_TYPES, CUSTOM_ITEMS_MAX: CUSTOM_ITEMS_MAX,
+            COLORS: COLORS, DEFAULTS: DEFAULTS, OPTIONS: OPTIONS,
+            normalizeFormat: normalizeFormat, normalizeState: normalizeState, normalizeItems: normalizeItems,
+            parseState: parseState,
             buildFields: buildFields, buildHtml: buildHtml, buildPlain: buildPlain, buildMd: buildMd,
             buildLatex: buildLatex, escapeHtml: escapeHtml, mdEscape: mdEscape, latexEscape: latexEscape
         };
@@ -158,6 +206,7 @@
 
     var $ = function (id) { return document.getElementById(id); };
     var els = {}, formats = {}, outputs = {};
+    var customRows = [];
     Object.keys(DEFAULTS).forEach(function (key) { els[key] = $(key); });
     ['label', 'value'].forEach(function (group) {
         formats[group] = { bold: $(group + 'Bold'), italic: $(group + 'Italic'), color: $(group + 'Color') };
@@ -175,10 +224,56 @@
         var isPost = els.simMode.value === '后仿';
         $('parasiticTypeWrap').hidden = !isPost;
         els.parasiticType.disabled = !isPost;
+        /* 模块类别：仅显示当前类别的专有字段，其余隐藏但保留数据 */
+        var cat = els.category.value;
+        $('catAmpWrap').style.display = cat === 'amp' ? '' : 'none';
+        $('catLdoWrap').style.display = cat === 'ldo' ? '' : 'none';
+        $('catPowerWrap').style.display = cat === 'power' ? '' : 'none';
+        $('catCustomWrap').style.display = cat === 'custom' ? '' : 'none';
+        CATEGORIES.forEach(function (c) {
+            $('catBtn-' + c).setAttribute('aria-pressed', String(c === cat));
+        });
+    }
+
+    /* ---------- 自定义条目行（DOM 创建 + 容器事件委托） ---------- */
+    function addCustomRow(label, value) {
+        var row = document.createElement('div');
+        row.className = 'custom-row';
+        var labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.className = 'custom-label';
+        labelInput.placeholder = '条目名（如：环路带宽）';
+        labelInput.value = label || '';
+        labelInput.setAttribute('aria-label', '自定义条目名');
+        labelInput.maxLength = 60;
+        var valueInput = document.createElement('input');
+        valueInput.type = 'text';
+        valueInput.className = 'custom-value';
+        valueInput.placeholder = '内容（如：10 MHz）';
+        valueInput.value = value || '';
+        valueInput.setAttribute('aria-label', '自定义条目内容');
+        valueInput.maxLength = 200;
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'btn cat-btn custom-del';
+        delBtn.textContent = '删除';
+        row.appendChild(labelInput);
+        row.appendChild(valueInput);
+        row.appendChild(delBtn);
+        $('customList').appendChild(row);
+        customRows.push({ row: row, labelInput: labelInput, valueInput: valueInput, delBtn: delBtn });
+    }
+    function clearCustomRows() {
+        var list = $('customList');
+        customRows.forEach(function (r) { list.removeChild(r.row); });
+        customRows = [];
     }
     function readState() {
         var state = { format: {} };
         Object.keys(els).forEach(function (key) { state[key] = els[key].value; });
+        state.customItems = customRows.map(function (r) {
+            return { label: r.labelInput.value, value: r.valueInput.value };
+        });
         Object.keys(formats).forEach(function (group) {
             state.format[group] = {
                 bold: formats[group].bold.checked, italic: formats[group].italic.checked,
@@ -217,6 +312,8 @@
         try { state = parseState(localStorage.getItem(STORE_KEY)); } catch (e) { state = normalizeState({}); }
         Object.keys(els).forEach(function (key) { els[key].value = state[key]; });
         applyFormat(state.format);
+        clearCustomRows();
+        state.customItems.forEach(function (item) { addCustomRow(item.label, item.value); });
     }
 
     /* ---------- 复制 ---------- */
@@ -315,6 +412,30 @@
             Object.keys(formats[group]).forEach(function (key) {
                 formats[group][key].addEventListener('change', render);
             });
+        });
+        /* 分类按钮：写隐藏输入 category 后重渲染；各类别数据隐藏保留 */
+        CATEGORIES.forEach(function (c) {
+            $('catBtn-' + c).addEventListener('click', function () {
+                els.category.value = c;
+                render();
+            });
+        });
+        /* 自定义条目：容器委托 input（实时收集）与 click（删除行） */
+        $('customList').addEventListener('input', render);
+        $('customList').addEventListener('click', function (e) {
+            var idx = -1;
+            for (var i = 0; i < customRows.length; i++) {
+                if (customRows[i].delBtn === e.target) { idx = i; break; }
+            }
+            if (idx === -1) return;
+            $('customList').removeChild(customRows[idx].row);
+            customRows.splice(idx, 1);
+            render();
+        });
+        $('customAddBtn').addEventListener('click', function () {
+            if (customRows.length >= CUSTOM_ITEMS_MAX) return;
+            addCustomRow('', '');
+            render();
         });
         $('resetFormatBtn').addEventListener('click', function () { applyFormat(null); render(); });
         /* Corner 个数：悬停滚轮直接步进（无需先聚焦），并阻止页面随滚轮滚动 */
