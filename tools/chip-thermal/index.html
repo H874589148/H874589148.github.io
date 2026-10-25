@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>芯片发热估算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+    <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']]},svg:{fontCache:'global'}};</script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body class="thermal-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 芯片发热估算</span>
+    </nav>
+    <main class="container-wide">
+        <h1>芯片发热估算</h1>
+        <p class="tool-desc">含温度反馈的导通损耗、热约束电流与多热源瞬态温度分布。默认值仅为演示，填写内容自动保存在本机。</p>
+        <div class="notice">本工具用于工程估算，不替代器件 SOA、数据手册及实测。RθJA 取决于封装、PCB 和散热条件；温度系数采用指定栅压下、以 25℃ 电阻为基准的线性模型。</div>
+        <section class="paper-card section-card">
+            <h2>共同散热条件</h2>
+            <div class="fields-grid" id="commonFields"></div>
+            <p class="hint">前两页计算持续直流的稳态温度，使用环境温度，不是通电前的初始结温。提醒阈值只用于标记，不限制计算范围，也不代表额定值。</p>
+        </section>
+        <div class="thermal-tabs" role="tablist" aria-label="估算方式">
+            <button class="btn" id="tab-current" type="button" role="tab" aria-controls="panel-current" aria-selected="true" data-tab="current">电流 → 稳态温升</button>
+            <button class="btn" id="tab-limit" type="button" role="tab" aria-controls="panel-limit" aria-selected="false" tabindex="-1" data-tab="limit">允许结温 → 电流</button>
+            <button class="btn" id="tab-drop" type="button" role="tab" aria-controls="panel-drop" aria-selected="false" tabindex="-1" data-tab="drop">恒压降功耗与热分布</button>
+        </div>
+        <section class="paper-card section-card" id="resistanceBlock">
+            <h2>导通电阻模型（前两页共用）</h2>
+            <div class="fields-grid" id="resistanceFields"></div>
+            <p class="formula">\(R(T)=R_{25}[1+a(T-25)],\quad a=\mathrm{TCR}/100\)</p>
+            <p class="hint">例如 0.4%/℃ 表示每升高 1℃，电阻增加 R25 的 0.4%，不是逐度复利。不包括开关、驱动、漏电或其他模块损耗；超出器件拟合温区仅属外推。</p>
+        </section>
+        <section class="paper-card section-card" id="currentSeriesBlock">
+            <div id="currentSeriesFields" class="fields-grid"></div>
+            <p class="hint">第一、三页共用电流序列，逗号/空白分隔，最多 50 个点，自动排序去重。末行始终保留自定义值。</p>
+        </section>
+        <section id="panel-current" role="tabpanel" aria-labelledby="tab-current">
+            <div class="paper-card section-card">
+                <h2>负载电流与最终稳态结温</h2>
+                <p class="formula">\(g=R_{\theta JA}I^2R_{25}a,\quad R_f=\frac{R_{25}[1+a(T_a-25)]}{1-g},\quad P=I^2R_f,\quad T_j=T_a+R_{\theta JA}P\)</p>
+                <p id="criticalNotice" class="notice" role="status"></p>
+                <p id="currentError" class="error" role="status"></p>
+                <div class="table-wrap"><table>
+                    <caption>连续导通，已联立电阻与温度反馈</caption>
+                    <thead><tr><th scope="col">负载电流 (A)</th><th scope="col">稳态结温 (℃)</th><th scope="col">最终电阻 (Ω)</th><th scope="col">功耗 (W)</th><th scope="col">状态</th></tr></thead>
+                    <tbody id="currentRows"></tbody><tfoot><tr id="currentCustomRow"><td id="currentCustomCell"></td></tr></tfoot>
+                </table></div>
+            </div>
+        </section>
+        <section id="panel-limit" role="tabpanel" aria-labelledby="tab-limit" hidden>
+            <div class="paper-card section-card">
+                <h2>允许结温与热约束最大电流</h2>
+                <div class="fields-grid" id="limitSeriesFields"></div>
+                <p class="formula">\(P_{allow}=\frac{T_{limit}-T_a}{R_{\theta JA}},\quad I_{max}=\sqrt{\frac{P_{allow}}{R(T_{limit})}}\)</p>
+                <p class="hint">这里只反求热约束电流，不是器件额定最大电流。请另行核对栅压、金属/键合线载流能力与 SOA。</p>
+                <p id="limitError" class="error" role="status"></p>
+                <div class="table-wrap"><table>
+                    <caption>允许结温可自行设置；低于环境温度时无可行解</caption>
+                    <thead><tr><th scope="col">允许结温 (℃)</th><th scope="col">导通电阻 (Ω)</th><th scope="col">允许功耗 (W)</th><th scope="col">最大电流 (A)</th><th scope="col">状态</th></tr></thead>
+                    <tbody id="limitRows"></tbody><tfoot><tr id="limitCustomRow"><td id="limitCustomCell"></td></tr></tfoot>
+                </table></div>
+            </div>
+        </section>
+        <section id="panel-drop" role="tabpanel" aria-labelledby="tab-drop" hidden>
+            <div class="paper-card section-card">
+                <h2>主管单独发热的热阻估算</h2>
+                <div class="fields-grid" id="voltageFields"></div>
+                <p class="formula">\(P_{main}=|V_{DS}|I,\quad T_{j,steady}=T_a+R_{\theta JA}P_{main}\)</p>
+                <p class="hint">适用于给定压降和电流下的功耗估算，不以饱和区条件代替 SOA 判断。此表不含其他热源；下方多源热图的峰值可以更高。</p>
+                <p id="dropError" class="error" role="status"></p>
+                <div class="table-wrap"><table>
+                    <caption>选择一行电流用于热图；默认使用最后的自定义行</caption>
+                    <thead><tr><th scope="col">用于热图 / 电流 (A)</th><th scope="col">主管功耗 (W)</th><th scope="col">稳态结温 (℃)</th><th scope="col">状态</th></tr></thead>
+                    <tbody id="dropRows"></tbody><tfoot><tr id="dropCustomRow"><td id="dropCustomCell"></td></tr></tfoot>
+                </table></div>
+                <p id="selectionNotice" class="hint" role="status"></p>
+            </div>
+            <section class="paper-card section-card">
+                <h2>芯片、材料与初始条件</h2>
+                <div class="fields-grid" id="heatFields"></div>
+                <label class="check"><input type="checkbox" id="initialFollow" checked>初始结温 T0 跟随环境温度 Ta</label>
+                <p id="materialInfo" class="hint"></p>
+                <p class="hint">默认是室温硅的近似示例，不代表具体工艺。厚度方向假设均温；所有启用热源从 t=0 同时开始恒功率发热。</p>
+                <h3>矩形热源（最多 8 个，含主管）</h3>
+                <p class="hint">面积＋长宽比定义尺寸，X/Y 是中心位置占芯片长宽的百分比（原点在左下角）。启用的热源不得越界或重叠，每条边须至少覆盖两个网格单元。</p>
+                <div id="sourceList"></div>
+                <button class="btn" type="button" id="addSource">+ 添加固定功耗热源</button>
+                <p id="sourceLimit" class="hint" role="status"></p>
+            </section>
+            <section class="paper-card section-card heat-output">
+                <h2>多热源温度分布 · 简化模型</h2>
+                <div class="fields-grid" id="timeFields"></div>
+                <label for="timeSlider">观察时刻（滑块上限可编辑）</label>
+                <input type="range" id="timeSlider" min="0" max="1" step="any" value="0.01">
+                <div class="toolbar"><button class="btn" type="button" id="transientBtn" aria-pressed="true">查看瞬态</button><button class="btn" type="button" id="steadyBtn" aria-pressed="false">查看稳态</button></div>
+                <div class="fields-grid" id="colorFields"></div>
+                <div class="toolbar"><button class="btn" type="button" id="defaultColor">默认色标</button><button class="btn" type="button" id="fitColor" disabled>适配当前范围</button><button class="btn" type="button" id="exportPng" disabled>导出热图 PNG</button></div>
+                <p class="hint">观察时间改变时色标保持不变，超出色标只截取显示颜色，不截断物理温度。色标与阈值不是器件额定值。</p>
+                <p id="heatStatus" class="notice" role="status" aria-live="polite">选择第三页后计算热图。</p>
+                <p id="heatTitle" class="heat-title"></p>
+                <p id="heatSummary" class="summary"></p>
+                <canvas id="heatCanvas" width="1000" height="740" aria-label="芯片温度分布；最高温、平均温及超温面积见上方文字摘要"></canvas>
+                <p id="probe" class="hint" role="status">点击或悬停热图查看单元坐标和温度。</p>
+                <p id="thinWarning" class="error" role="status"></p>
+            </section>
+            <details class="paper-card section-card">
+                <summary>模型定义、标定方式与适用边界</summary>
+                <p class="formula">\(\partial_t u=\alpha\nabla^2u-\beta u+q''/(C_v d),\quad u=T-T_a,\quad k=\alpha C_v\)</p>
+                <ul class="model-notes">
+                    <li>芯片为均匀薄层，四周绝热，垂直方向均匀等效散热；矩形内均匀功率密度。有限体积网格守恒分配热源功率，DCT 对角化并解析求时间响应。</li>
+                    <li>仅用主管单独施加 1 W 的稳态峰值标定 β，使其温升等于 RθJA。它是模型约定，不证明数据手册温度等于真实局部热点，也不唯一反推出真实封装。</li>
+                    <li>添加、移动或改变附加源功耗不改变 β；多源温升在同一散热条件下叠加，不简单套用 Ta＋RθJA×总功耗。</li>
+                    <li>芯片/主管几何、材料、厚度、网格、RθJA 改变会重新标定。固定 RθJA 时主管单源稳态峰值保持相同，不能据此预测真实主管面积变化带来的峰值变化。</li>
+                    <li>不含封装热容、厚度方向温差、温变材料、开关脉冲、非线性电热耦合及 SOA；一个稳态热阻不能验证全部瞬态。短于 d²/α 的时刻会提醒薄层近似限制。</li>
+                </ul>
+                <a href="https://www.ti.com/lit/pdf/spra953" target="_blank" rel="noopener">参考：TI 半导体与封装热参数说明</a>
+            </details>
+        </section>
+        <div class="toolbar"><button class="btn" id="copyTable" type="button">复制当前表格 TSV</button><span id="copyStatus" role="status"></span></div>
+        <p id="storageStatus" class="hint" role="status"></p>
+        <noscript><p class="error">此工具需要启用 JavaScript 才能计算。</p></noscript>
+    </main>
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> · 总浏览 <span id="busuanzi_value_site_pv">-</span> · 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="thermal-core.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

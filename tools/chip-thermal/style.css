@@ -1,0 +1,55 @@
+/* 页面颜色与全站主题同步；栅格颜色来自相同 CSS 变量。 */
+.thermal-page .container-wide { max-width: 1360px; }
+.thermal-page [hidden] { display: none !important; }
+.section-card { margin: var(--space-lg) 0; padding: var(--space-lg); min-width: 0; }
+.section-card h2 { font-size: 1.25rem; margin-bottom: var(--space-md); }
+.section-card h3 { margin: var(--space-md) 0; }
+.fields-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--space-md); }
+.field-control { min-width: 0; }
+.field-control .unit-row { display: flex; align-items: center; gap: var(--space-xs); }
+.field-control input[type="text"] { min-width: 0; flex: 1; }
+.field-control select { width: auto; max-width: 100%; }
+.field-control .unit-label { white-space: nowrap; color: var(--color-text-secondary); }
+.field-control label { font-size: 0.94rem; }
+.field-control.wide { grid-column: 1 / -1; }
+.field-error { display: block; font-size: 0.82rem; color: var(--color-accent); overflow-wrap: anywhere; }
+.field-error:empty, .error:empty { display: none; }
+.thermal-page [aria-invalid="true"] { border-color: var(--color-accent); }
+.thermal-page .hint { font-size: 0.88rem; color: var(--color-text-secondary); margin-top: var(--space-sm); line-height: 1.7; }
+.thermal-page .error { color: var(--color-accent); margin: var(--space-sm) 0; overflow-wrap: anywhere; }
+.notice { padding: var(--space-sm) var(--space-md); border-left: 3px solid var(--color-primary); background: var(--color-bg-paper); line-height: 1.8; }
+.notice:empty { display: none; }
+.thermal-tabs, .toolbar { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; margin: var(--space-md) 0; }
+.thermal-tabs .btn[aria-selected="true"], .toolbar .btn[aria-pressed="true"] { border-color: var(--color-primary); color: var(--color-primary); font-weight: bold; }
+.thermal-page :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.thermal-page .btn:disabled { cursor: not-allowed; opacity: 0.6; transform: none; }
+.formula { overflow-x: auto; padding: var(--space-sm) 0; line-height: 2; }
+.table-wrap { overflow-x: auto; }
+.table-wrap table { width: 100%; min-width: 650px; border-collapse: collapse; }
+.table-wrap caption { text-align: left; font-size: 0.9rem; color: var(--color-text-secondary); padding: var(--space-sm) 0; }
+.table-wrap th, .table-wrap td { text-align: left; padding: var(--space-sm); border-bottom: 1px solid var(--color-border); }
+.table-wrap td { font-family: var(--font-mono); font-size: 0.92rem; }
+.table-wrap tfoot { border-top: 2px dashed var(--color-primary); background: var(--color-bg-paper); }
+.table-wrap tfoot td:first-child { width: 235px; }
+.table-wrap .row-alert { color: var(--color-accent); }
+.check, .current-choice { display: flex; gap: var(--space-sm); align-items: center; margin: var(--space-sm) 0; }
+.check input, .current-choice input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--color-primary); }
+.source-card { border: 1px dashed var(--color-border-sketch); border-radius: var(--radius-sm); padding: var(--space-md); margin: var(--space-md) 0; }
+.source-card summary { cursor: pointer; color: var(--color-primary); margin-bottom: var(--space-sm); overflow-wrap: anywhere; }
+.source-card .toolbar { justify-content: space-between; }
+.source-summary { font-size: 0.87rem; color: var(--color-text-secondary); overflow-wrap: anywhere; margin-top: var(--space-sm); }
+#timeSlider { width: 100%; accent-color: var(--color-primary); }
+#heatCanvas { width: 100%; height: auto; display: block; background: var(--color-card-bg); border: 1px solid var(--color-border); touch-action: pan-y; }
+.heat-title { font-family: var(--font-mono); color: var(--color-primary); font-weight: bold; margin: var(--space-md) 0; overflow-wrap: anywhere; }
+.summary { line-height: 1.9; margin: var(--space-md) 0; overflow-wrap: anywhere; }
+.model-notes { padding-left: var(--space-lg); line-height: 1.9; }
+.thermal-page details > summary { cursor: pointer; }
+@media (max-width: 700px) {
+    .section-card { padding: var(--space-md); }
+    .fields-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .thermal-tabs .btn { flex: 1 1 100%; }
+}
+@media (max-width: 440px) {
+    .fields-grid { grid-template-columns: minmax(0, 1fr); }
+    .toolbar .btn { max-width: 100%; }
+}
