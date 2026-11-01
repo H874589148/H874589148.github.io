@@ -122,3 +122,48 @@
     left: -9999px;
     top: 0;
 }
+
+/* 主标签与结果编辑器独立作用域；文档填色由单元格内联数据控制。 */
+.sim-main-tabs { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin: var(--space-lg) 0; }
+.sim-main-tabs [aria-selected="true"] { color: var(--color-primary); border-color: var(--color-primary); font-weight: 700; }
+#sim-panel-settings[hidden], .sim-results [hidden], .sim-results[hidden] { display: none; }
+.sim-results { color: var(--color-text); }
+.sim-results h2 { font-size: 1.15rem; margin: 0 0 var(--space-md); }
+.sim-results .sr-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--space-lg); align-items: start; }
+.sim-results .sr-image-panel, .sim-results .sr-editor-panel { min-width: 0; }
+.sim-results .sr-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); margin: var(--space-sm) 0; }
+.sim-results label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); max-width: 100%; }
+.sim-results input, .sim-results select, .sim-results textarea { background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); max-width: 100%; font: inherit; border-radius: var(--radius-sm); padding: .35rem; }
+.sim-results input[type="number"] { width: 6em; }
+.sim-results input[type="color"] { width: 3em; height: 2.4em; padding: .2rem; }
+.sim-results input[type="checkbox"] { width: 1em; accent-color: var(--color-primary); }
+.sim-results textarea { display: block; width: 100%; resize: vertical; }
+.sim-results fieldset { min-width: 0; border: 1px dashed var(--color-border); margin: var(--space-md) 0; padding: var(--space-sm); }
+.sim-results legend { color: var(--color-text-secondary); padding: 0 var(--space-xs); }
+.sim-results fieldset > label { display: flex; margin: var(--space-xs) 0; }
+.sim-results :disabled { opacity: .55; cursor: not-allowed; }
+.sim-results :focus-visible, .sim-main-tabs :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.sim-results .sr-status { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-primary); }
+.sim-results .sr-error { color: var(--color-accent); }
+.sim-results #sr-preview { display: block; width: 100%; height: auto; border: 1px solid var(--color-border); touch-action: none; }
+.sim-results .sr-table-wrap { overflow: auto; max-height: 65vh; border: 1px solid var(--color-border); position: relative; }
+.sim-results #sr-table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+.sim-results #sr-table td, .sim-results #sr-table th { border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: .45rem; position: relative; min-width: 6em; max-width: 24em; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9rem; }
+.sim-results #sr-table th { background: var(--color-bg-paper); color: var(--color-text-secondary); min-width: 2.8em; position: sticky; top: 0; z-index: 2; }
+.sim-results #sr-table tbody th { left: 0; z-index: 1; }
+.sim-results #sr-table th button { background: transparent; border: 0; font: inherit; color: inherit; cursor: pointer; }
+.sim-results #sr-table td[aria-selected="true"] { box-shadow: inset 0 0 0 2px var(--color-primary); }
+.sim-results #sr-table td.sr-unchecked::after { content: '待核对'; display: block; font-size: .7rem; text-decoration: underline dotted; }
+.sim-results #sr-table td.sr-header { font-weight: bold; }
+.sim-results #sr-table textarea { min-width: 10em; min-height: 4em; margin: 0; }
+.sim-results #sr-issues { max-height: 18em; overflow: auto; }
+.sim-results #sr-issues button { display: block; margin: .4em 0; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sim-results #sr-source, .sim-results #sr-origin, .sim-results #sr-save { overflow-wrap: anywhere; white-space: pre-wrap; }
+.sim-results #sr-fallback-label { display: block; }
+.sim-results #sr-fallback-label[hidden] { display: none; }
+@media (max-width: 1000px) { .sim-results .sr-layout { grid-template-columns: 1fr; } }
+@media (max-width: 440px) {
+    .sim-results .sr-toolbar { align-items: stretch; }
+    .sim-results .sr-toolbar .btn { flex: 1 1 8em; }
+    .sim-results .param-block { padding: var(--space-sm); }
+}

@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "languageLicense": {
+    "upstream": "https://github.com/naptha/tessdata/blob/gh-pages/LICENSE",
+    "license": "Apache-2.0",
+    "note": "训练数据上游许可证为 Apache-2.0；npm 包元数据的 MIT 声明另行原样保留，未分发包内其他代码。"
+  },
+  "resources": [
+    {
+      "file": "lib/exceljs/4.4.0/exceljs.min.js",
+      "package": "exceljs",
+      "version": "4.4.0",
+      "source": "https://registry.npmjs.org/exceljs/-/exceljs-4.4.0.tgz",
+      "member": "dist/exceljs.min.js",
+      "packageIntegrity": "sha512-XctvKaEMaj1Ii9oDOqbW/6e1gXknSY4g/aLCDicOXqBE4M0nRWkUu0PTp++UPNzoFY12BNHMfs/VadKIS6llvg==",
+      "bytes": 947702,
+      "sha256": "7e49da68588e250dbb8bba190d2caa8ab3787cc0284bda1d8b2f805c4df742c9"
+    },
+    {
+      "file": "lib/exceljs/4.4.0/LICENSE",
+      "package": "exceljs",
+      "version": "4.4.0",
+      "source": "https://registry.npmjs.org/exceljs/-/exceljs-4.4.0.tgz",
+      "member": "LICENSE",
+      "packageIntegrity": "sha512-XctvKaEMaj1Ii9oDOqbW/6e1gXknSY4g/aLCDicOXqBE4M0nRWkUu0PTp++UPNzoFY12BNHMfs/VadKIS6llvg==",
+      "bytes": 1084,
+      "sha256": "2ed526b7e7c7681dc2347995b5036ddf73dc27d0539cdea59b6d4a72b63a57a0"
+    },
+    {
+      "file": "lib/exceljs/4.4.0/LICENSE",
+      "package": "exceljs",
+      "version": "4.4.0",
+      "source": "https://registry.npmjs.org/exceljs/-/exceljs-4.4.0.tgz",
+      "member": "dist/LICENSE",
+      "packageIntegrity": "sha512-XctvKaEMaj1Ii9oDOqbW/6e1gXknSY4g/aLCDicOXqBE4M0nRWkUu0PTp++UPNzoFY12BNHMfs/VadKIS6llvg==",
+      "bytes": 1084,
+      "sha256": "2ed526b7e7c7681dc2347995b5036ddf73dc27d0539cdea59b6d4a72b63a57a0"
+    }
+  ]
+}

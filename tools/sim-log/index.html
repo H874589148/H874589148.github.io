@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>仿真结果规范收集 - EE工具箱</title>
+    <title>仿真结果收集 - EE工具箱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -17,11 +17,18 @@
     <nav class="top-nav">
         <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
         <a href="../../index.html">EE工具箱</a>
-        <span class="breadcrumb">计算工具 / 仿真结果规范收集</span>
+        <span class="breadcrumb">计算工具 / 仿真结果收集</span>
     </nav>
 
     <main class="container-wide">
-        <h1>仿真结果规范收集</h1>
+        <h1>仿真结果收集</h1>
+        <p class="tool-desc">整理仿真设置，或将规则表格截图在浏览器本地转换为可校对、可编辑、可导出的结果表。</p>
+        <div class="sim-main-tabs" role="tablist" aria-label="格式化类型">
+            <button class="btn" type="button" id="sim-tab-settings" role="tab" aria-selected="true" aria-controls="sim-panel-settings">仿真设置格式化</button>
+            <button class="btn" type="button" id="sim-tab-results" role="tab" aria-selected="false" aria-controls="sim-panel-results" tabindex="-1">仿真结果格式化</button>
+        </div>
+        <p id="sim-ui-warning" class="hint" role="status"></p>
+        <section id="sim-panel-settings" role="tabpanel" aria-labelledby="sim-tab-settings">
         <p class="tool-desc">按电路模块类别（Common / AMP / LDO / PowerStage / 自定义）填写仿真设置与后仿寄生提参类型，实时生成规范化记录；字段名与字段值可分别设置加粗、斜体和颜色。默认字段名黑体加粗、值楷体斜体，支持 Word、Markdown、LaTeX 三格式复制。填写内容及样式自动保存在本机，刷新后恢复。</p>
 
         <div class="simlog-layout">
@@ -227,6 +234,81 @@
                 <p class="hint">Word / WPS 粘贴时请选择「保留源格式」，以保留字体与所选样式。Markdown 保留加粗、斜体，不支持颜色；LaTeX 输出样式命令，需 XeLaTeX / ctex，使用颜色时另需 xcolor 宏包。</p>
             </section>
         </div>
+        </section>
+        <section id="sim-panel-results" class="sim-results" role="tabpanel" aria-labelledby="sim-tab-results" hidden>
+            <p class="hint">本地 OCR：图片及识别文字不上传。仅支持单个清晰正向的规则矩形表，不支持合并单元格、倾斜照片、曲线提取。识别草稿，请核对工程数值；置信分数不等于正确率。</p>
+            <div class="paper-card param-block">
+                <h2>1. 导入图片与转换</h2>
+                <div class="sr-toolbar">
+                    <label>图片文件 <input id="sr-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+                    <span class="hint">或在此标签页非文字编辑区域按 Ctrl+V / Cmd+V</span>
+                </div>
+                <div class="sr-toolbar">
+                    <label>预处理 <select id="sr-mode"><option value="auto">自动</option><option value="light">浅底深字</option><option value="dark">深底浅字</option></select></label>
+                    <label>语言 <select id="sr-lang"><option value="eng">英文及数字</option><option value="chi_sim+eng">简体中文＋英文</option></select></label>
+                    <button class="btn" id="sr-convert" type="button" disabled>转换为表格</button>
+                    <button class="btn" id="sr-cancel" type="button" disabled>取消转换</button>
+                </div>
+                <p class="hint">一次一张，PNG / JPEG / WebP ≤15 MiB，解码尺寸 ≤20 MP。工作图 ≤6 MP、最长边 4096 px；首次转换会加载本站引擎和语言资源，可能较大，失败后可重试。</p>
+                <p id="sr-status" class="sr-status" role="status" aria-live="polite">未导入图片；也可手工创建空表。</p>
+                <p id="sr-image-info" class="hint"></p>
+            </div>
+            <div class="sr-layout">
+                <section class="paper-card param-block sr-image-panel" aria-label="原图与结构校对">
+                    <h2>2. 原图与结构校正</h2>
+                    <div class="sr-toolbar">
+                        <label>预览操作 <select id="sr-preview-mode"><option value="view">查看 / 定位来源</option><option value="crop">拖动矩形裁剪</option></select></label>
+                        <button class="btn" id="sr-crop-reset" type="button" disabled>重置裁剪</button>
+                    </div>
+                    <canvas id="sr-preview" width="640" height="360" aria-label="原图预览，拖动裁剪，也可在下方输入坐标"></canvas>
+                    <fieldset id="sr-crop-controls" disabled>
+                        <legend>裁剪坐标（原图像素）</legend>
+                        <div class="sr-toolbar">
+                            <label>X <input id="sr-crop-x" type="number" value="0" min="0"></label><label>Y <input id="sr-crop-y" type="number" value="0" min="0"></label>
+                            <label>宽 <input id="sr-crop-width" type="number" min="1" value="1"></label><label>高 <input id="sr-crop-height" type="number" min="1" value="1"></label>
+                            <button class="btn" id="sr-crop-apply" type="button">应用裁剪</button>
+                        </div>
+                    </fieldset>
+                    <fieldset id="sr-grid-controls" disabled>
+                        <legend>结构校正（复用已有 OCR 词框）</legend>
+                        <label>列边界 X <input id="sr-grid-x" type="text" placeholder="递增坐标，例如 0, 200, 400"></label>
+                        <label>行边界 Y <input id="sr-grid-y" type="text" placeholder="递增坐标，例如 0, 80, 160"></label>
+                        <p class="hint">坐标相对于裁剪缩放后的工作图；首尾是外边界。修改数值移动分隔线，插入/删除数值增删分隔线，严格递增且间距 ≥1 px。</p>
+                        <div class="sr-toolbar"><button class="btn" id="sr-grid-preview" type="button">预览分隔线</button><button class="btn" id="sr-grid-apply" type="button">确认重新组表</button></div>
+                    </fieldset>
+                    <p class="hint">无线表完全空白的行列无法可靠推断，可在编辑区增补。初始表不还原截图原底色；词框与边界仅用于人工核对。</p>
+                    <details><summary>待核对及未归属文字 <span id="sr-issue-count"></span></summary><div id="sr-issues"></div></details>
+                </section>
+                <section class="paper-card param-block sr-editor-panel" aria-label="结果表编辑器">
+                    <h2>3. 表格编辑</h2>
+                    <p id="sr-origin" class="hint"></p><p id="sr-save" class="hint" role="status"></p>
+                    <fieldset id="sr-manual-controls">
+                        <legend>手工创建空表（不是 OCR 识别结果）</legend>
+                        <div class="sr-toolbar"><label>行 <input id="sr-rows" type="number" value="3" min="1" max="200"></label><label>列 <input id="sr-cols" type="number" value="3" min="1" max="50"></label><button class="btn" id="sr-create" type="button">创建空表</button></div>
+                    </fieldset>
+                    <div class="sr-toolbar"><button class="btn" id="sr-undo" type="button" disabled>撤销</button><button class="btn" id="sr-redo" type="button" disabled>重做</button></div>
+                    <fieldset id="sr-edit-controls" disabled>
+                        <legend>选区与编辑操作</legend>
+                        <div class="sr-toolbar"><label><input id="sr-header" type="checkbox" checked> 首行为表头</label></div>
+                        <div class="sr-toolbar"><label>行操作 <select id="sr-row-action"><option value="up">上移</option><option value="down">下移</option><option value="to">移动到指定行</option><option value="before">在前面插入</option><option value="after">在后面插入</option><option value="delete">删除选中完整行</option></select></label><label>目标行 <input id="sr-row-to" type="number" value="1" min="1"></label><button class="btn" id="sr-row-apply" type="button">执行行操作</button></div>
+                        <div class="sr-toolbar"><label>列操作 <select id="sr-col-action"><option value="up">左移</option><option value="down">右移</option><option value="to">移动到指定列</option><option value="before">在前面插入</option><option value="after">在后面插入</option><option value="delete">删除选中完整列</option></select></label><label>目标列 <input id="sr-col-to" type="number" value="1" min="1"></label><button class="btn" id="sr-col-apply" type="button">执行列操作</button></div>
+                        <div class="sr-toolbar"><label>预设底色 <select id="sr-palette"><option value="#FFF2CC">浅黄</option><option value="#D9EAD3">浅绿</option><option value="#CFE2F3">浅蓝</option><option value="#F4CCCC">浅红</option><option value="#434343">深灰</option></select></label><label>自定义 RGB <input id="sr-fill" type="color" value="#fff2cc"></label><button class="btn" id="sr-fill-apply" type="button">应用底色</button><button class="btn" id="sr-fill-clear" type="button">清除底色</button></div>
+                        <label>同文填充 <textarea id="sr-fill-text" rows="2" placeholder="文字应用到整个选区，支持换行"></textarea></label>
+                        <div class="sr-toolbar"><label>填充模式 <select id="sr-fill-mode"><option value="all">全部覆盖</option><option value="empty">只填空白（仅空串）</option></select></label><button class="btn" id="sr-text-apply" type="button">应用文字</button><button class="btn" id="sr-text-clear" type="button">清除文字</button><button class="btn" id="sr-reviewed" type="button">选区已核对</button></div>
+                    </fieldset>
+                    <p class="hint">单击选格，Shift 扩选，点击行号/列号选整行/整列。双击、F2 或直接输入编辑；Enter 提交，Shift+Enter 换行，Esc 取消，Tab 移动。最多 200×50 且 ≤5,000 格，单格 ≤2,000 字符、总文字 ≤500,000 字符。</p>
+                    <p id="sr-selection" class="hint"></p>
+                    <div id="sr-table-wrap" class="sr-table-wrap"><table id="sr-table" role="grid" aria-label="可编辑结果表"></table></div>
+                    <div id="sr-source" class="hint"></div>
+                    <h2>4. 复制与下载</h2>
+                    <fieldset id="sr-export-controls" disabled><legend>导出完整表格</legend><div class="sr-toolbar">
+                        <button class="btn" id="sr-copy-excel" type="button">复制 Excel 格式</button><button class="btn" id="sr-xlsx" type="button">下载 .xlsx</button><button class="btn" id="sr-copy-md" type="button">复制 Markdown</button><button class="btn" id="sr-copy-tex" type="button">复制 LaTeX</button>
+                    </div></fieldset>
+                    <p class="hint">Excel / WPS 粘贴请选择保留源格式；TSV 兜底可能显示保护用的前导单引号，精确保真请下载 .xlsx（全部按文本写入）。Markdown 不支持底色；LaTeX 需 XeLaTeX / ctex 及 xcolor[table]。</p>
+                    <label id="sr-fallback-label" hidden>复制失败，请手工选取导出文本<textarea id="sr-fallback" rows="8" readonly></textarea></label>
+                </section>
+            </div>
+        </section>
     </main>
 
     <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
@@ -234,6 +316,10 @@
 
     <script src="../../js/common.js"></script>
     <script src="script.js"></script>
+    <script src="result-core.js"></script>
+    <script src="result-ocr.js"></script>
+    <script src="result-editor.js"></script>
+    <script src="page.js"></script>
     <div id="copyHolder" aria-hidden="true"></div>
 </body>
 </html>

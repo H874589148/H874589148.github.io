@@ -1,0 +1,170 @@
+{
+  "format": 1,
+  "languageLicense": {
+    "upstream": "https://github.com/naptha/tessdata/blob/gh-pages/LICENSE",
+    "license": "Apache-2.0",
+    "note": "训练数据上游许可证为 Apache-2.0；npm 包元数据的 MIT 声明另行原样保留，未分发包内其他代码。"
+  },
+  "resources": [
+    {
+      "file": "lib/ocr/tesseract/6.0.1/tesseract.min.js",
+      "package": "tesseract.js",
+      "version": "6.0.1",
+      "source": "https://registry.npmjs.org/tesseract.js/-/tesseract.js-6.0.1.tgz",
+      "member": "dist/tesseract.min.js",
+      "packageIntegrity": "sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==",
+      "bytes": 62961,
+      "sha256": "10fff78484067759c43028a02a72d76d0b90eb17302bb23b58a9ec5410bc928b"
+    },
+    {
+      "file": "lib/ocr/tesseract/6.0.1/worker.min.js",
+      "package": "tesseract.js",
+      "version": "6.0.1",
+      "source": "https://registry.npmjs.org/tesseract.js/-/tesseract.js-6.0.1.tgz",
+      "member": "dist/worker.min.js",
+      "packageIntegrity": "sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==",
+      "bytes": 111162,
+      "sha256": "38645599043239c0eb6db08a6504a92dcdc292200535f3e9339cd77c4443b842"
+    },
+    {
+      "file": "lib/ocr/core/6.0.0/tesseract-core-lstm.wasm.js",
+      "package": "tesseract.js-core",
+      "version": "6.0.0",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz",
+      "member": "tesseract-core-lstm.wasm.js",
+      "packageIntegrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "bytes": 3954181,
+      "sha256": "775a35df6f2ae100e02609443e6bd5cafcd07983dd6175454ca4a432a7730687"
+    },
+    {
+      "file": "lib/ocr/core/6.0.0/tesseract-core-lstm.wasm",
+      "package": "tesseract.js-core",
+      "version": "6.0.0",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz",
+      "member": "tesseract-core-lstm.wasm",
+      "packageIntegrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "bytes": 2871085,
+      "sha256": "220e2e87551edccb85519796a170469f8ab2a8055216789e3b8b1ada18b7bc2b"
+    },
+    {
+      "file": "lib/ocr/core/6.0.0/tesseract-core-simd-lstm.wasm.js",
+      "package": "tesseract.js-core",
+      "version": "6.0.0",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz",
+      "member": "tesseract-core-simd-lstm.wasm.js",
+      "packageIntegrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "bytes": 3954569,
+      "sha256": "9d7c43fb206dc9f48475228b46bf35f888fa9e6259da2e67d5a75c77049f2dc7"
+    },
+    {
+      "file": "lib/ocr/core/6.0.0/tesseract-core-simd-lstm.wasm",
+      "package": "tesseract.js-core",
+      "version": "6.0.0",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz",
+      "member": "tesseract-core-simd-lstm.wasm",
+      "packageIntegrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "bytes": 2871377,
+      "sha256": "187d76742dfc0d8929f0b49a619f145bb6370730776c7bd0d3e20c6b2098808d"
+    },
+    {
+      "file": "lib/ocr/lang/eng.traineddata.gz",
+      "package": "@tesseract.js-data/eng",
+      "version": "1.0.0",
+      "source": "https://registry.npmjs.org/@tesseract.js-data/eng/-/eng-1.0.0.tgz",
+      "member": "4.0.0_best_int/eng.traineddata.gz",
+      "packageIntegrity": "sha512-mbTumm6KQPUHyzTPQaF3ObXYnx0SqqfV2nabqFVQBwD6Kl7PhGSLSzOlfFTWy0P3BjghaSKA2W9GB19Jk+ZcTg==",
+      "bytes": 2952873,
+      "sha256": "45b4cb346724ac1774f1c36f42f182b887bcdb28ebe63e6fff90ac41f3fcff91"
+    },
+    {
+      "file": "lib/ocr/lang/chi_sim.traineddata.gz",
+      "package": "@tesseract.js-data/chi_sim",
+      "version": "1.0.0",
+      "source": "https://registry.npmjs.org/@tesseract.js-data/chi_sim/-/chi_sim-1.0.0.tgz",
+      "member": "4.0.0_best_int/chi_sim.traineddata.gz",
+      "packageIntegrity": "sha512-iuErURkPbECDUazgsLn/r3c+tU2y5o5S/w14d0A/YiagfsjYyZKgTo75RUpsGJ311qtu0dIX4hqnXAAjmqf2CA==",
+      "bytes": 1718768,
+      "sha256": "b8a23f10c7de500891eb458a8adc9cc58ab7f242f08b7d149f5e9aea4ad5db7c"
+    },
+    {
+      "file": "lib/ocr/tesseract/6.0.1/LICENSE.md",
+      "package": "tesseract.js",
+      "version": "6.0.1",
+      "source": "https://registry.npmjs.org/tesseract.js/-/tesseract.js-6.0.1.tgz",
+      "member": "LICENSE.md",
+      "packageIntegrity": "sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==",
+      "bytes": 11357,
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+    },
+    {
+      "file": "lib/ocr/tesseract/6.0.1/tesseract.min.js.LICENSE.txt",
+      "package": "tesseract.js",
+      "version": "6.0.1",
+      "source": "https://registry.npmjs.org/tesseract.js/-/tesseract.js-6.0.1.tgz",
+      "member": "dist/tesseract.min.js.LICENSE.txt",
+      "packageIntegrity": "sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==",
+      "bytes": 149,
+      "sha256": "cdf963ced7d25a0f98901a547647b4d6e2dbe0197fd78c87a059a87b0e542fe2"
+    },
+    {
+      "file": "lib/ocr/tesseract/6.0.1/worker.min.js.LICENSE.txt",
+      "package": "tesseract.js",
+      "version": "6.0.1",
+      "source": "https://registry.npmjs.org/tesseract.js/-/tesseract.js-6.0.1.tgz",
+      "member": "dist/worker.min.js.LICENSE.txt",
+      "packageIntegrity": "sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==",
+      "bytes": 466,
+      "sha256": "45f54171aeaa1d10c0c1a66f374b7bba1f02472b1487fbe892eec04f840002ac"
+    },
+    {
+      "file": "lib/ocr/core/6.0.0/LICENSE",
+      "package": "tesseract.js-core",
+      "version": "6.0.0",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz",
+      "member": "LICENSE",
+      "packageIntegrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "bytes": 11358,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+    },
+    {
+      "file": "lib/ocr/lang/eng/package.json",
+      "package": "@tesseract.js-data/eng",
+      "version": "1.0.0",
+      "source": "https://registry.npmjs.org/@tesseract.js-data/eng/-/eng-1.0.0.tgz",
+      "member": "package.json",
+      "packageIntegrity": "sha512-mbTumm6KQPUHyzTPQaF3ObXYnx0SqqfV2nabqFVQBwD6Kl7PhGSLSzOlfFTWy0P3BjghaSKA2W9GB19Jk+ZcTg==",
+      "bytes": 530,
+      "sha256": "b603509212196b5d09e10519bf252c1e344b79704d065e0d62886846f8554c80"
+    },
+    {
+      "file": "lib/ocr/lang/eng/APACHE-2.0.txt",
+      "package": "tesseract.js-core",
+      "version": "6.0.0",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz",
+      "member": "LICENSE",
+      "packageIntegrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "bytes": 11358,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+    },
+    {
+      "file": "lib/ocr/lang/chi_sim/package.json",
+      "package": "@tesseract.js-data/chi_sim",
+      "version": "1.0.0",
+      "source": "https://registry.npmjs.org/@tesseract.js-data/chi_sim/-/chi_sim-1.0.0.tgz",
+      "member": "package.json",
+      "packageIntegrity": "sha512-iuErURkPbECDUazgsLn/r3c+tU2y5o5S/w14d0A/YiagfsjYyZKgTo75RUpsGJ311qtu0dIX4hqnXAAjmqf2CA==",
+      "bytes": 534,
+      "sha256": "cc520ba9b3ced7b1fb69d7d4c0cea43b3dc9eb5e0814662e9be028c8a5cc36c6"
+    },
+    {
+      "file": "lib/ocr/lang/chi_sim/APACHE-2.0.txt",
+      "package": "tesseract.js-core",
+      "version": "6.0.0",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz",
+      "member": "LICENSE",
+      "packageIntegrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "bytes": 11358,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+    }
+  ]
+}

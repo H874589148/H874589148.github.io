@@ -1,0 +1,113 @@
+{
+  "source": "固定合成截图，非用户截图；字体及像素以随附 PNG 为准。",
+  "fixtures": [
+    {
+      "file": "lined.png",
+      "lang": "eng",
+      "rows": [
+        [
+          "Metric",
+          "Value",
+          "Unit"
+        ],
+        [
+          "Voltage",
+          "-0.25",
+          "V"
+        ],
+        [
+          "Current",
+          "00123",
+          "uA"
+        ],
+        [
+          "Gain",
+          "100",
+          "dB"
+        ]
+      ],
+      "sha256": "c9ebc6a83180cd72423a4c783b3cf4838220c23705de7ec982f6113fb3a4b04c"
+    },
+    {
+      "file": "wireless.png",
+      "lang": "eng",
+      "rows": [
+        [
+          "Metric",
+          "Value",
+          "Unit"
+        ],
+        [
+          "Voltage",
+          "-0.25",
+          "V"
+        ],
+        [
+          "Current",
+          "00123",
+          "uA"
+        ],
+        [
+          "Gain",
+          "100",
+          "dB"
+        ]
+      ],
+      "sha256": "17192eccbb2c8dcb4b6894969484f9eb05784038a01d91ab66ceec295de8fbdd"
+    },
+    {
+      "file": "dark.png",
+      "lang": "eng",
+      "rows": [
+        [
+          "Metric",
+          "Value",
+          "Unit"
+        ],
+        [
+          "Voltage",
+          "-0.25",
+          "V"
+        ],
+        [
+          "Current",
+          "00123",
+          "uA"
+        ],
+        [
+          "Gain",
+          "100",
+          "dB"
+        ]
+      ],
+      "sha256": "19c0a8fa249c37a42bb825737533a90d08c482841e02307091dca0dbfdde96ef"
+    },
+    {
+      "file": "chinese.png",
+      "lang": "chi_sim+eng",
+      "rows": [
+        [
+          "指标",
+          "数值",
+          "单位"
+        ],
+        [
+          "电压",
+          "-0.25",
+          "V"
+        ],
+        [
+          "电流",
+          "00123",
+          "uA"
+        ],
+        [
+          "增益",
+          "100",
+          "dB"
+        ]
+      ],
+      "sha256": "c717178d1ef2031b0452e2d42f294f030e0200bb77c7a25c70e429e4cb4ab24d"
+    }
+  ]
+}

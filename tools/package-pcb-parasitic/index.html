@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>封装/PCB寄生估算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+    <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']]},svg:{fontCache:'global'}};</script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body class="pp-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / 封装/PCB寄生估算</span>
+    </nav>
+    <main class="container-wide">
+        <h1>封装/PCB 寄生估算</h1>
+        <p class="tool-desc">键合线与微带走线的电阻、电感一阶估算。修改参数实时计算，示例表与计算器共用同一公式。</p>
+        <div class="notice">默认值仅作演示。结果用于方案早期比较，不替代封装/PCB 电磁场求解、厂商叠层阻抗计算或实测。</div>
+        <p id="ppStorageStatus" class="hint" role="status">参数仅保存在本机浏览器。</p>
+
+        <div class="pp-tabs" role="tablist" aria-label="寄生估算类型">
+            <button class="btn" id="bondTab" type="button" role="tab" aria-controls="bondPanel" aria-selected="true">封装打线</button>
+            <button class="btn" id="pcbTab" type="button" role="tab" aria-controls="pcbPanel" aria-selected="false" tabindex="-1">PCB 走线</button>
+        </div>
+
+        <section id="bondPanel" role="tabpanel" aria-labelledby="bondTab">
+            <div class="paper-card pp-card">
+                <h2>单根键合线：直流电阻与低频自感</h2>
+                <p>适用于芯片焊盘到封装焊盘、引线或基板的单根圆形键合线估算。长度 \(l\) 应输入实际弧线的展开长度，直径为 \(d\)。</p>
+                <div class="pp-formula">
+                    <p>\[R=\frac{4\rho l}{\pi d^2}\]</p>
+                    <p>\[L=\frac{\mu_0l}{2\pi}\left[\ln\left(\frac{4l}{d}\right)+\frac{\mu_r}{4}\tanh\left(\frac{4l}{d}\right)-1\right]\]</p>
+                    <p class="hint">\(\rho=2.4\times10^{-8}\,\Omega\cdot\mathrm{m}\)，\(\mu_0=4\pi\times10^{-7}\,\mathrm{H/m}\)，\(\mu_r=1\)；核心计算中长度统一换算为米。</p>
+                </div>
+                <div class="pp-workbench">
+                    <section class="pp-inputs" aria-labelledby="bondInputTitle">
+                        <h3 id="bondInputTitle">键合参数</h3>
+                        <div id="bondFields" class="pp-fields"></div>
+                        <button class="btn" id="bondReset" type="button">恢复本页默认值</button>
+                        <p id="bondError" class="pp-error" role="alert"></p>
+                    </section>
+                    <section class="pp-results" aria-labelledby="bondResultTitle">
+                        <h3 id="bondResultTitle">实时结果</h3>
+                        <div class="pp-result-grid">
+                            <div class="pp-metric"><span>寄生电阻 R</span><strong id="bond-resistance">—</strong></div>
+                            <div class="pp-metric"><span>寄生电感 L</span><strong id="bond-inductance">—</strong></div>
+                        </div>
+                        <p class="pp-intermediate">几何核对：\(l/d=\) <output id="bond-ratio">—</output></p>
+                    </section>
+                </div>
+                <p class="hint">不包含弧形修正、附近回流导体、相邻线互感、焊点/封装引脚或趋肤效应。多根并联线的实际总电感不能仅按数量直接相除。</p>
+            </div>
+            <div class="paper-card pp-card">
+                <h2>常见参数查找表</h2>
+                <div class="pp-table-wrap">
+                    <table class="sketch-table pp-example-table">
+                        <caption>结果由上方同一组公式实时生成；点击“应用此组”可继续调整。</caption>
+                        <thead><tr><th scope="col">方案</th><th scope="col">l (mm)</th><th scope="col">d (µm)</th><th scope="col">R</th><th scope="col">L</th><th scope="col">操作</th></tr></thead>
+                        <tbody id="bondExamples"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="pcbPanel" role="tabpanel" aria-labelledby="pcbTab" hidden>
+            <div class="paper-card pp-card">
+                <h2>表面微带线：电阻与分布电感</h2>
+                <p>假设走线下方存在完整参考平面。\(l,w,t\) 分别为走线长度、宽度和铜厚，\(h\) 为走线到参考平面的介质厚度，\(\varepsilon_r\) 为介质相对介电常数。</p>
+                <div class="pp-formula">
+                    <p>\[R_{dc}=\frac{\rho_{Cu}l}{wt},\qquad \delta=\sqrt{\frac{\rho_{Cu}}{\pi f\mu_0}}\]</p>
+                    <p>\[Z_0=\frac{87}{\sqrt{\varepsilon_r+1.41}}\ln\left(\frac{5.98h}{0.8w+t}\right),\qquad \varepsilon_{eff}=0.475\varepsilon_r+0.67\]</p>
+                    <p>\[L'=\frac{Z_0\sqrt{\varepsilon_{eff}}}{c},\qquad L=L'l\]</p>
+                    <p>当 \(2\delta\geq\min(w,t)\) 时，\(R_{ac}=R_{dc}\)；否则</p>
+                    <p>\[A_\delta=2\delta(w+t)-4\delta^2,\qquad R_{ac}=\frac{\rho_{Cu}l}{A_\delta}\]</p>
+                    <p class="hint">\(\rho_{Cu}=1.72\times10^{-8}\,\Omega\cdot\mathrm{m}\)（20 ℃近似），\(\mu_r=1\)，\(c=299792458\,\mathrm{m/s}\)。</p>
+                </div>
+                <div class="pp-workbench">
+                    <section class="pp-inputs" aria-labelledby="pcbInputTitle">
+                        <h3 id="pcbInputTitle">走线与叠层参数</h3>
+                        <div id="pcbFields" class="pp-fields"></div>
+                        <p class="hint">铜厚 \(1\,\mathrm{oz}\approx35\,\mathrm{\mu m}\) 是常见名义换算。频率指关注的正弦频率，不是数字信号的开关周期。</p>
+                        <button class="btn" id="pcbReset" type="button">恢复本页默认值</button>
+                        <p id="pcbError" class="pp-error" role="alert"></p>
+                    </section>
+                    <section class="pp-results" aria-labelledby="pcbResultTitle">
+                        <h3 id="pcbResultTitle">实时结果</h3>
+                        <div class="pp-result-grid">
+                            <div class="pp-metric"><span>直流电阻 R<sub>dc</sub></span><strong id="pcb-dcResistance">—</strong></div>
+                            <div class="pp-metric"><span>趋肤估算 R<sub>ac</sub>(f)</span><strong id="pcb-acResistance">—</strong></div>
+                            <div class="pp-metric"><span>单位长度电感 L′</span><strong id="pcb-inductancePerMeter">—</strong></div>
+                            <div class="pp-metric"><span>整段电感 L</span><strong id="pcb-inductance">—</strong></div>
+                        </div>
+                        <dl class="pp-details">
+                            <div><dt>特性阻抗 Z₀</dt><dd id="pcb-impedance">—</dd></div>
+                            <div><dt>有效介电常数 ε<sub>eff</sub></dt><dd id="pcb-effectivePermittivity">—</dd></div>
+                            <div><dt>趋肤深度 δ</dt><dd id="pcb-skinDepth">—</dd></div>
+                            <div><dt>电阻计算分支</dt><dd id="pcb-skinMode">—</dd></div>
+                        </dl>
+                    </section>
+                </div>
+                <p class="hint">R 仅计算信号铜箔本身，不含回流平面、过孔、焊盘及接触电阻。Rac 是一阶趋肤近似，未含电流拥挤、邻近效应和铜面粗糙度，实际高频电阻可能更高。电感采用 IPC-2141A 经验闭式模型；极端几何、阻焊、色散及参考平面不连续会降低准确性。</p>
+            </div>
+            <div class="paper-card pp-card">
+                <h2>常见参数查找表</h2>
+                <div class="pp-table-wrap">
+                    <table class="sketch-table pp-example-table pp-pcb-table">
+                        <caption>Rac 按每行频率计算；L 是整段走线电感，不是单位长度电感。</caption>
+                        <thead><tr><th scope="col">方案</th><th scope="col">l (mm)</th><th scope="col">w (mm)</th><th scope="col">t (oz)</th><th scope="col">h (mm)</th><th scope="col">εr</th><th scope="col">f</th><th scope="col">Rdc</th><th scope="col">Rac</th><th scope="col">L</th><th scope="col">操作</th></tr></thead>
+                        <tbody id="pcbExamples"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <details class="paper-card pp-card pp-references">
+            <summary>公式来源与模型说明</summary>
+            <ul>
+                <li>E. B. Rosa，<a href="https://nvlpubs.nist.gov/nistpubs/bulletin/04/nbsbulletinv4n2p301_a2b.pdf" target="_blank" rel="noopener noreferrer">直导线自感与互感</a>；键合线采用需求指定的低频圆线形式。</li>
+                <li>IPC-2141A，表面微带经验公式；准 TEM 下由特性阻抗和有效介电常数得到分布电感。</li>
+                <li><a href="https://www.sigcon.com/Pubs/misc/skineffect-calculations.htm" target="_blank" rel="noopener noreferrer">Howard Johnson：Skin Effect Calculations</a>，趋肤深度及参考平面邻近效应说明。</li>
+            </ul>
+        </details>
+    </main>
+    <footer class="site-footer">
+        <p>EE工具箱 &copy; 2026</p>
+        <div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div>
+    </footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="parasitic-core.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

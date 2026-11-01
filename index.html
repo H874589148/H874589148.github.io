@@ -234,6 +234,11 @@
                 <div class="card-title">版图寄生计算</div>
                 <div class="card-desc">走线段电阻与对衬底电容累加，支持逐段独立电流，IR 压降实时显示</div>
             </a>
+            <a href="tools/package-pcb-parasitic/index.html" class="nav-card">
+                <div class="card-icon" id="icon-parasitic"></div>
+                <div class="card-title">封装/PCB寄生估算</div>
+                <div class="card-desc">键合线与微带走线 R/L 实时估算，含趋肤效应、公式边界和常见参数查找表</div>
+            </a>
         </div>
 
         <!-- ========== 绘图工具 ========== -->
@@ -306,8 +311,8 @@
             </a>
             <a href="tools/sim-log/index.html" class="nav-card">
                 <div class="card-icon" id="icon-simlog"></div>
-                <div class="card-title">仿真结果规范收集</div>
-                <div class="card-desc">仿真设置与后仿寄生提参一键生成规范记录：字段名 / 值独立样式配置，支持 Word、Markdown、LaTeX 三格式复制</div>
+                <div class="card-title">仿真结果收集</div>
+                <div class="card-desc">仿真设置格式化与截图本地 OCR 转表格：校对编辑、行列调整及填色，支持 Word / Excel / Markdown / LaTeX 复制与真实 .xlsx 下载</div>
             </a>
             <a href="tools/code-formatter.html" class="nav-card">
                 <div class="card-icon" id="icon-format"></div>
@@ -426,6 +431,7 @@
                     'icon-calculator': 'calculator',
                     'icon-chip-thermal': 'chipThermal',
                     'icon-wire': 'wire',
+                    'icon-parasitic': 'parasitic',
                     'icon-lsq': 'lsq',
                     'icon-schematic': 'schematic',
                     'icon-tt': 'tt',
@@ -470,12 +476,13 @@
                     'tools/least-squares/': '最小二乘 拟合 线性 回归 fit 直线',
                     'tools/layout-match/': '版图 失配 梯度 匹配 layout inl dnl 阵列',
                     'tools/wire-res/': '版图 寄生 阻抗 电阻 电容 衬底 走线 方块 wire ir 压降 metal',
+                    'tools/package-pcb-parasitic/': '封装 pcb 寄生 打线 键合线 金线 微带 走线 电阻 电感 趋肤 集肤 参考平面 叠层 package bond wire microstrip skin effect',
                     'tools/latex-render/': 'latex 公式 渲染 tex svg 导出 符号',
                     'tools/base-converter/': '进制 二进制 八进制 十六进制 hex bin oct dec 转换',
                     'tools/complement-code/': '原码 反码 补码 位宽 有符号',
                     'tools/gaussian/': '正态 高斯 分布 概率 置信区间 gaussian',
                     'tools/random-gen/': '随机数 骰子 随机 random dice 抽取',
-                    'tools/sim-log/': '仿真 结果 记录 收集 规范 corner 蒙特卡罗 monte carlo pvt tt 前仿 后仿 模板 寄生 提参 提取 parasitic extraction rc cc 样式 配置 加粗 斜体 颜色',
+                    'tools/sim-log/': '仿真结果规范收集 仿真 设置格式化 结果格式化 图片 截图 表格 ocr excel xlsx 结果 记录 收集 规范 corner 蒙特卡罗 monte carlo pvt tt 前仿 后仿 模板 寄生 提参 提取 parasitic extraction rc cc 样式 配置 加粗 斜体 颜色',
                     'tools/circuit-sketch/': '电路 示意图 原理图 schematic 编辑器 绘图 visio 运放 连线 论文 razavi 器件',
                     'tools/truth-table/': '真值表 逻辑 布尔 表达式 门电路 卡诺 truth table logic 组合逻辑',
                     'tools/transfer-function/': '传递函数 跨导 gm 小信号 电压增益 跨阻 级联 并联 耦合电容 零极点 频响 bode transfer function MNA',
