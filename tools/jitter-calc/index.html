@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('ee-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="时间、相位与 UI 抖动换算，相噪积分，整数 N 电荷泵 PLL 稳定性与噪声，ADC SNR/ENOB 和 TIE 统计。">
+    <title>Jitter 综合计算 - EE工具箱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/layout.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="style.css">
+    <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']]},svg:{fontCache:'global'}};</script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body class="jitter-page">
+    <nav class="top-nav">
+        <a class="back-btn" href="../../index.html">&larr; <span class="back-text">返回主页</span></a>
+        <a href="../../index.html">EE工具箱</a>
+        <span class="breadcrumb">计算工具 / Jitter 综合计算</span>
+    </nav>
+    <main class="container-wide">
+        <h1>Jitter 综合计算</h1>
+        <p class="tool-desc">从单位换算、相噪和 PLL 到 ADC 性能与 TIE 记录统计。所有计算在本机完成，不上传输入或测量数据。</p>
+        <div class="notice">结果是指定模型和频段下的 RMS 估算，不等同于周期抖动、周期间抖动或 BER 峰峰值。离散杂散、AM 噪声、电源耦合和仪器底噪需另行处理。</div>
+        <p id="jitterStorageStatus" class="hint" role="status">有效参数仅保存在本机浏览器；TIE 原文不保存。</p>
+
+        <div class="jitter-tabs" role="tablist" aria-label="Jitter 计算类型">
+            <button class="btn" id="convertTab" type="button" role="tab" aria-controls="convertPanel" aria-selected="true">换算与预算</button>
+            <button class="btn" id="phaseTab" type="button" role="tab" aria-controls="phasePanel" aria-selected="false" tabindex="-1">相噪积分</button>
+            <button class="btn" id="pllTab" type="button" role="tab" aria-controls="pllPanel" aria-selected="false" tabindex="-1">PLL 分析</button>
+            <button class="btn" id="adcTab" type="button" role="tab" aria-controls="adcPanel" aria-selected="false" tabindex="-1">ADC 性能</button>
+            <button class="btn" id="tieTab" type="button" role="tab" aria-controls="tiePanel" aria-selected="false" tabindex="-1">TIE 统计</button>
+        </div>
+
+        <section id="convertPanel" role="tabpanel" aria-labelledby="convertTab">
+            <div class="jitter-actions">
+                <button class="btn" id="convertReset" type="button">恢复本页默认</button>
+                <button class="btn" id="convertCopy" type="button">复制结果摘要</button>
+                <button class="btn" id="convertExport" type="button">导出 CSV</button>
+            </div>
+            <section class="paper-card jitter-card">
+                <h2>时间、相位与 UI 双向换算</h2>
+                <p>载波 \(f_c\) 用于相位换算，比特率 \(R_b\) 用于 UI 换算：\(\sigma_\phi=2\pi f_c\sigma_t\)，\(\sigma_{UI}=R_b\sigma_t\)。</p>
+                <div class="jitter-convert-row">
+                    <label for="convertSource">输入量</label>
+                    <select id="convertSource"><option value="time">时间</option><option value="rad">相位 rad</option><option value="deg">相位 °</option><option value="ui">UI</option><option value="percent">%UI</option></select>
+                    <input id="convert-value" type="text" inputmode="decimal" value="1" aria-label="待换算数值">
+                    <select id="convert-unit" aria-label="待换算单位"></select>
+                </div>
+                <div id="convertFields" class="jitter-fields"></div>
+                <div class="jitter-result-grid">
+                    <div class="jitter-metric"><span>时间 RMS</span><strong id="convert-seconds">—</strong></div>
+                    <div class="jitter-metric"><span>相位 RMS</span><strong id="convert-phaseRad">—</strong></div>
+                    <div class="jitter-metric"><span>相位 RMS</span><strong id="convert-phaseDeg">—</strong></div>
+                    <div class="jitter-metric"><span>UI RMS</span><strong id="convert-ui">—</strong></div>
+                    <div class="jitter-metric"><span>归一化 UI</span><strong id="convert-uiPercent">—</strong></div>
+                </div>
+            </section>
+            <section class="paper-card jitter-card">
+                <h2>不相关 RMS 预算</h2>
+                <p>以逗号、分号或空白分隔最多 16 个分量。仅合并不相关且未重复包含的噪声：\(\sigma_t=\sqrt{\sum_i\sigma_i^2}\)，\(\sigma_{remaining}=\sqrt{\sigma_{target}^2-\sum_i\sigma_i^2}\)。</p>
+                <div id="rssFields" class="jitter-fields"></div>
+                <dl class="jitter-details">
+                    <div><dt>合成 RMS</dt><dd id="convert-rssTotal">—</dd></div>
+                    <div><dt>剩余预算</dt><dd id="convert-rssRemaining">—</dd></div>
+                    <div><dt>预算状态</dt><dd id="convert-rssStatus">—</dd></div>
+                </dl>
+            </section>
+            <div class="jitter-two-columns">
+                <section class="paper-card jitter-card">
+                    <h2>电压噪声到边沿抖动</h2>
+                    <p>\(\sigma_t\approx v_{n,rms}/|dv/dt|_{threshold}\)。输入必须是已经按带宽积分的电压噪声，不是 V/√Hz 谱密度。</p>
+                    <div id="edgeFields" class="jitter-fields"></div>
+                    <p class="jitter-intermediate">边沿时间 RMS：<output id="convert-edgeJitter">—</output></p>
+                </section>
+                <section class="paper-card jitter-card">
+                    <h2>理想倍频 / 分频</h2>
+                    <p>\(L_{out}=L_{in}+20\log_{10}M\)，相位 RMS 乘 \(M\)。同频段时间 RMS 不变；不含器件附加噪声，也不把频段自动平移。</p>
+                    <div id="scalingFields" class="jitter-fields"></div>
+                    <dl class="jitter-details"><div><dt>输出相噪</dt><dd id="convert-scaledNoise">—</dd></div><div><dt>输出相位 RMS</dt><dd id="convert-scaledPhase">—</dd></div></dl>
+                </section>
+            </div>
+            <p id="convertError" class="jitter-error" role="alert"></p><ul id="convertWarnings" class="jitter-warnings"></ul>
+        </section>
+
+        <section id="phasePanel" role="tabpanel" aria-labelledby="phaseTab" hidden>
+            <div class="jitter-actions"><button class="btn" id="phaseReset" type="button">恢复本页默认</button><button class="btn" id="phaseCopy" type="button">复制结果摘要</button><button class="btn" id="phaseExport" type="button">导出 CSV</button></div>
+            <section class="paper-card jitter-card">
+                <h2>SSB 相噪到频段 RMS 抖动</h2>
+                <p>\(S_{\phi,1}=2\cdot10^{L/10}\)，\(\sigma_\phi^2=2\int_{f_L}^{f_H}10^{L(f)/10}\,df\)，\(\sigma_t=\sigma_\phi/(2\pi f_c)\)。dB 对 \(\log f\) 插值，线性功率谱逐段解析积分，不外推。</p>
+                <div id="phaseFields" class="jitter-fields"></div>
+                <div class="jitter-text-head"><label for="phaseText">频偏 / SSB 相噪表</label><label>频偏单位 <select id="phaseOffsetUnit"><option>Hz</option><option>kHz</option><option>MHz</option></select></label></div>
+                <textarea id="phaseText" rows="8" spellcheck="false" aria-describedby="phaseImportHint"></textarea>
+                <p id="phaseImportHint" class="hint">两列 CSV/TXT，支持逗号、Tab、空白、科学计数法、UTF-8 BOM 和 # 注释；最多 2000 点、5 MiB。修改后点击解析。</p>
+                <div class="jitter-actions"><button class="btn btn-primary" id="phaseParse" type="button">解析并积分</button><button class="btn" id="phaseFlat" type="button">平坦谱示例</button><button class="btn" id="phaseShaped" type="button">斜率/底噪示例</button><label class="btn jitter-file">导入 CSV/TXT<input id="phaseFile" type="file" accept=".csv,.txt,text/csv,text/plain" hidden></label></div>
+                <p id="phaseError" class="jitter-error" role="alert"></p><ul id="phaseWarnings" class="jitter-warnings"></ul>
+            </section>
+            <section class="paper-card jitter-card">
+                <div class="jitter-result-grid"><div class="jitter-metric"><span>积分时间 RMS</span><strong id="phase-seconds">—</strong></div><div class="jitter-metric"><span>相位 RMS</span><strong id="phase-phaseRms">—</strong></div><div class="jitter-metric"><span>相位 RMS</span><strong id="phase-phaseDeg">—</strong></div><div class="jitter-metric"><span>单边带积分功率比</span><strong id="phase-ssbPower">—</strong></div></div>
+                <button class="btn btn-primary" id="phaseApplyAdc" type="button" disabled>确认为采样时钟并应用到 ADC</button>
+                <div class="jitter-chart-grid"><div class="jitter-chart"><canvas id="phaseNoiseChart" role="img" aria-label="输入相噪曲线"></canvas></div><div class="jitter-chart"><canvas id="phaseCumulativeChart" role="img" aria-label="累计 RMS 抖动曲线"></canvas></div></div>
+                <div class="jitter-table-wrap"><table class="sketch-table"><caption>逐段相位方差贡献</caption><thead><tr><th>下限 / Hz</th><th>上限 / Hz</th><th>方差 / rad²</th><th>占比</th></tr></thead><tbody id="phaseSegments"></tbody></table></div>
+            </section>
+        </section>
+
+        <section id="pllPanel" role="tabpanel" aria-labelledby="pllTab" hidden>
+            <div class="jitter-actions"><button class="btn" id="pllReset" type="button">恢复本页默认</button><button class="btn" id="pllCopy" type="button">复制结果摘要</button><button class="btn" id="pllExport" type="button">导出 CSV</button></div>
+            <section class="paper-card jitter-card">
+                <h2>整数 N 电荷泵 PLL：连续时间小信号模型</h2>
+                <p>拓扑 A 为 \(C_1\parallel(R_2+C_2)\) 二阶滤波器、三阶闭环；拓扑 B 在输出串联 \(R_3\) 并对地接 \(C_3\)，采用完整带负载网络。\(K_\phi=I_{cp}/2\pi\)，\(K_v=2\pi K_{vco}\)，\(T=K_\phi ZK_v/(sN)\)。</p>
+                <label class="jitter-select-label">滤波器拓扑 <select id="pllTopology"><option value="A">A：二阶滤波器 / 三阶闭环</option><option value="B">B：三阶滤波器 / 四阶闭环</option></select></label>
+                <div id="pllFields" class="jitter-fields jitter-pll-fields"></div>
+                <fieldset id="pllSources" class="jitter-sources"><legend>参与积分的噪声源</legend></fieldset>
+                <div class="jitter-two-columns">
+                    <div><div class="jitter-text-head"><label for="pllReferenceText">参考相噪表</label></div><textarea id="pllReferenceText" rows="6" spellcheck="false"></textarea></div>
+                    <div><div class="jitter-text-head"><label for="pllVcoText">VCO 相噪表</label></div><textarea id="pllVcoText" rows="6" spellcheck="false"></textarea></div>
+                </div>
+                <div class="jitter-text-head"><span>两张表的频偏单位</span><label>单位 <select id="pllOffsetUnit"><option>Hz</option><option>kHz</option><option>MHz</option></select></label></div>
+                <div class="jitter-actions"><button class="btn btn-primary" id="pllParse" type="button">解析相噪并计算 PLL</button></div>
+                <p class="hint">其他标量修改后 200 ms 计算；相噪文本修改后需点击上方按钮。积分上限不得超过 \(f_{PFD}/10\)，绘图频段独立设置。</p>
+                <p id="pllError" class="jitter-error" role="alert"></p><ul id="pllWarnings" class="jitter-warnings"></ul>
+            </section>
+            <section class="paper-card jitter-card">
+                <div class="jitter-result-grid"><div class="jitter-metric"><span>输出积分 RMS</span><strong id="pll-seconds">—</strong></div><div class="jitter-metric"><span>开环交越</span><strong id="pll-crossover">—</strong></div><div class="jitter-metric"><span>相位裕度</span><strong id="pll-phaseMargin">—</strong></div><div class="jitter-metric"><span>闭环 −3 dB 带宽</span><strong id="pll-bandwidth">—</strong></div></div>
+                <dl class="jitter-details"><div><dt>fPFD / fVCO / fout</dt><dd id="pll-frequencies">—</dd></div><div><dt>增益裕度</dt><dd id="pll-gainMargin">—</dd></div><div><dt>Routh–Hurwitz</dt><dd id="pll-stability">—</dd></div><div><dt>相位 RMS / 积分评估</dt><dd id="pll-phaseRms">—</dd></div></dl>
+                <button class="btn btn-primary" id="pllApplyAdc" type="button" disabled>确认模型有效并应用到 ADC</button>
+                <div id="pllFigure" class="circuit-figure-scroll jitter-figure" aria-label="PLL 功能框图与滤波器连接图"></div>
+                <div class="jitter-chart-grid"><div class="jitter-chart"><canvas id="pllLoopChart" role="img" aria-label="PLL 开环幅频响应"></canvas></div><div class="jitter-chart"><canvas id="pllPhaseChart" role="img" aria-label="PLL 开环相频响应"></canvas></div></div>
+                <div class="jitter-chart"><canvas id="pllNoiseChart" role="img" aria-label="PLL 输出 SSB 相噪"></canvas></div>
+                <div class="jitter-table-wrap"><table class="sketch-table"><caption>各噪声源积分贡献</caption><thead><tr><th>噪声源</th><th>相位方差 / rad²</th><th>时间 RMS</th><th>方差占比</th></tr></thead><tbody id="pllContributions"></tbody></table></div>
+            </section>
+        </section>
+
+        <section id="adcPanel" role="tabpanel" aria-labelledby="adcTab" hidden>
+            <div class="jitter-actions"><button class="btn" id="adcReset" type="button">恢复本页默认</button><button class="btn" id="adcCopy" type="button">复制结果摘要</button><button class="btn" id="adcExport" type="button">导出 CSV</button></div>
+            <section class="paper-card jitter-card">
+                <h2>时钟抖动对 ADC 的影响</h2>
+                <p>满量程正弦、小时间误差：\(\sigma_{total}=\sqrt{\sigma_{clock}^2+\sigma_{aperture}^2+\sigma_{buffer}^2}\)，\(SNR_j=-20\log_{10}(2\pi f_{in}\sigma_{total})\)。这里使用模拟输入频率 \(f_{in}\)，不是采样率。</p>
+                <label class="jitter-select-label">无抖动基线 <select id="adcMode"><option value="jitter">仅抖动</option><option value="ideal">理想 N 位 ADC</option><option value="snr">用户 SNR</option><option value="sinad">用户 SINAD</option></select></label>
+                <div id="adcFields" class="jitter-fields"></div>
+                <p class="hint">基线应与目标频率、带宽和满量程条件一致；aperture 若已包含在时钟或实测 SNR 中，不应重复计入。SNR 仅给噪声受限位数，ENOB 仅由 SINAD 推导。</p>
+                <p id="adcSource" class="jitter-source-status">当前使用手动输入，没有上游快照。</p>
+                <p id="adcError" class="jitter-error" role="alert"></p><ul id="adcWarnings" class="jitter-warnings"></ul>
+            </section>
+            <section class="paper-card jitter-card">
+                <div class="jitter-result-grid"><div class="jitter-metric"><span>总时间 RMS</span><strong id="adc-total">—</strong></div><div class="jitter-metric"><span>仅抖动 SNR</span><strong id="adc-snrJitter">—</strong></div><div class="jitter-metric"><span>合成性能</span><strong id="adc-performance">—</strong></div><div class="jitter-metric"><span id="adc-bitLabel">等效位数</span><strong id="adc-equivalentBits">—</strong></div></div>
+                <dl class="jitter-details"><div><dt>相对基线损失</dt><dd id="adc-loss">—</dd></div><div><dt>目标下总 RMS 预算</dt><dd id="adc-budgetTotal">—</dd></div><div><dt>扣除其他分量后的 clock 预算</dt><dd id="adc-budgetClock">—</dd></div><div><dt>固定分量下最大 fin</dt><dd id="adc-maxFin">—</dd></div></dl>
+                <div class="jitter-chart"><canvas id="adcChart" role="img" aria-label="ADC SNR 随模拟输入频率变化"></canvas></div>
+                <div class="jitter-table-wrap"><table class="sketch-table"><caption>当前抖动和基线下的频点结果</caption><thead><tr><th>fin</th><th>仅抖动 SNR</th><th>合成性能</th><th>等效位数</th></tr></thead><tbody id="adcExamples"></tbody></table></div>
+            </section>
+        </section>
+
+        <section id="tiePanel" role="tabpanel" aria-labelledby="tieTab" hidden>
+            <div class="jitter-actions"><button class="btn" id="tieReset" type="button">恢复本页默认</button><button class="btn" id="tieCopy" type="button">复制结果摘要</button><button class="btn" id="tieExport" type="button">导出 CSV</button></div>
+            <section class="paper-card jitter-card">
+                <h2>TIE 与连续同极性边沿时间戳</h2>
+                <p>边沿序列按 \(e_n=(t_n-t_0)-nT_0\) 计算，先用十进制定点整数消除大绝对时间。周期 \(p_n=e_{n+1}-e_n\)，周期间 \(c_n=e_{n+2}-2e_{n+1}+e_n\) 始终从原始 TIE 序列差分。</p>
+                <div class="jitter-tie-controls"><label>输入模式 <select id="tieMode"><option value="tie">单列 TIE</option><option value="edges">连续同极性边沿时间戳</option></select></label><label>时间单位 <select id="tieUnit"><option>s</option><option>ns</option><option>ps</option><option>fs</option></select></label><label>去趋势 <select id="tieDetrend"><option value="none">不处理</option><option value="mean">去均值</option><option value="linear">线性去趋势</option></select></label></div>
+                <div id="tieFields" class="jitter-fields"></div>
+                <div class="jitter-text-head"><label for="tieText">单列 TIE 或边沿时间戳</label></div><textarea id="tieText" rows="9" spellcheck="false"></textarea>
+                <p class="hint">最多 100000 点、5 MiB、每个十进制数最多 40 位有效数字，显式指数绝对值不超过 30。修改后点击解析。</p>
+                <label class="jitter-confirm"><input id="tieConsecutive" type="checkbox">我确认每周期恰好一个同极性边沿且无漏采，启用周期与周期间统计</label>
+                <div class="jitter-actions"><button class="btn btn-primary" id="tieParse" type="button">解析并统计</button><button class="btn" id="tieOffset" type="button">常量偏置</button><button class="btn" id="tieDrift" type="button">线性频偏</button><button class="btn" id="tieSine" type="button">正弦 TIE</button><label class="btn jitter-file">导入单列文件<input id="tieFile" type="file" accept=".csv,.txt,text/csv,text/plain" hidden></label></div>
+                <p id="tieError" class="jitter-error" role="alert"></p><ul id="tieWarnings" class="jitter-warnings"></ul>
+            </section>
+            <section class="paper-card jitter-card">
+                <div class="jitter-table-wrap"><table class="sketch-table"><caption>全量记录统计；标准差采用 N 分母</caption><thead><tr><th>序列</th><th>均值</th><th>标准差</th><th>RMS</th><th>最小</th><th>最大</th><th>峰峰值</th></tr></thead><tbody><tr><th>原始 TIE</th><td id="tie-rawMean">—</td><td id="tie-rawStd">—</td><td id="tie-rawRms">—</td><td id="tie-rawMin">—</td><td id="tie-rawMax">—</td><td id="tie-rawPeak">—</td></tr><tr><th>处理后 TIE</th><td id="tie-processedMean">—</td><td id="tie-processedStd">—</td><td id="tie-processedRms">—</td><td id="tie-processedMin">—</td><td id="tie-processedMax">—</td><td id="tie-processedPeak">—</td></tr></tbody></table></div>
+                <dl class="jitter-details"><div><dt>线性斜率 / 样本</dt><dd id="tie-slope">—</dd></div><div><dt>拟合频率</dt><dd id="tie-frequency">—</dd></div><div><dt>拟合频偏</dt><dd id="tie-ppm">—</dd></div><div><dt>周期标准差 / RMS / 峰峰</dt><dd id="tie-period">—</dd></div><div><dt>周期间标准差 / RMS / 峰峰</dt><dd id="tie-cycle">—</dd></div></dl>
+                <div class="jitter-chart-grid"><div class="jitter-chart"><canvas id="tieTrendChart" role="img" aria-label="TIE 原始与去趋势趋势图"></canvas></div><div class="jitter-chart"><canvas id="tieHistogramChart" role="img" aria-label="处理后 TIE 直方图"></canvas></div></div>
+                <p class="hint">趋势最多显示 2000 个桶极值点，统计始终使用全量。记录峰峰不外推 BER；全记录 TIE RMS 不会自动传给 ADC。</p>
+            </section>
+        </section>
+
+        <details class="paper-card jitter-card jitter-references">
+            <summary>公式来源、适用范围与参考链接</summary>
+            <ul>
+                <li>Analog Devices <a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-007.pdf" target="_blank" rel="noopener noreferrer">MT-007</a>、<a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-008.pdf" target="_blank" rel="noopener noreferrer">MT-008</a>：相噪、抖动与频域积分。</li>
+                <li>Analog Devices <a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-003.pdf" target="_blank" rel="noopener noreferrer">MT-003</a>、<a href="https://www.analog.com/media/en/training-seminars/application-notes/AN-1067.pdf" target="_blank" rel="noopener noreferrer">AN-1067</a>：ADC 孔径抖动与性能估算。</li>
+                <li>Texas Instruments <a href="https://www.ti.com/lit/an/snaa106c/snaa106c.pdf" target="_blank" rel="noopener noreferrer">SNAA106C</a>：PLL 相噪与抖动基础。</li>
+                <li>Keysight <a href="https://www.keysight.com/us/en/assets/7018-01464/application-notes/5989-5718.pdf" target="_blank" rel="noopener noreferrer">5989-5718</a>：TIE 与抖动测量概念。</li>
+                <li>PLL 不含分数 N、分频器/电源噪声、离散杂散、CP 采样折叠、失锁和非线性；Routh 稳定不代表实测必然稳定。首版不做自动环路元件设计、RJ/DJ 分离、BER/眼图或仪器专有文件解析。</li>
+            </ul>
+        </details>
+    </main>
+    <footer class="site-footer"><p>EE工具箱 &copy; 2026</p><div id="busuanzi_container_site_pv" style="display:none"><p class="site-stats">本站访客 <span id="busuanzi_value_site_uv">-</span> &middot; 总浏览 <span id="busuanzi_value_site_pv">-</span> &middot; 本页浏览 <span id="busuanzi_value_page_pv">-</span></p></div></footer>
+    <script async src="https://cn.vercount.one/js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../lib/chart.min.js"></script>
+    <script src="../../razavi/razavi-symbols.js"></script>
+    <script src="../../razavi/render.js"></script>
+    <script src="../../razavi/figure-utils.js"></script>
+    <script src="jitter-core.js"></script>
+    <script src="phase-noise.js"></script>
+    <script src="tie-core.js"></script>
+    <script src="pll-core.js"></script>
+    <script src="plots.js"></script>
+    <script src="pll-figure.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
