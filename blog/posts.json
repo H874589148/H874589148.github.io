@@ -1,5 +1,18 @@
 [
   {
+    "file": "cadence_startup_config.md",
+    "title": "Cadence Virtuoso 启动配置：.cdsinit、.cdsenv 与 .cshrc 的区别及常用命令",
+    "date": "2026-11-15",
+    "tags": [
+      "analog",
+      "tools"
+    ],
+    "authors": "Hawkeye",
+    "source": "Tools",
+    "abstract": "系统梳理 Cadence Virtuoso 中 .cshrc、.cdsenv、.cdsinit 的加载阶段、语法和覆盖关系，并汇总 ViVA 白底与线宽、Symbol 默认模板、Layout 网格与十字光标、ADE 仿真目录、快捷键和故障排查等常用配置。",
+    "readtime": 20
+  },
+  {
     "file": "aliasing_time_domain.md",
     "title": "频谱混叠（Aliasing）是什么：从\"采样点骗局\"到时域直观理解",
     "date": "2026-10-12",
